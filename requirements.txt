@@ -1,3 +1,4 @@
+supabase
 pandas
 requests
 openpyxl

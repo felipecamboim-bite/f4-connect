@@ -82,8 +82,8 @@ def atualizar_status_chamado(protocolo, novo_status):
 #   2. Um arquivo .streamlit/config.toml com:
 #        [server]
 #        enableStaticServing = true
-robo_src = "app/static/roboanimado__semfundo.gif"
-fundo_src = "app/static/fundo_animacao.png"
+robo_src = "https://github.com/felipecamboim-bite/f4-connect/releases/download/v1.0/roboanimado__semfundo.gif"
+fundo_src = "https://github.com/felipecamboim-bite/f4-connect/releases/download/v1.0/fundo_animacao.png"
 
 if "opcao_menu" not in st.session_state:
     st.session_state["opcao_menu"] = "inicio"
@@ -108,7 +108,7 @@ if "temp_empresa" not in st.session_state:
 st.markdown(
     f"""
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-
+    
     <style>
         .stApp {{
             background-image: url("{fundo_src}") !important;

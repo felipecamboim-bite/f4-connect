@@ -6,7 +6,7 @@ from supabase import create_client, Client
 
 # 1. Configuração da página
 st.set_page_config(
-    page_title="F4 Connect",
+    page_title="HelpDesk",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -452,7 +452,7 @@ with st.sidebar:
 # INTERFACE PRINCIPAL
 # ---------------------------------------------------------
 st.markdown(
-    '<div class="titulo-topo">F4 Connect</div>',
+    '<div class="titulo-topo">HelpDesk</div>',
     unsafe_allow_html=True,
 )
 

@@ -47,7 +47,7 @@ def gerar_protocolo():
     codigo = "".join(random.choices(letras_numeros, k=6))
     return f"#F4-{codigo}"
 
-def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao):
+def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao, severidade):
     protocolo = gerar_protocolo()
     dados = {
         "protocolo": protocolo,
@@ -57,6 +57,7 @@ def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao
         "ferramenta": ferramenta,
         "assunto": assunto,
         "descricao": descricao,
+        "severidade": severidade, # <--- NOVO CAMPO
         "status": "Aguardando atendimento"
     }
     if supabase:
@@ -618,6 +619,19 @@ else:
                         "Outro",
                     ],
                 )
+
+                # --- CAMPO DE SEVERIDADE ---
+                severidade = st.selectbox(
+                    "Nível de Severidade / Urgência do Chamado",
+                    [
+                        "Selecione...",
+                        "🟢 Baixa",
+                        "🟡 Média",
+                        "🟠 Alta",
+                        "🔴 Crítica"
+                    ]
+                )
+
                 assunto = st.text_input("Assunto do chamado")
                 descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
 
@@ -626,6 +640,8 @@ else:
                         st.warning("⚠️ Digite um e-mail válido.")
                     elif ferramenta == "Selecione...":
                         st.warning("⚠️ Selecione a ferramenta.")
+                    elif severidade == "Selecione...":
+                        st.warning("⚠️ Selecione a severidade do chamado.")
                     elif not assunto.strip():
                         st.warning("⚠️ Informe o assunto.")
                     elif not descricao.strip():
@@ -637,7 +653,8 @@ else:
                             st.session_state["temp_empresa"],
                             ferramenta,
                             assunto,
-                            descricao
+                            descricao,
+                            severidade # <--- PASSANDO A SEVERIDADE
                         )
                         st.session_state["ultimo_protocolo"] = protocolo
                         st.session_state["etapa_abertura"] = 1
@@ -699,8 +716,8 @@ else:
                 else:
                     st.markdown("### 📋 Resultado da Consulta:")
                     
-                    col_widths = [1.1, 1.3, 1.9, 1.4, 1.5, 1.4, 2.0, 1.8]
-                    headers = ["Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Assunto", "Descrição", "Status"]
+                    col_widths = [1.1, 1.2, 1.6, 1.2, 1.3, 1.1, 1.4, 1.8, 1.5]
+                    headers = ["Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status"]
                     
                     cols_head = st.columns(col_widths)
                     for col, h in zip(cols_head, headers):
@@ -712,13 +729,14 @@ else:
                         with st.container():
                             st.markdown('<div class="chamado-card-container">', unsafe_allow_html=True)
                             
-                            c_proto, c_nome, c_mail, c_emp, c_ferr, c_ass, c_desc, c_stat = st.columns(col_widths)
+                            c_proto, c_nome, c_mail, c_emp, c_ferr, c_sev, c_ass, c_desc, c_stat = st.columns(col_widths)
                             
                             c_proto.markdown(f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}</div>', unsafe_allow_html=True)
                             c_nome.markdown(f'<div class="celula-texto"><span class="mobile-label">Solicitante:</span>{c.get("nome_solicitante", "-")}</div>', unsafe_allow_html=True)
                             c_mail.markdown(f'<div class="celula-texto"><span class="mobile-label">E-mail:</span>{c.get("email_solicitante", "-")}</div>', unsafe_allow_html=True)
                             c_emp.markdown(f'<div class="celula-texto"><span class="mobile-label">Empresa:</span>{c.get("empresa", "-")}</div>', unsafe_allow_html=True)
                             c_ferr.markdown(f'<div class="celula-texto"><span class="mobile-label">Ferramenta:</span>{c.get("ferramenta", "-")}</div>', unsafe_allow_html=True)
+                            c_sev.markdown(f'<div class="celula-texto"><span class="mobile-label">Severidade:</span>{c.get("severidade", "-")}</div>', unsafe_allow_html=True)
                             c_ass.markdown(f'<div class="celula-texto"><span class="mobile-label">Assunto:</span>{c.get("assunto", "-")}</div>', unsafe_allow_html=True)
                             c_desc.markdown(f'<div class="celula-texto"><span class="mobile-label">Descrição:</span>{c.get("descricao", "-")}</div>', unsafe_allow_html=True)
                             

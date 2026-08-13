@@ -15,6 +15,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# Lista de Atendentes disponíveis para atribuição
+OPCOES_ATENDENTES = [
+    "Não atribuído",
+    "Felipe",
+    "Colega 1",
+    "Colega 2"
+]
+
 # ---------------------------------------------------------
 # CONEXÃO SUPABASE
 # ---------------------------------------------------------
@@ -128,6 +136,10 @@ def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao
     if supabase:
         supabase.table("chamados").insert(dados).execute()
     return protocolo
+
+def atualizar_atendente_chamado(protocolo, novo_atendente):
+    if supabase:
+        supabase.table("chamados").update({"atendente": novo_atendente}).eq("protocolo", protocolo).execute()
 
 def listar_chamados():
     if supabase:
@@ -531,9 +543,9 @@ def painel_admin():
         st.info("Nenhum chamado cadastrado até o momento.")
         return
 
-    # 1. BLOCOS DE TITULOS/CABEÇALHO
-    col_widths = [1.1, 1.2, 1.6, 1.1, 1.2, 1.1, 1.3, 1.8, 1.5]
-    headers = ["Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status"]
+    # 1. 10 BLOCOS DE TITULOS/CABEÇALHO
+    col_widths = [1.3, 1.1, 1.2, 1.6, 1.1, 1.2, 1.1, 1.3, 1.8, 1.5]
+    headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status"]
 
     cols_head = st.columns(col_widths)
     for col, h in zip(cols_head, headers):
@@ -541,12 +553,29 @@ def painel_admin():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. LINHAS EM FORMATO DE CARDS
+    # 2. Exibição das linhas com o Seletor de Atendente
     for c in chamados:
         with st.container():
             st.markdown('<div class="chamado-card-container">', unsafe_allow_html=True)
 
-            c_proto, c_nome, c_mail, c_emp, c_ferr, c_sev, c_ass, c_desc, c_stat = st.columns(col_widths)
+            c_atend, c_proto, c_nome, c_mail, c_emp, c_ferr, c_sev, c_ass, c_desc, c_stat = st.columns(col_widths)
+
+            # --- 1ª COLUNA: SELETOR DE ATENDENTE ---
+            atendente_atual = c.get("atendente") or "Não atribuído"
+            idx_atend = OPCOES_ATENDENTES.index(atendente_atual) if atendente_atual in OPCOES_ATENDENTES else 0
+
+            novo_atendente = c_atend.selectbox(
+                "Atendente",
+                OPCOES_ATENDENTES,
+                index=idx_atend,
+                key=f"atend_{c['protocolo']}",
+                label_visibility="collapsed"
+            )
+
+            if novo_atendente != atendente_atual:
+                atualizar_atendente_chamado(c['protocolo'], novo_atendente)
+                st.toast(f"Chamado {c['protocolo']} atribuído para: {novo_atendente}")
+                st.rerun(scope="fragment")
 
             c_proto.markdown(f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}</div>', unsafe_allow_html=True)
             c_nome.markdown(f'<div class="celula-texto"><span class="mobile-label">Solicitante:</span>{c.get("nome_solicitante", "-")}</div>', unsafe_allow_html=True)
@@ -557,6 +586,7 @@ def painel_admin():
             c_ass.markdown(f'<div class="celula-texto"><span class="mobile-label">Assunto:</span>{c.get("assunto", "-")}</div>', unsafe_allow_html=True)
             c_desc.markdown(f'<div class="celula-texto"><span class="mobile-label">Descrição:</span>{c.get("descricao", "-")}</div>', unsafe_allow_html=True)
 
+            # SELETOR DE STATUS
             idx_atual = OPCOES_STATUS.index(c['status']) if c['status'] in OPCOES_STATUS else 0
             novo_status = c_stat.selectbox(
                 "Status",
@@ -578,7 +608,7 @@ def painel_admin():
                     assunto_chamado=c['assunto'],
                     status_atual=novo_status
                 )
-                
+
                 st.toast(f"Status do {c['protocolo']} atualizado para: {novo_status}")
                 # rerun com escopo "fragment": atualiza só este painel,
                 # sem re-executar o app inteiro (login, CSS, imagens etc.)

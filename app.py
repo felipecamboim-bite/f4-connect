@@ -19,8 +19,7 @@ st.set_page_config(
 OPCOES_ATENDENTES = [
     "Não atribuído",
     "Felipe",
-    "Colega 1",
-    "Colega 2"
+    "Rafael",
 ]
 
 # ---------------------------------------------------------
@@ -55,7 +54,7 @@ supabase = init_supabase()
 # Dicionário de Usuários Administradores
 USUARIOS_ADMIN = {
     "felipe": "1234",
-    "colega": "1234"
+    "rafael": "1234"
 }
 
 OPCOES_STATUS = [

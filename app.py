@@ -66,6 +66,67 @@ OPCOES_STATUS = [
     "Encerrado pelo solicitante"
 ]
 
+# ---------------------------------------------------------
+# EMPRESAS E FERRAMENTAS CADASTRADAS PELO ADMIN
+# ---------------------------------------------------------
+def listar_empresas():
+    """Retorna apenas os nomes, usado para popular os selectboxes do solicitante."""
+    if supabase:
+        res = supabase.table("empresas_chamados").select("nome").order("nome").execute()
+        return [item["nome"] for item in res.data] if res.data else []
+    return []
+
+def listar_empresas_detalhado():
+    """Retorna nome, quem cadastrou e a data, usado no painel administrativo."""
+    if supabase:
+        res = (
+            supabase.table("empresas_chamados")
+            .select("nome, criado_por, created_at")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return res.data if res.data else []
+    return []
+
+def adicionar_empresa(nome, criado_por):
+    if supabase:
+        supabase.table("empresas_chamados").insert(
+            {"nome": nome, "criado_por": criado_por}
+        ).execute()
+
+def remover_empresa(nome):
+    if supabase:
+        supabase.table("empresas_chamados").delete().eq("nome", nome).execute()
+
+def listar_ferramentas():
+    """Retorna apenas os nomes, usado para popular os selectboxes do solicitante."""
+    if supabase:
+        res = supabase.table("ferramentas_chamados").select("nome").order("nome").execute()
+        return [item["nome"] for item in res.data] if res.data else []
+    return []
+
+def listar_ferramentas_detalhado():
+    """Retorna nome, quem cadastrou e a data, usado no painel administrativo."""
+    if supabase:
+        res = (
+            supabase.table("ferramentas_chamados")
+            .select("nome, criado_por, created_at")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return res.data if res.data else []
+    return []
+
+def adicionar_ferramenta(nome, criado_por):
+    if supabase:
+        supabase.table("ferramentas_chamados").insert(
+            {"nome": nome, "criado_por": criado_por}
+        ).execute()
+
+def remover_ferramenta(nome):
+    if supabase:
+        supabase.table("ferramentas_chamados").delete().eq("nome", nome).execute()
+
 def gerar_protocolo():
     letras_numeros = string.ascii_uppercase + string.digits
     codigo = "".join(random.choices(letras_numeros, k=6))
@@ -85,10 +146,10 @@ def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_cham
                 <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">🤖 F4 Connect - Help Desk</h2>
                 <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Central de Atendimento e Suporte</p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                
+
                 <p>Olá, <b>{nome_solicitante}</b>!</p>
                 <p>Houve uma atualização no seu chamado. Confira os detalhes abaixo:</p>
-                
+
                 <div style="background-color: #f8fafc; border-left: 4px solid #007aff; padding: 15px; margin: 20px 0; border-radius: 4px;">
                     <p style="margin: 6px 0;"><b>Protocolo:</b> <span style="color: #007aff; font-weight: bold;">{protocolo}</span></p>
                     <p style="margin: 6px 0;"><b>Assunto:</b> {assunto_chamado}</p>
@@ -99,7 +160,7 @@ def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_cham
                 <br>
                 <p style="margin-bottom: 0;">Atenciosamente,</p>
                 <p style="margin-top: 2px;"><b>Equipe de Suporte F4 Connect</b></p>
-                
+
                 <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0 15px 0;">
                 <p style="font-size: 11px; color: #999; text-align: center;">Este é um e-mail automático enviado pelo sistema F4 Connect. Por favor, não responda a este e-mail.</p>
             </div>
@@ -176,8 +237,15 @@ if "usuario_logado" not in st.session_state:
 
 if "temp_nome" not in st.session_state:
     st.session_state["temp_nome"] = ""
+
 if "temp_empresa" not in st.session_state:
     st.session_state["temp_empresa"] = "Selecione..."
+
+# Controla qual conteúdo aparece na área principal do admin:
+# "chamados" (padrão), "empresa" (cadastro/lista de empresas) ou
+# "ferramenta" (cadastro/lista de ferramentas)
+if "aba_admin" not in st.session_state:
+    st.session_state["aba_admin"] = "chamados"
 
 # ---------------------------------------------------------
 # CSS DA INTERFACE & CONTAINERS DA TABELA ADMIN
@@ -185,7 +253,7 @@ if "temp_empresa" not in st.session_state:
 st.markdown(
     f"""
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    
+
     <style>
         .stApp {{
             background-image: url("{fundo_src}") !important;
@@ -208,7 +276,7 @@ st.markdown(
             border-right: 1px solid rgba(0, 183, 255, 0.3) !important;
         }}
 
-        section[data-testid="stSidebar"] .stMarkdown, 
+        section[data-testid="stSidebar"] .stMarkdown,
         section[data-testid="stSidebar"] label {{
             color: #FFFFFF !important;
             font-family: 'Inter', sans-serif !important;
@@ -520,8 +588,54 @@ with st.sidebar:
                 st.error("Usuário ou senha incorretos.")
     else:
         st.success(f"👋 Logado como: **{st.session_state['usuario_logado']}**")
+
+        if st.button("📋 Chamados"):
+            st.session_state["aba_admin"] = "chamados"
+            st.rerun()
+
+        st.markdown("---")
+
+        # ---- CADASTRAR EMPRESA ----
+        if st.button("🏢 Cadastrar empresa"):
+            # clicar de novo no mesmo texto fecha o campo
+            if st.session_state["aba_admin"] == "empresa":
+                st.session_state["aba_admin"] = "chamados"
+            else:
+                st.session_state["aba_admin"] = "empresa"
+            st.rerun()
+
+        if st.session_state["aba_admin"] == "empresa":
+            nova_empresa = st.text_input("Nome da empresa", key="input_nova_empresa")
+            if st.button("💾 Salvar empresa", key="salvar_empresa"):
+                if nova_empresa.strip():
+                    adicionar_empresa(nova_empresa.strip(), st.session_state["usuario_logado"])
+                    st.success("Empresa cadastrada!")
+                    st.rerun()
+                else:
+                    st.warning("Digite o nome da empresa.")
+
+        # ---- CADASTRAR FERRAMENTA ----
+        if st.button("🛠️ Cadastrar Ferramenta"):
+            if st.session_state["aba_admin"] == "ferramenta":
+                st.session_state["aba_admin"] = "chamados"
+            else:
+                st.session_state["aba_admin"] = "ferramenta"
+            st.rerun()
+
+        if st.session_state["aba_admin"] == "ferramenta":
+            nova_ferramenta = st.text_input("Nome da ferramenta", key="input_nova_ferramenta")
+            if st.button("💾 Salvar ferramenta", key="salvar_ferramenta"):
+                if nova_ferramenta.strip():
+                    adicionar_ferramenta(nova_ferramenta.strip(), st.session_state["usuario_logado"])
+                    st.success("Ferramenta cadastrada!")
+                    st.rerun()
+                else:
+                    st.warning("Digite o nome da ferramenta.")
+
+        st.markdown("---")
         if st.button("🚪 Sair (Logout)"):
             st.session_state["usuario_logado"] = None
+            st.session_state["aba_admin"] = "chamados"
             st.rerun()
 
 # ---------------------------------------------------------
@@ -616,8 +730,69 @@ def painel_admin():
             st.markdown('</div>', unsafe_allow_html=True)
 
 
+# ------------------ VISÃO ADMIN: LISTA DE EMPRESAS / FERRAMENTAS CADASTRADAS ------------------
+@st.fragment
+def painel_cadastros(tipo):
+    """
+    tipo: "empresa" ou "ferramenta"
+    Mostra a lista de itens cadastrados com nome, usuário que cadastrou e data.
+    """
+    if tipo == "empresa":
+        st.markdown("## 🏢 Empresas Cadastradas")
+        itens = listar_empresas_detalhado()
+        func_remover = remover_empresa
+    else:
+        st.markdown("## 🛠️ Ferramentas Cadastradas")
+        itens = listar_ferramentas_detalhado()
+        func_remover = remover_ferramenta
+
+    if not itens:
+        st.info("Nenhum cadastro encontrado até o momento.")
+        return
+
+    col_widths = [2.5, 2, 2, 0.8]
+    headers = ["Nome", "Usuário", "Data de Cadastro", ""]
+
+    cols_head = st.columns(col_widths)
+    for col, h in zip(cols_head, headers):
+        col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    for item in itens:
+        with st.container():
+            st.markdown('<div class="chamado-card-container">', unsafe_allow_html=True)
+
+            c_nome, c_user, c_data, c_del = st.columns(col_widths)
+
+            data_formatada = "-"
+            if item.get("created_at"):
+                try:
+                    data_formatada = datetime.fromisoformat(
+                        item["created_at"].replace("Z", "+00:00")
+                    ).strftime("%d/%m/%Y %H:%M")
+                except Exception:
+                    data_formatada = item["created_at"]
+
+            c_nome.markdown(f'<div class="celula-texto"><span class="mobile-label">Nome:</span>{item.get("nome", "-")}</div>', unsafe_allow_html=True)
+            c_user.markdown(f'<div class="celula-texto"><span class="mobile-label">Usuário:</span>{item.get("criado_por") or "-"}</div>', unsafe_allow_html=True)
+            c_data.markdown(f'<div class="celula-texto"><span class="mobile-label">Data:</span>{data_formatada}</div>', unsafe_allow_html=True)
+
+            if c_del.button("🗑️", key=f"del_{tipo}_{item.get('nome')}"):
+                func_remover(item.get("nome"))
+                st.toast(f"'{item.get('nome')}' removido.")
+                st.rerun(scope="fragment")
+
+            st.markdown('</div>', unsafe_allow_html=True)
+
+
 if st.session_state["usuario_logado"]:
-    painel_admin()
+    if st.session_state["aba_admin"] == "empresa":
+        painel_cadastros("empresa")
+    elif st.session_state["aba_admin"] == "ferramenta":
+        painel_cadastros("ferramenta")
+    else:
+        painel_admin()
 
 # ------------------ VISÃO PÚBLICA (SOLICITANTE) ------------------
 else:
@@ -668,14 +843,10 @@ else:
                     )
                     st.session_state["ultimo_protocolo"] = None
 
+                empresas_cadastradas = listar_empresas()
                 empresa = st.selectbox(
                     "Qual empresa você faz parte?",
-                    [
-                        "Selecione...",
-                        "Clicklog transportes",
-                        "Frete autônomo",
-                        "Outra"
-                    ],
+                    ["Selecione..."] + empresas_cadastradas + ["Outra"],
                     index=0
                 )
 
@@ -710,19 +881,10 @@ else:
                 )
 
                 email = st.text_input("Seu E-mail", placeholder="exemplo@empresa.com")
+                ferramentas_cadastradas = listar_ferramentas()
                 ferramenta = st.selectbox(
                     "Escolha a ferramenta que necessita de ajuda",
-                    [
-                        "Selecione...",
-                        "Escalasoft",
-                        "SSW",
-                        "E-mail",
-                        "Drive",
-                        "Frete autônomo",
-                        "Dashboards (BI)",
-                        "Roteirizador",
-                        "Outro",
-                    ],
+                    ["Selecione..."] + ferramentas_cadastradas + ["Outro"],
                 )
 
                 # --- CAMPO DE SEVERIDADE ---
@@ -792,7 +954,7 @@ else:
 
             if st.button("🔍 Pesquisar"):
                 termo_limpo = termo_busca.strip()
-                
+
                 if not termo_limpo:
                     st.warning("⚠️ Digite um número de protocolo ou e-mail para pesquisar.")
                 else:
@@ -824,15 +986,15 @@ else:
             # EXIBIÇÃO DOS RESULTADOS ENCONTRADOS
             if "resultado_busca" in st.session_state and st.session_state["resultado_busca"] is not None:
                 resultados = st.session_state["resultado_busca"]
-                
+
                 if not resultados:
                     st.error("❌ Nenhum chamado foi encontrado com essa informação.")
                 else:
                     st.markdown("### 📋 Resultado da Consulta:")
-                    
+
                     col_widths = [1.1, 1.2, 1.6, 1.2, 1.3, 1.1, 1.4, 1.8, 1.5]
                     headers = ["Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status"]
-                    
+
                     cols_head = st.columns(col_widths)
                     for col, h in zip(cols_head, headers):
                         col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
@@ -842,9 +1004,9 @@ else:
                     for c in resultados:
                         with st.container():
                             st.markdown('<div class="chamado-card-container">', unsafe_allow_html=True)
-                            
+
                             c_proto, c_nome, c_mail, c_emp, c_ferr, c_sev, c_ass, c_desc, c_stat = st.columns(col_widths)
-                            
+
                             c_proto.markdown(f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}</div>', unsafe_allow_html=True)
                             c_nome.markdown(f'<div class="celula-texto"><span class="mobile-label">Solicitante:</span>{c.get("nome_solicitante", "-")}</div>', unsafe_allow_html=True)
                             c_mail.markdown(f'<div class="celula-texto"><span class="mobile-label">E-mail:</span>{c.get("email_solicitante", "-")}</div>', unsafe_allow_html=True)
@@ -853,7 +1015,7 @@ else:
                             c_sev.markdown(f'<div class="celula-texto"><span class="mobile-label">Severidade:</span>{c.get("severidade", "-")}</div>', unsafe_allow_html=True)
                             c_ass.markdown(f'<div class="celula-texto"><span class="mobile-label">Assunto:</span>{c.get("assunto", "-")}</div>', unsafe_allow_html=True)
                             c_desc.markdown(f'<div class="celula-texto"><span class="mobile-label">Descrição:</span>{c.get("descricao", "-")}</div>', unsafe_allow_html=True)
-                            
+
                             # STATUS APENAS COMO SELO LEITURA (SEM EDITAR)
                             c_stat.markdown(f'<div class="badge-status"><span class="mobile-label">Status:</span>📌 {c.get("status", "-")}</div>', unsafe_allow_html=True)
 
@@ -921,7 +1083,7 @@ else:
                     )
 
                     st.markdown("#### Como foi o seu atendimento?")
-                    
+
                     # Componente nativo de Estrelas (disponível no Streamlit recente)
                     # Caso sua versão do Streamlit não tenha st.feedback, usamos um seletor numérico amigável
                     try:

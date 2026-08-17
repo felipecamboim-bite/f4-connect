@@ -397,7 +397,8 @@ def atualizar_status_chamado(protocolo, novo_status):
 #        [server]
 #        enableStaticServing = true
 robo_src = "https://github.com/felipecamboim-bite/f4-connect/releases/download/v1.0/roboanimado__semfundo.gif"
-fundo_src = "https://github.com/felipecamboim-bite/f4-connect/releases/download/v1.0/fundo_animacao.png"
+fundo_src = "https://kommodo.ai/i/xl9IwxPAf9ZpdGYGVV4r"
+sidebar_src = "https://kommodo.ai/i/G5n4GzFcCAPhZVOq34uW"
 
 if "opcao_menu" not in st.session_state:
     st.session_state["opcao_menu"] = "inicio"
@@ -407,6 +408,10 @@ if "etapa_abertura" not in st.session_state:
 
 if "ultimo_protocolo" not in st.session_state:
     st.session_state["ultimo_protocolo"] = None
+
+# Guarda se o e-mail de confirmação do último chamado falhou, para avisar na tela
+if "ultimo_email_falhou" not in st.session_state:
+    st.session_state["ultimo_email_falhou"] = False
 
 if "usuario_logado" not in st.session_state:
     st.session_state["usuario_logado"] = None
@@ -452,10 +457,14 @@ st.markdown(
             background: transparent !important;
         }}
 
-        /* SIDEBAR COMPACTA */
+        /* SIDEBAR COMPACTA, com imagem de fundo preenchendo toda a barra lateral.
+           O gradiente escuro por cima garante que o texto branco continue legível. */
         section[data-testid="stSidebar"] {{
             width: 280px !important;
-            background-color: rgba(10, 25, 47, 0.75) !important;
+            background-image: linear-gradient(rgba(10, 25, 47, 0.78), rgba(10, 25, 47, 0.78)), url("{sidebar_src}") !important;
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
             backdrop-filter: blur(8px) !important;
             border-right: 1px solid rgba(0, 183, 255, 0.3) !important;
         }}
@@ -1028,7 +1037,7 @@ def painel_admin():
                 atualizar_status_chamado(c['protocolo'], novo_status)
 
                 # 2. --- DISPARA O E-MAIL DE ATUALIZAÇÃO ---
-                enviar_email_status(
+                email_enviado = enviar_email_status(
                     email_destino=c['email_solicitante'],
                     nome_solicitante=c['nome_solicitante'],
                     protocolo=c['protocolo'],
@@ -1036,7 +1045,13 @@ def painel_admin():
                     status_atual=novo_status
                 )
 
-                st.toast(f"Status do {c['protocolo']} atualizado para: {novo_status}")
+                if email_enviado:
+                    st.toast(f"Status do {c['protocolo']} atualizado para: {novo_status}")
+                else:
+                    st.toast(
+                        f"Status do {c['protocolo']} atualizado, mas o e-mail para o solicitante falhou.",
+                        icon="⚠️",
+                    )
                 # rerun com escopo "fragment": atualiza só este painel,
                 # sem re-executar o app inteiro (login, CSS, imagens etc.)
                 st.rerun(scope="fragment")
@@ -1213,7 +1228,13 @@ else:
                         """,
                         unsafe_allow_html=True,
                     )
+                    if st.session_state["ultimo_email_falhou"]:
+                        st.warning(
+                            "⚠️ Não conseguimos enviar o e-mail de confirmação. "
+                            "Guarde o protocolo acima para acompanhar seu chamado."
+                        )
                     st.session_state["ultimo_protocolo"] = None
+                    st.session_state["ultimo_email_falhou"] = False
 
                 empresas_cadastradas = listar_empresas()
                 empresa = st.selectbox(
@@ -1297,7 +1318,7 @@ else:
                             severidade # <--- PASSANDO A SEVERIDADE
                         )
                         # 2. --- DISPARA O E-MAIL INICIAL ---
-                        enviar_email_status(
+                        email_enviado = enviar_email_status(
                             email_destino=email,
                             nome_solicitante=st.session_state["temp_nome"],
                             protocolo=protocolo,
@@ -1305,6 +1326,7 @@ else:
                             status_atual="Aguardando atendimento"
                         )
                         st.session_state["ultimo_protocolo"] = protocolo
+                        st.session_state["ultimo_email_falhou"] = not email_enviado
                         st.session_state["etapa_abertura"] = 1
                         st.session_state["temp_nome"] = ""
                         st.session_state["temp_empresa"] = "Selecione..."

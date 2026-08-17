@@ -495,6 +495,17 @@ st.markdown(
             padding-top: 4px;
         }}
 
+        /* Variante centralizada, usada na lista de Empresas/Ferramentas Cadastradas */
+        .celula-centro {{
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            word-wrap: break-word;
+            padding-top: 4px;
+            text-align: center;
+        }}
+
         .celula-protocolo {{
             color: #38bdf8;
             font-family: 'Inter', sans-serif;
@@ -774,9 +785,9 @@ def painel_cadastros(tipo):
                 except Exception:
                     data_formatada = item["created_at"]
 
-            c_nome.markdown(f'<div class="celula-texto"><span class="mobile-label">Nome:</span>{item.get("nome", "-")}</div>', unsafe_allow_html=True)
-            c_user.markdown(f'<div class="celula-texto"><span class="mobile-label">Usuário:</span>{item.get("criado_por") or "-"}</div>', unsafe_allow_html=True)
-            c_data.markdown(f'<div class="celula-texto"><span class="mobile-label">Data:</span>{data_formatada}</div>', unsafe_allow_html=True)
+            c_nome.markdown(f'<div class="celula-centro"><span class="mobile-label">Nome:</span>{item.get("nome", "-")}</div>', unsafe_allow_html=True)
+            c_user.markdown(f'<div class="celula-centro"><span class="mobile-label">Usuário:</span>{item.get("criado_por") or "-"}</div>', unsafe_allow_html=True)
+            c_data.markdown(f'<div class="celula-centro"><span class="mobile-label">Data:</span>{data_formatada}</div>', unsafe_allow_html=True)
 
             if c_del.button("🗑️", key=f"del_{tipo}_{item.get('nome')}"):
                 func_remover(item.get("nome"))

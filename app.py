@@ -13,7 +13,7 @@ st.set_page_config(
     page_title="HelpDesk",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # Lista de Atendentes disponíveis para atribuição
@@ -463,9 +463,21 @@ st.markdown(
             background: transparent !important;
         }}
 
+        /* Impede que a sidebar seja recolhida: some com o botão de colapsar
+           (tanto o que fica dentro da sidebar aberta quanto o que reaparece
+           no canto para reabrir), então ela fica sempre fixa e aberta. */
+        button[kind="header"] {{
+            display: none !important;
+        }}
+
+        [data-testid="collapsedControl"] {{
+            display: none !important;
+        }}
+
         /* SIDEBAR COM IMAGEM DE FUNDO */
     section[data-testid="stSidebar"] {{ /* <--- Dupla */
         width: 280px !important;
+        min-width: 280px !important;
         background-image: url("https://github.com/user-attachments/assets/9d9bf266-02b4-493e-b90e-3ff5f2125473") !important;
         background-size: cover !important;
         background-position: center !important;

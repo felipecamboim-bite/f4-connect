@@ -393,7 +393,7 @@ def atualizar_status_chamado(protocolo, novo_status):
 # As imagens do robô e do fundo animado continuam vindo de uma URL pública
 # (GitHub Releases), como já funcionava antes.
 robo_src = "https://github.com/felipecamboim-bite/f4-connect/releases/download/v1.0/roboanimado__semfundo.gif"
-fundo_src = "https://github.com/felipecamboim-bite/f4-connect/releases/download/v1.0/fundo_animacao.png"
+fundo_src = "https://github.com/user-attachments/assets/12833297-9621-4b87-acd7-3a9365b262b7"
 
 # Logo "F4 HELPDESK" da sidebar: a arte enviada (Imagem_capa_helpdesk.png) era um
 # retângulo verde sólido com a marca só num cantinho — usar ela como imagem de

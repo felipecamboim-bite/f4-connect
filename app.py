@@ -1,7 +1,8 @@
 import random
 import string
+import hashlib
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from supabase import create_client, Client
 import smtplib
 from email.mime.text import MIMEText
@@ -51,11 +52,93 @@ def init_supabase():
 
 supabase = init_supabase()
 
-# Dicionário de Usuários Administradores
-USUARIOS_ADMIN = {
-    "felipe": "1234",
-    "rafael": "1234"
-}
+# ---------------------------------------------------------
+# LOGIN E SENHA DOS ADMINISTRADORES (armazenados no Supabase,
+# permitindo que cada administrador troque sua própria senha)
+# ---------------------------------------------------------
+def hash_senha(senha):
+    return hashlib.sha256(senha.encode("utf-8")).hexdigest()
+
+def buscar_usuario_admin(usuario):
+    if supabase:
+        res = (
+            supabase.table("usuarios_admin")
+            .select("usuario, senha, email")
+            .eq("usuario", usuario.strip().lower())
+            .execute()
+        )
+        return res.data[0] if res.data else None
+    return None
+
+def buscar_email_admin(usuario):
+    registro = buscar_usuario_admin(usuario)
+    return registro.get("email") if registro else None
+
+def verificar_login(usuario, senha):
+    registro = buscar_usuario_admin(usuario)
+    if not registro:
+        return False
+    return registro["senha"] == hash_senha(senha)
+
+def atualizar_senha_admin(usuario, nova_senha):
+    if supabase:
+        supabase.table("usuarios_admin").update(
+            {
+                "senha": hash_senha(nova_senha),
+                "atualizado_em": datetime.now(timezone.utc).isoformat(),
+            }
+        ).eq("usuario", usuario.strip().lower()).execute()
+
+def gerar_senha_temporaria(tamanho=8):
+    caracteres = string.ascii_letters + string.digits
+    return "".join(random.choices(caracteres, k=tamanho))
+
+def listar_usuarios_admin_detalhado():
+    if supabase:
+        res = (
+            supabase.table("usuarios_admin")
+            .select("usuario, email, criado_por, created_at")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return res.data if res.data else []
+    return []
+
+def adicionar_usuario_admin(usuario, email, criado_por):
+    """
+    Cadastra um novo administrador com uma senha temporária aleatória,
+    que é enviada para o e-mail informado. Retorna um dicionário com o
+    resultado da operação.
+    """
+    usuario_norm = usuario.strip().lower()
+
+    if buscar_usuario_admin(usuario_norm):
+        return {"ok": False, "erro": "Já existe um administrador com esse nome de usuário."}
+
+    senha_temp = gerar_senha_temporaria()
+
+    if supabase:
+        supabase.table("usuarios_admin").insert(
+            {
+                "usuario": usuario_norm,
+                "email": email.strip(),
+                "senha": hash_senha(senha_temp),
+                "criado_por": criado_por,
+            }
+        ).execute()
+
+    email_enviado = enviar_email_novo_admin(email.strip(), usuario_norm, senha_temp)
+
+    return {
+        "ok": True,
+        "usuario": usuario_norm,
+        "email_enviado": email_enviado,
+        "senha_temp": senha_temp,
+    }
+
+def remover_usuario_admin(usuario):
+    if supabase:
+        supabase.table("usuarios_admin").delete().eq("usuario", usuario.strip().lower()).execute()
 
 OPCOES_STATUS = [
     "Aguardando atendimento",
@@ -180,6 +263,99 @@ def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_cham
         print(f"Erro ao enviar e-mail: {e}")
         return False
 
+def enviar_email_codigo_senha(email_destino, usuario, codigo):
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["From"] = f"F4 Connect HelpDesk <{EMAIL_REMETENTE}>"
+        msg["To"] = email_destino
+        msg["Subject"] = "Código para redefinição de senha - F4 Connect HelpDesk"
+
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
+                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">🤖 F4 Connect - Help Desk</h2>
+                <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Redefinição de senha do painel administrativo</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <p>Olá, <b>{usuario}</b>!</p>
+                <p>Use o código abaixo para redefinir sua senha. Ele é válido por 10 minutos:</p>
+
+                <div style="text-align: center; margin: 24px 0;">
+                    <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #007aff;">{codigo}</span>
+                </div>
+
+                <p>Se você não solicitou essa alteração, apenas ignore este e-mail.</p>
+                <br>
+                <p style="margin-bottom: 0;">Atenciosamente,</p>
+                <p style="margin-top: 2px;"><b>Equipe de Suporte F4 Connect</b></p>
+
+                <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0 15px 0;">
+                <p style="font-size: 11px; color: #999; text-align: center;">Este é um e-mail automático enviado pelo sistema F4 Connect. Por favor, não responda a este e-mail.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        msg.attach(MIMEText(html_body, "html"))
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_REMETENTE, SENHA_REMETENTE)
+        server.sendmail(EMAIL_REMETENTE, email_destino, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Erro ao enviar e-mail de código: {e}")
+        return False
+
+def enviar_email_novo_admin(email_destino, usuario, senha_temporaria):
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["From"] = f"F4 Connect HelpDesk <{EMAIL_REMETENTE}>"
+        msg["To"] = email_destino
+        msg["Subject"] = "Seu acesso administrativo - F4 Connect HelpDesk"
+
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
+                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">🤖 F4 Connect - Help Desk</h2>
+                <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Acesso ao painel administrativo</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <p>Olá!</p>
+                <p>Você foi cadastrado como administrador do F4 Connect HelpDesk. Seus dados de acesso:</p>
+
+                <div style="background-color: #f8fafc; border-left: 4px solid #007aff; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 6px 0;"><b>Usuário:</b> {usuario}</p>
+                    <p style="margin: 6px 0;"><b>Senha temporária:</b> <span style="color: #007aff; font-weight: bold;">{senha_temporaria}</span></p>
+                </div>
+
+                <p>Recomendamos trocar essa senha assim que fizer login, usando a opção "🔑 Alterar senha" no painel administrativo.</p>
+                <br>
+                <p style="margin-bottom: 0;">Atenciosamente,</p>
+                <p style="margin-top: 2px;"><b>Equipe de Suporte F4 Connect</b></p>
+
+                <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0 15px 0;">
+                <p style="font-size: 11px; color: #999; text-align: center;">Este é um e-mail automático enviado pelo sistema F4 Connect. Por favor, não responda a este e-mail.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        msg.attach(MIMEText(html_body, "html"))
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_REMETENTE, SENHA_REMETENTE)
+        server.sendmail(EMAIL_REMETENTE, email_destino, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Erro ao enviar e-mail de novo administrador: {e}")
+        return False
+
 def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao, severidade):
     protocolo = gerar_protocolo()
     dados = {
@@ -246,6 +422,14 @@ if "temp_empresa" not in st.session_state:
 # "ferramenta" (cadastro/lista de ferramentas)
 if "aba_admin" not in st.session_state:
     st.session_state["aba_admin"] = "chamados"
+
+# Controla se o formulário de "Alterar senha" está visível na sidebar
+if "mostrar_alterar_senha" not in st.session_state:
+    st.session_state["mostrar_alterar_senha"] = False
+
+# Controla se o código de verificação por e-mail já foi enviado nesta sessão
+if "codigo_senha_enviado" not in st.session_state:
+    st.session_state["codigo_senha_enviado"] = False
 
 # ---------------------------------------------------------
 # CSS DA INTERFACE & CONTAINERS DA TABELA ADMIN
@@ -607,8 +791,8 @@ with st.sidebar:
         senha = st.text_input("Senha", type="password", key="pass_admin")
 
         if st.button("🔑 Entrar"):
-            if usuario in USUARIOS_ADMIN and USUARIOS_ADMIN[usuario] == senha:
-                st.session_state["usuario_logado"] = usuario
+            if verificar_login(usuario, senha):
+                st.session_state["usuario_logado"] = usuario.strip().lower()
                 st.success(f"Bem-vindo, {usuario}!")
                 st.rerun()
             else:
@@ -659,10 +843,113 @@ with st.sidebar:
                 else:
                     st.warning("Digite o nome da ferramenta.")
 
+        # ---- CADASTRAR ADMINISTRADOR ----
+        if st.button("👤 Cadastrar Administrador"):
+            if st.session_state["aba_admin"] == "usuarios":
+                st.session_state["aba_admin"] = "chamados"
+            else:
+                st.session_state["aba_admin"] = "usuarios"
+            st.rerun()
+
+        if st.session_state["aba_admin"] == "usuarios":
+            novo_admin_usuario = st.text_input("Nome de usuário", key="input_novo_admin_usuario")
+            novo_admin_email = st.text_input("E-mail", key="input_novo_admin_email")
+
+            if st.button("💾 Cadastrar administrador", key="salvar_novo_admin"):
+                if not novo_admin_usuario.strip():
+                    st.warning("Digite o nome de usuário.")
+                elif not novo_admin_email.strip() or "@" not in novo_admin_email:
+                    st.warning("Digite um e-mail válido.")
+                else:
+                    resultado = adicionar_usuario_admin(
+                        novo_admin_usuario, novo_admin_email, st.session_state["usuario_logado"]
+                    )
+                    if not resultado["ok"]:
+                        st.error(resultado["erro"])
+                    elif resultado["email_enviado"]:
+                        st.success(
+                            f"Administrador '{resultado['usuario']}' cadastrado! "
+                            f"A senha temporária foi enviada para {novo_admin_email.strip()}."
+                        )
+                        st.rerun()
+                    else:
+                        # e-mail falhou: mostra a senha na tela como último recurso,
+                        # sem dar rerun para a mensagem não sumir antes de ser lida
+                        st.warning(
+                            f"Administrador '{resultado['usuario']}' cadastrado, mas não foi possível "
+                            f"enviar o e-mail. Senha temporária: **{resultado['senha_temp']}** "
+                            "(repasse com segurança e peça para trocar assim que possível)."
+                        )
+
+        st.markdown("---")
+
+        # ---- ALTERAR SENHA (via código enviado por e-mail, sem precisar da senha atual) ----
+        if st.button("🔑 Alterar senha"):
+            abrir = not st.session_state["mostrar_alterar_senha"]
+            st.session_state["mostrar_alterar_senha"] = abrir
+            if abrir:
+                # sempre que reabrir o painel, começa do zero (pede um código novo)
+                st.session_state["codigo_senha_enviado"] = False
+            st.rerun()
+
+        if st.session_state["mostrar_alterar_senha"]:
+            if not st.session_state.get("codigo_senha_enviado"):
+                st.caption("Vamos enviar um código para o seu e-mail cadastrado.")
+                if st.button("📧 Enviar código por e-mail", key="enviar_codigo_senha"):
+                    email_admin = buscar_email_admin(st.session_state["usuario_logado"])
+                    if not email_admin:
+                        st.error(
+                            "Não há e-mail cadastrado para este usuário. "
+                            "Peça para outro administrador cadastrar seu e-mail na tabela usuarios_admin."
+                        )
+                    else:
+                        codigo = "".join(random.choices(string.digits, k=6))
+                        if enviar_email_codigo_senha(email_admin, st.session_state["usuario_logado"], codigo):
+                            st.session_state["codigo_senha_valor"] = codigo
+                            st.session_state["codigo_senha_gerado_em"] = datetime.now(timezone.utc)
+                            st.session_state["codigo_senha_enviado"] = True
+                            st.success(f"Código enviado para {email_admin}!")
+                            st.rerun()
+                        else:
+                            st.error("Não foi possível enviar o e-mail. Tente novamente mais tarde.")
+            else:
+                codigo_digitado = st.text_input("Código recebido por e-mail", key="codigo_senha_input")
+                nova_senha = st.text_input("Nova senha", type="password", key="nova_senha_input")
+                confirmar_senha = st.text_input("Confirmar nova senha", type="password", key="confirmar_senha_input")
+
+                if st.button("💾 Confirmar e trocar senha", key="salvar_nova_senha"):
+                    codigo_valido = st.session_state.get("codigo_senha_valor")
+                    gerado_em = st.session_state.get("codigo_senha_gerado_em")
+                    expirado = gerado_em and (datetime.now(timezone.utc) - gerado_em).total_seconds() > 600
+
+                    if expirado:
+                        st.error("Código expirado. Solicite um novo.")
+                        st.session_state["codigo_senha_enviado"] = False
+                    elif codigo_digitado.strip() != codigo_valido:
+                        st.error("Código incorreto.")
+                    elif len(nova_senha) < 4:
+                        st.warning("A nova senha deve ter pelo menos 4 caracteres.")
+                    elif nova_senha != confirmar_senha:
+                        st.warning("A confirmação não confere com a nova senha.")
+                    else:
+                        atualizar_senha_admin(st.session_state["usuario_logado"], nova_senha)
+                        st.session_state["mostrar_alterar_senha"] = False
+                        st.session_state["codigo_senha_enviado"] = False
+                        st.session_state.pop("codigo_senha_valor", None)
+                        st.session_state.pop("codigo_senha_gerado_em", None)
+                        st.success("Senha alterada com sucesso!")
+                        st.rerun()
+
+                if st.button("🔁 Reenviar código", key="reenviar_codigo_senha"):
+                    st.session_state["codigo_senha_enviado"] = False
+                    st.rerun()
+
         st.markdown("---")
         if st.button("🚪 Sair (Logout)"):
             st.session_state["usuario_logado"] = None
             st.session_state["aba_admin"] = "chamados"
+            st.session_state["mostrar_alterar_senha"] = False
+            st.session_state["codigo_senha_enviado"] = False
             st.rerun()
 
 # ---------------------------------------------------------
@@ -813,11 +1100,69 @@ def painel_cadastros(tipo):
             st.markdown('</div>', unsafe_allow_html=True)
 
 
+# ------------------ VISÃO ADMIN: LISTA DE ADMINISTRADORES CADASTRADOS ------------------
+@st.fragment
+def painel_usuarios_admin():
+    st.markdown("## 👤 Administradores Cadastrados")
+
+    itens = listar_usuarios_admin_detalhado()
+
+    if not itens:
+        st.info("Nenhum administrador cadastrado até o momento.")
+        return
+
+    col_widths = [1.8, 2.5, 1.8, 1.8, 0.8]
+    headers = ["Usuário", "E-mail", "Cadastrado por", "Data de Cadastro", ""]
+
+    cols_head = st.columns(col_widths)
+    for col, h in zip(cols_head, headers):
+        col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    for item in itens:
+        with st.container():
+            st.markdown('<div class="chamado-card-container">', unsafe_allow_html=True)
+
+            c_user, c_mail, c_por, c_data, c_del = st.columns(col_widths)
+
+            data_formatada = "-"
+            if item.get("created_at"):
+                try:
+                    data_formatada = datetime.fromisoformat(
+                        item["created_at"].replace("Z", "+00:00")
+                    ).strftime("%d/%m/%Y %H:%M")
+                except Exception:
+                    data_formatada = item["created_at"]
+
+            c_user.markdown(f'<div class="celula-centro"><span class="mobile-label">Usuário:</span>{item.get("usuario", "-")}</div>', unsafe_allow_html=True)
+            c_mail.markdown(f'<div class="celula-centro"><span class="mobile-label">E-mail:</span>{item.get("email") or "-"}</div>', unsafe_allow_html=True)
+            c_por.markdown(f'<div class="celula-centro"><span class="mobile-label">Cadastrado por:</span>{item.get("criado_por") or "-"}</div>', unsafe_allow_html=True)
+            c_data.markdown(f'<div class="celula-centro"><span class="mobile-label">Data:</span>{data_formatada}</div>', unsafe_allow_html=True)
+
+            # Por segurança: não deixa remover a si mesmo, nem o último administrador restante
+            usuario_da_linha = item.get("usuario")
+            eh_voce_mesmo = usuario_da_linha == st.session_state["usuario_logado"]
+            eh_ultimo_admin = len(itens) <= 1
+
+            if eh_voce_mesmo or eh_ultimo_admin:
+                c_del.markdown('<div class="celula-centro">—</div>', unsafe_allow_html=True)
+            else:
+                if c_del.button("🗑️", key=f"del_admin_{usuario_da_linha}"):
+                    remover_usuario_admin(usuario_da_linha)
+                    st.toast(f"Administrador '{usuario_da_linha}' removido.")
+                    st.rerun(scope="fragment")
+
+            st.markdown('</div>', unsafe_allow_html=True)
+
+
 if st.session_state["usuario_logado"]:
     if st.session_state["aba_admin"] == "empresa":
         painel_cadastros("empresa")
     elif st.session_state["aba_admin"] == "ferramenta":
         painel_cadastros("ferramenta")
+    elif st.session_state["aba_admin"] == "usuarios":
+        painel_usuarios_admin()
     else:
         painel_admin()
 

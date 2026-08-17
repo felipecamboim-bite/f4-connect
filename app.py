@@ -282,9 +282,25 @@ st.markdown(
             font-family: 'Inter', sans-serif !important;
         }}
 
+        /* PADRÃO DE BOTÃO COMPACTO PARA A SIDEBAR (menor que os botões da tela principal) */
         section[data-testid="stSidebar"] .stButton > button {{
             width: 100% !important;
+            max-width: 100% !important;
             margin-bottom: 8px !important;
+            padding: 8px 12px !important;
+            border-radius: 8px !important;
+            min-height: 36px !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+        }}
+
+        section[data-testid="stSidebar"] .stButton > button p {{
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+        }}
+
+        section[data-testid="stSidebar"] .stButton > button:hover {{
+            transform: none !important;
         }}
 
         .main .block-container {{

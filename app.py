@@ -463,12 +463,15 @@ st.markdown(
             background: transparent !important;
         }}
 
-        /* SIDEBAR COMPACTA */
-        section[data-testid="stSidebar"] {{
-            width: 280px !important;
-            background-color: rgba(10, 25, 47, 0.75) !important;
-            backdrop-filter: blur(8px) !important;
-            border-right: 1px solid rgba(0, 183, 255, 0.3) !important;
+        /* SIDEBAR COM IMAGEM DE FUNDO */
+    section[data-testid="stSidebar"] {{ /* <--- Dupla */
+        width: 280px !important;
+        background-image: url("https://github.com/user-attachments/assets/9d9bf266-02b4-493e-b90e-3ff5f2125473") !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        backdrop-filter: blur(8px) !important;
+        border-right: 1px solid rgba(0, 183, 255, 0.3) !important;
         }}
 
         /* Logo F4 Helpdesk no topo da sidebar (tamanho fixo, sem esticar) */

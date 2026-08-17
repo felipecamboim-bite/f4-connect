@@ -397,8 +397,10 @@ def atualizar_status_chamado(protocolo, novo_status):
 #        [server]
 #        enableStaticServing = true
 robo_src = "https://github.com/felipecamboim-bite/f4-connect/releases/download/v1.0/roboanimado__semfundo.gif"
-fundo_src = "https://kommodo.ai/i/xl9IwxPAf9ZpdGYGVV4r"
-sidebar_src = "https://kommodo.ai/i/G5n4GzFcCAPhZVOq34uW"
+# fundo_src e sidebar_src apontam para arquivos dentro da pasta "static/" do
+# próprio projeto (servidos pelo Streamlit via enableStaticServing = true).
+fundo_src = "app/static/Imagem_capa_helpdesk.png"
+sidebar_src = "app/static/Barra_sidebar_helpdesk.png"
 
 if "opcao_menu" not in st.session_state:
     st.session_state["opcao_menu"] = "inicio"

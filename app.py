@@ -390,17 +390,21 @@ def atualizar_status_chamado(protocolo, novo_status):
 # ---------------------------------------------------------
 # IMAGENS & SESSÃO
 # ---------------------------------------------------------
-# As imagens agora são servidas como arquivo estático pelo próprio Streamlit,
-# em vez de embutidas em base64 no HTML. Isso exige:
-#   1. Os arquivos dentro de uma pasta "static/" na raiz do projeto (já é o caso).
-#   2. Um arquivo .streamlit/config.toml com:
-#        [server]
-#        enableStaticServing = true
+# As imagens do robô e do fundo animado continuam vindo de uma URL pública
+# (GitHub Releases), como já funcionava antes.
 robo_src = "https://github.com/felipecamboim-bite/f4-connect/releases/download/v1.0/roboanimado__semfundo.gif"
-# fundo_src e sidebar_src apontam para arquivos dentro da pasta "static/" do
-# próprio projeto (servidos pelo Streamlit via enableStaticServing = true).
-fundo_src = "app/static/Imagem_capa_helpdesk.png"
-sidebar_src = "app/static/Barra_sidebar_helpdesk.png"
+fundo_src = "https://github.com/felipecamboim-bite/f4-connect/releases/download/v1.0/fundo_animacao.png"
+
+# Logo "F4 HELPDESK" da sidebar: a arte enviada (Imagem_capa_helpdesk.png) era um
+# retângulo verde sólido com a marca só num cantinho — usar ela como imagem de
+# fundo esticada deixava a tela toda verde. Em vez disso, recortei só a marca
+# (fundo transparente) e embuti como base64 direto no código: assim não depende
+# de pasta "static/", link externo nem configuração de enableStaticServing —
+# funciona sempre, em qualquer deploy.
+LOGO_SIDEBAR_B64 = (
+    "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"
+)
+sidebar_src = f"data:image/png;base64,{LOGO_SIDEBAR_B64}"
 
 if "opcao_menu" not in st.session_state:
     st.session_state["opcao_menu"] = "inicio"
@@ -459,16 +463,24 @@ st.markdown(
             background: transparent !important;
         }}
 
-        /* SIDEBAR COMPACTA, com imagem de fundo preenchendo toda a barra lateral.
-           O gradiente escuro por cima garante que o texto branco continue legível. */
+        /* SIDEBAR COMPACTA */
         section[data-testid="stSidebar"] {{
             width: 280px !important;
-            background-image: linear-gradient(rgba(10, 25, 47, 0.78), rgba(10, 25, 47, 0.78)), url("{sidebar_src}") !important;
-            background-size: cover !important;
-            background-position: center !important;
-            background-repeat: no-repeat !important;
+            background-color: rgba(10, 25, 47, 0.75) !important;
             backdrop-filter: blur(8px) !important;
             border-right: 1px solid rgba(0, 183, 255, 0.3) !important;
+        }}
+
+        /* Logo F4 Helpdesk no topo da sidebar (tamanho fixo, sem esticar) */
+        .logo-sidebar-box {{
+            display: flex !important;
+            justify-content: center !important;
+            margin-bottom: 14px !important;
+        }}
+
+        .logo-sidebar-box img {{
+            max-width: 170px !important;
+            height: auto !important;
         }}
 
         section[data-testid="stSidebar"] .stMarkdown,
@@ -795,6 +807,10 @@ st.markdown(
 # SIDEBAR (LOGIN ADMIN)
 # ---------------------------------------------------------
 with st.sidebar:
+    st.markdown(
+        f'<div class="logo-sidebar-box"><img src="{sidebar_src}"></div>',
+        unsafe_allow_html=True,
+    )
     st.markdown("### 🔐 Área Administrativa")
 
     if not st.session_state["usuario_logado"]:

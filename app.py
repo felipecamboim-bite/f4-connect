@@ -463,15 +463,20 @@ st.markdown(
             background: transparent !important;
         }}
 
-        /* Impede que a sidebar seja recolhida: some com o botão de colapsar
-           (tanto o que fica dentro da sidebar aberta quanto o que reaparece
-           no canto para reabrir), então ela fica sempre fixa e aberta. */
-        button[kind="header"] {{
-            display: none !important;
-        }}
-
+        /* Impede que a sidebar seja recolhida. O nome exato do botão de colapsar
+           muda entre versões do Streamlit, então escondo TODAS as variantes
+           conhecidas (antigas e novas) de uma vez, tanto o botão que fica
+           dentro da sidebar aberta quanto o que reaparece no canto pra reabrir. */
+        button[kind="header"],
+        button[kind="headerNoPadding"],
+        [data-testid="baseButton-header"],
+        [data-testid="baseButton-headerNoPadding"],
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="stSidebarCollapsedControl"],
         [data-testid="collapsedControl"] {{
             display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
         }}
 
         /* SIDEBAR COM IMAGEM DE FUNDO */
@@ -484,6 +489,17 @@ st.markdown(
         background-repeat: no-repeat !important;
         backdrop-filter: blur(8px) !important;
         border-right: 1px solid rgba(0, 183, 255, 0.3) !important;
+        }}
+
+        /* Reforço: mesmo que algum clique consiga acionar o estado "recolhido"
+           internamente, a sidebar continua sendo forçada a aparecer do mesmo
+           jeito (mesma largura/visibilidade) — trava visual, não só o botão. */
+        section[data-testid="stSidebar"][aria-expanded="false"] {{
+            visibility: visible !important;
+            width: 280px !important;
+            min-width: 280px !important;
+            margin-left: 0px !important;
+            transform: none !important;
         }}
 
         /* Logo F4 Helpdesk no topo da sidebar (tamanho fixo, sem esticar) */

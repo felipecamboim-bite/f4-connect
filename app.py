@@ -570,7 +570,7 @@ st.markdown(
         }}
 
         section[data-testid="stSidebar"] .stButton > button:hover {{
-            background-color: rgba(29, 89, 2, 0.3) !important;
+            background-color: #72A703 !important;
             box-shadow: none !important;
             transform: none !important;
         }}
@@ -1300,7 +1300,7 @@ with st.sidebar:
                 f'.st-key-{k} .stButton > button' for k in _keys_ativas
             )
             st.markdown(
-                f"<style>{_seletores_ativos} {{ background-color: rgba(29, 89, 2, 0.3) !important; }}</style>",
+                f"<style>{_seletores_ativos} {{ background-color: #72A703 !important; }}</style>",
                 unsafe_allow_html=True,
             )
 

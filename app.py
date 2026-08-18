@@ -886,9 +886,11 @@ st.markdown(
         /* Campo "Digite o Protocolo ou E-mail" (etapa Acompanhar): mais estreito
            (como o campo Nome da etapa Abrir chamado) e mesma cor escura dos
            campos da etapa Detalhes do Chamado */
-        .st-key-input_busca_protocolo,
-        .st-key-input_busca_protocolo input {{
+        .st-key-input_busca_protocolo {{
             max-width: 380px !important;
+        }}
+
+        .st-key-input_busca_protocolo input {{
             background-color: #24261F !important;
             border: none !important;
             box-shadow: none !important;

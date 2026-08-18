@@ -1197,25 +1197,34 @@ st.markdown(
         }}
 
         /* ========================================================= */
-        /* PAINEL DE CONTROLE - CENTRAL DE CHAMADOS: mesmo visual de   */
-        /* "planilha" do Resultado da Consulta (fundo #7C845D, grade   */
-        /* #3B3D35, cabeçalho escuro, texto branco centralizado)       */
+        /* PAINEL DE CONTROLE - CENTRAL DE CHAMADOS, EMPRESAS/         */
+        /* FERRAMENTAS CADASTRADAS E ADMINISTRADORES CADASTRADOS:      */
+        /* mesmo visual de "planilha" (fundo #7C845D, cabeçalho        */
+        /* escuro, texto branco centralizado, sem grade)               */
         /* ========================================================= */
-        .st-key-painel_admin_tabela {{
+        .st-key-painel_admin_tabela,
+        .st-key-painel_cadastros_tabela,
+        .st-key-painel_usuarios_admin_tabela {{
             background-color: #7C845D !important;
             border-radius: 10px !important;
             padding: 10px !important;
         }}
 
-        .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] {{
+        .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"],
+        .st-key-painel_cadastros_tabela [data-testid="stHorizontalBlock"],
+        .st-key-painel_usuarios_admin_tabela [data-testid="stHorizontalBlock"] {{
             gap: 0 !important;
         }}
 
-        .st-key-painel_admin_tabela [data-testid="stColumn"] {{
+        .st-key-painel_admin_tabela [data-testid="stColumn"],
+        .st-key-painel_cadastros_tabela [data-testid="stColumn"],
+        .st-key-painel_usuarios_admin_tabela [data-testid="stColumn"] {{
             padding: 0 !important;
         }}
 
-        .st-key-painel_admin_tabela .header-box {{
+        .st-key-painel_admin_tabela .header-box,
+        .st-key-painel_cadastros_tabela .header-box,
+        .st-key-painel_usuarios_admin_tabela .header-box {{
             background-color: #3B3D35 !important;
             color: #FFFFFF !important;
             border: none !important;
@@ -1226,7 +1235,9 @@ st.markdown(
         }}
 
         .st-key-painel_admin_tabela .celula-texto,
-        .st-key-painel_admin_tabela .celula-protocolo {{
+        .st-key-painel_admin_tabela .celula-protocolo,
+        .st-key-painel_cadastros_tabela .celula-centro,
+        .st-key-painel_usuarios_admin_tabela .celula-centro {{
             color: #FFFFFF !important;
             text-align: center !important;
             padding: 8px 10px !important;
@@ -1244,6 +1255,21 @@ st.markdown(
             color: #FFFFFF !important;
             margin: 4px 8px !important;
             font-size: 12px !important;
+        }}
+
+        /* Botão "Excluir" (Empresas/Ferramentas e Administradores): compacto,
+           combinando com o resto da planilha */
+        .st-key-painel_cadastros_tabela .stButton > button,
+        .st-key-painel_usuarios_admin_tabela .stButton > button {{
+            background-color: #3B3D35 !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 20px !important;
+            font-size: 11px !important;
+            padding: 4px 10px !important;
+            min-height: auto !important;
+            margin: 4px 8px !important;
         }}
 
         .tabela-consulta .badge-status {{
@@ -1621,16 +1647,12 @@ def painel_cadastros(tipo):
     col_widths = [2.5, 2, 2, 0.8]
     headers = ["Nome", "Usuário", "Data de Cadastro", ""]
 
-    cols_head = st.columns(col_widths)
-    for col, h in zip(cols_head, headers):
-        col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
+    with st.container(key="painel_cadastros_tabela"):
+        cols_head = st.columns(col_widths)
+        for col, h in zip(cols_head, headers):
+            col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    for item in itens:
-        with st.container():
-            st.markdown('<div class="chamado-card-container">', unsafe_allow_html=True)
-
+        for item in itens:
             c_nome, c_user, c_data, c_del = st.columns(col_widths)
 
             data_formatada = "-"
@@ -1651,8 +1673,6 @@ def painel_cadastros(tipo):
                 st.toast(f"'{item.get('nome')}' removido.")
                 st.rerun(scope="fragment")
 
-            st.markdown('</div>', unsafe_allow_html=True)
-
 
 # ------------------ VISÃO ADMIN: LISTA DE ADMINISTRADORES CADASTRADOS ------------------
 @st.fragment
@@ -1668,16 +1688,12 @@ def painel_usuarios_admin():
     col_widths = [1.8, 2.5, 1.8, 1.8, 0.8]
     headers = ["Usuário", "E-mail", "Cadastrado por", "Data de Cadastro", ""]
 
-    cols_head = st.columns(col_widths)
-    for col, h in zip(cols_head, headers):
-        col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
+    with st.container(key="painel_usuarios_admin_tabela"):
+        cols_head = st.columns(col_widths)
+        for col, h in zip(cols_head, headers):
+            col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    for item in itens:
-        with st.container():
-            st.markdown('<div class="chamado-card-container">', unsafe_allow_html=True)
-
+        for item in itens:
             c_user, c_mail, c_por, c_data, c_del = st.columns(col_widths)
 
             data_formatada = "-"
@@ -1706,8 +1722,6 @@ def painel_usuarios_admin():
                     remover_usuario_admin(usuario_da_linha)
                     st.toast(f"Administrador '{usuario_da_linha}' removido.")
                     st.rerun(scope="fragment")
-
-            st.markdown('</div>', unsafe_allow_html=True)
 
 
 if st.session_state["usuario_logado"]:

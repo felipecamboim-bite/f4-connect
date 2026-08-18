@@ -868,11 +868,19 @@ st.markdown(
         }}
 
         /* Campos da etapa 2 (Seu E-mail, ferramenta, severidade, assunto,
-           descrição): fundo um pouco mais escuro que o da tela (#3B3D35) */
+           descrição): fundo mais escuro que o da tela (#3B3D35 ficava
+           "transparente" de tão parecido com o fundo) */
         .st-key-etapa2_campos input,
         .st-key-etapa2_campos textarea,
         .st-key-etapa2_campos div[data-baseweb="select"] {{
-            background-color: #3B3D35 !important;
+            background-color: #24261F !important;
+        }}
+
+        /* Sem borda nos campos de texto (E-mail, Assunto, Descrição) */
+        .st-key-etapa2_campos input,
+        .st-key-etapa2_campos textarea {{
+            border: none !important;
+            box-shadow: none !important;
         }}
 
         .card-sucesso {{

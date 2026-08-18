@@ -1071,7 +1071,7 @@ st.markdown(
         .tabela-consulta td {{
             border: 1px solid #3B3D35;
             padding: 10px 12px;
-            text-align: left;
+            text-align: center;
             font-size: 13px;
             color: #FFFFFF;
             word-wrap: break-word;
@@ -1902,7 +1902,7 @@ else:
                     linhas_html += f'<td>{html.escape(str(c.get("severidade", "-")))}</td>'
                     linhas_html += f'<td>{html.escape(str(c.get("assunto", "-")))}</td>'
                     linhas_html += f'<td>{html.escape(str(c.get("descricao", "-")))}</td>'
-                    linhas_html += f'<td><span class="badge-status">📌 {html.escape(str(c.get("status", "-")))}</span></td>'
+                    linhas_html += f'<td><span class="badge-status">{html.escape(str(c.get("status", "-")))}</span></td>'
                     linhas_html += "</tr>"
 
                 tabela_html = f"""

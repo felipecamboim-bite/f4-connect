@@ -1196,6 +1196,51 @@ st.markdown(
             font-weight: 800;
         }}
 
+        /* ========================================================= */
+        /* PAINEL DE CONTROLE - CENTRAL DE CHAMADOS: mesmo visual de   */
+        /* "planilha" do Resultado da Consulta (fundo #7C845D, grade   */
+        /* #3B3D35, cabeçalho escuro, texto branco centralizado)       */
+        /* ========================================================= */
+        .st-key-painel_admin_tabela {{
+            background-color: #7C845D !important;
+            border-radius: 10px !important;
+            padding: 10px !important;
+        }}
+
+        .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] {{
+            gap: 0 !important;
+        }}
+
+        .st-key-painel_admin_tabela [data-testid="stColumn"] {{
+            padding: 0 !important;
+            border: 1px solid #3B3D35 !important;
+        }}
+
+        .st-key-painel_admin_tabela .header-box {{
+            background-color: #3B3D35 !important;
+            color: #FFFFFF !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }}
+
+        .st-key-painel_admin_tabela .celula-texto,
+        .st-key-painel_admin_tabela .celula-protocolo {{
+            color: #FFFFFF !important;
+            text-align: center !important;
+            padding: 8px 10px !important;
+        }}
+
+        /* Os seletores de Atendente/Status continuam funcionais (não dá pra
+           virar texto estático), mas ganham a mesma cor escura do cabeçalho
+           pra combinar com a grade */
+        .st-key-painel_admin_tabela .stSelectbox div[data-baseweb="select"] {{
+            background-color: #3B3D35 !important;
+            border: none !important;
+            border-radius: 20px !important;
+            color: #FFFFFF !important;
+            margin: 4px 8px !important;
+        }}
+
         .tabela-consulta .badge-status {{
             background-color: transparent;
             border: 1px solid #FFFFFF;
@@ -1478,17 +1523,13 @@ def painel_admin():
     col_widths = [1.3, 1.1, 1.2, 1.6, 1.1, 1.2, 1.1, 1.3, 1.8, 1.5]
     headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status"]
 
-    cols_head = st.columns(col_widths)
-    for col, h in zip(cols_head, headers):
-        col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
+    with st.container(key="painel_admin_tabela"):
+        cols_head = st.columns(col_widths)
+        for col, h in zip(cols_head, headers):
+            col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # 2. Exibição das linhas com o Seletor de Atendente
-    for c in chamados:
-        with st.container():
-            st.markdown('<div class="chamado-card-container">', unsafe_allow_html=True)
-
+        # 2. Exibição das linhas com o Seletor de Atendente
+        for c in chamados:
             c_atend, c_proto, c_nome, c_mail, c_emp, c_ferr, c_sev, c_ass, c_desc, c_stat = st.columns(col_widths)
 
             # --- 1ª COLUNA: SELETOR DE ATENDENTE ---
@@ -1550,8 +1591,6 @@ def painel_admin():
                 # rerun com escopo "fragment": atualiza só este painel,
                 # sem re-executar o app inteiro (login, CSS, imagens etc.)
                 st.rerun(scope="fragment")
-
-            st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ------------------ VISÃO ADMIN: LISTA DE EMPRESAS / FERRAMENTAS CADASTRADAS ------------------

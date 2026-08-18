@@ -913,7 +913,7 @@ with st.sidebar:
         f'<div class="logo-sidebar-box"><img src="{sidebar_src}"></div>',
         unsafe_allow_html=True,
     )
-    st.markdown("### 🔐 Área Administrativa")
+    st.markdown("### Área Administrativa")
 
     if not st.session_state["usuario_logado"]:
         usuario = st.text_input("Usuário", key="user_admin")

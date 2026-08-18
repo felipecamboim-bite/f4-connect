@@ -906,7 +906,7 @@ st.markdown(
         .card-sucesso {{
             width: 100% !important;
             max-width: 460px !important;
-            background-color: rgba(6, 78, 59, 0.75) !important;
+            background-color: #72A703 !important;
             border: 1px solid #10b981;
             border-radius: 14px;
             padding: 18px;
@@ -1512,7 +1512,7 @@ else:
                         f"""
                         <div class="card-sucesso">
                             ✅ <b>Chamado registrado com sucesso!</b><br>
-                            Seu Protocolo: <b style="font-size: 20px; color: #34d399;">{st.session_state['ultimo_protocolo']}</b>
+                            Seu Protocolo: <b style="font-size: 20px; color: #000000;">{st.session_state['ultimo_protocolo']}</b>
                         </div>
                         """,
                         unsafe_allow_html=True,

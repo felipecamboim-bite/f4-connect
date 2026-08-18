@@ -867,6 +867,14 @@ st.markdown(
             max-width: 380px !important;
         }}
 
+        /* Campos da etapa 2 (Seu E-mail, ferramenta, severidade, assunto,
+           descrição): fundo um pouco mais escuro que o da tela (#3B3D35) */
+        .st-key-etapa2_campos input,
+        .st-key-etapa2_campos textarea,
+        .st-key-etapa2_campos div[data-baseweb="select"] {{
+            background-color: #3B3D35 !important;
+        }}
+
         .card-sucesso {{
             width: 100% !important;
             max-width: 460px !important;
@@ -1525,31 +1533,32 @@ else:
 
             elif st.session_state["etapa_abertura"] == 2:
                 st.markdown(
-                    '<div class="fala-titulo-card">📝 Detalhes do Chamado:</div>',
+                    '<div class="fala-titulo-sem-balao">📝 Detalhes do Chamado:</div>',
                     unsafe_allow_html=True,
                 )
 
-                email = st.text_input("Seu E-mail", placeholder="exemplo@empresa.com")
-                ferramentas_cadastradas = listar_ferramentas()
-                ferramenta = st.selectbox(
-                    "Escolha a ferramenta que necessita de ajuda",
-                    ["Selecione..."] + ferramentas_cadastradas + ["Outro"],
-                )
+                with st.container(key="etapa2_campos"):
+                    email = st.text_input("Seu E-mail", placeholder="exemplo@empresa.com")
+                    ferramentas_cadastradas = listar_ferramentas()
+                    ferramenta = st.selectbox(
+                        "Escolha a ferramenta que necessita de ajuda",
+                        ["Selecione..."] + ferramentas_cadastradas + ["Outro"],
+                    )
 
-                # --- CAMPO DE SEVERIDADE ---
-                severidade = st.selectbox(
-                    "Nível de Severidade / Urgência do Chamado",
-                    [
-                        "Selecione...",
-                        "🟢 Baixa",
-                        "🟡 Média",
-                        "🟠 Alta",
-                        "🔴 Crítica"
-                    ]
-                )
+                    # --- CAMPO DE SEVERIDADE ---
+                    severidade = st.selectbox(
+                        "Nível de Severidade / Urgência do Chamado",
+                        [
+                            "Selecione...",
+                            "🟢 Baixa",
+                            "🟡 Média",
+                            "🟠 Alta",
+                            "🔴 Crítica"
+                        ]
+                    )
 
-                assunto = st.text_input("Assunto do chamado")
-                descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
+                    assunto = st.text_input("Assunto do chamado")
+                    descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
 
                 if st.button("🚀 Enviar Chamado"):
                     if not email or "@" not in email:

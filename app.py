@@ -915,6 +915,42 @@ st.markdown(
             margin-top: 24px !important;
         }}
 
+        /* Campo "Número do Protocolo Concluído" e botões "Buscar Chamado" /
+           "Voltar ao Menu" da etapa Avaliar atendimento: mesmo visual da
+           etapa Consulte seu chamado (campo estreito/escuro, botões #3B3D35
+           sem azul) */
+        .st-key-input_protocolo_avaliar,
+        .st-key-input_protocolo_avaliar input {{
+            max-width: 380px !important;
+        }}
+
+        .st-key-input_protocolo_avaliar input {{
+            background-color: #24261F !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+
+        .st-key-btn_buscar_chamado_avaliar .stButton > button,
+        .st-key-btn_voltar_menu_avaliar .stButton > button {{
+            background-color: #3B3D35 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+            max-width: 220px !important;
+            padding: 8px 14px !important;
+        }}
+
+        .st-key-btn_buscar_chamado_avaliar .stButton > button p,
+        .st-key-btn_voltar_menu_avaliar .stButton > button p {{
+            font-size: 14px !important;
+        }}
+
+        .st-key-btn_buscar_chamado_avaliar .stButton > button:hover,
+        .st-key-btn_voltar_menu_avaliar .stButton > button:hover {{
+            background-color: #3B3D35 !important;
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
+        }}
+
         .st-key-btn_pesquisar_chamado .stButton > button p,
         .st-key-btn_voltar_menu_acompanhar .stButton > button p {{
             font-size: 14px !important;
@@ -1788,15 +1824,16 @@ else:
 
         elif st.session_state["opcao_menu"] == "avaliar":
             st.markdown(
-                '<div class="fala-titulo-card">⭐ Deixe sua avaliação:</div>',
+                '<div class="fala-titulo-sem-balao titulo-identificacao">⭐ Deixe sua avaliação:</div>',
                 unsafe_allow_html=True,
             )
             proto_input = st.text_input(
                 "Número do Protocolo Concluído",
-                placeholder="Ex: F4-PXA6A4"
+                placeholder="Ex: F4-PXA6A4",
+                key="input_protocolo_avaliar"
             )
 
-            if st.button("🔍 Buscar Chamado"):
+            if st.button("🔍 Buscar Chamado", key="btn_buscar_chamado_avaliar"):
                 termo_limpo = proto_input.strip()
                 if not termo_limpo:
                     st.warning("⚠️ Por favor, informe o número do protocolo.")
@@ -1868,7 +1905,7 @@ else:
                             del st.session_state["chamado_para_avaliar"]
 
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("← Voltar ao Menu"):
+            if st.button("← Voltar ao Menu", key="btn_voltar_menu_avaliar"):
                 st.session_state["opcao_menu"] = "inicio"
                 if "chamado_para_avaliar" in st.session_state:
                     del st.session_state["chamado_para_avaliar"]

@@ -814,6 +814,12 @@ st.markdown(
             background-color: #3B3D35 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+            max-width: 220px !important;
+            padding: 8px 14px !important;
+        }}
+
+        .st-key-etapa1_botoes .stButton > button p {{
+            font-size: 14px !important;
         }}
 
         .st-key-etapa1_botoes .stButton > button:hover {{

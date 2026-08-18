@@ -545,9 +545,21 @@ st.markdown(
 
         /* Campos de Usuário/Senha na sidebar: fundo branco (o resto dos campos
            da tela principal continua com o fundo azul-escuro original) */
-        section[data-testid="stSidebar"] .stTextInput input {{
+        section[data-testid="stSidebar"] .stTextInput input,
+        section[data-testid="stSidebar"] .stTextInput div[data-baseweb="input"],
+        section[data-testid="stSidebar"] .stTextInput div[data-baseweb="base-input"] {{
             background-color: #FFFFFF !important;
             border: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }}
+
+        section[data-testid="stSidebar"] .stTextInput input:focus,
+        section[data-testid="stSidebar"] .stTextInput div[data-baseweb="input"]:focus-within,
+        section[data-testid="stSidebar"] .stTextInput div[data-baseweb="base-input"]:focus-within {{
+            border: none !important;
+            box-shadow: none !important;
+            outline: none !important;
         }}
 
         .main .block-container {{
@@ -851,7 +863,7 @@ with st.sidebar:
         f'<div class="logo-sidebar-box"><img src="{sidebar_src}"></div>',
         unsafe_allow_html=True,
     )
-    st.markdown("### Área Administrativa")
+    st.markdown("### 🔐 Área Administrativa")
 
     if not st.session_state["usuario_logado"]:
         usuario = st.text_input("Usuário", key="user_admin")

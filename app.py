@@ -732,6 +732,19 @@ st.markdown(
             margin-top: 50px !important;
         }}
 
+        /* Saudação da tela inicial ("Olá! Como posso te ajudar hoje?") sem balão —
+           só o texto, sem fundo/borda/sombra (variante do .fala-titulo-card) */
+        .fala-titulo-sem-balao {{
+            width: 100% !important;
+            max-width: 460px !important;
+            font-size: clamp(17px, 3.2vw, 22px);
+            font-weight: 800;
+            color: #FFFFFF !important;
+            font-family: 'Inter', sans-serif !important;
+            text-align: center !important;
+            margin-bottom: 22px;
+        }}
+
         /* CARD DE TÍTULO/FALA EXPANDIDO */
         .fala-titulo-card {{
             width: 100% !important;
@@ -778,6 +791,21 @@ st.markdown(
             border-color: #00d4ff !important;
             transform: translateY(-3px) !important;
             box-shadow: 0 10px 25px rgba(0, 212, 255, 0.35);
+        }}
+
+        /* Os 3 botões de menu da tela inicial (Abrir/Acompanhar/Avaliar): tira o
+           azul, usa um tom próximo do fundo (#3B3D35) mas um pouco mais claro,
+           só pra dar o "destaque" de que são clicáveis */
+        .st-key-menu_home_botoes .stButton > button {{
+            background-color: #4B4E42 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+        }}
+
+        .st-key-menu_home_botoes .stButton > button:hover {{
+            background-color: #5A5E4F !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
         }}
 
         .stTextInput label, .stSelectbox label, .stTextArea label {{
@@ -1375,21 +1403,22 @@ else:
             st.session_state["ultimo_protocolo"] = None
             st.session_state["etapa_abertura"] = 1
             st.markdown(
-                '<div class="fala-titulo-card">💬 Olá! Como posso te ajudar hoje?</div>',
+                '<div class="fala-titulo-sem-balao">💬 Olá! Como posso te ajudar hoje?</div>',
                 unsafe_allow_html=True,
             )
 
-            if st.button("📝 Abrir um novo chamado"):
-                st.session_state["opcao_menu"] = "abrir"
-                st.rerun()
+            with st.container(key="menu_home_botoes"):
+                if st.button("📝 Abrir um novo chamado", key="btn_abrir_chamado"):
+                    st.session_state["opcao_menu"] = "abrir"
+                    st.rerun()
 
-            if st.button("🔍 Acompanhar meu chamado"):
-                st.session_state["opcao_menu"] = "acompanhar"
-                st.rerun()
+                if st.button("🔍 Acompanhar meu chamado", key="btn_acompanhar_chamado"):
+                    st.session_state["opcao_menu"] = "acompanhar"
+                    st.rerun()
 
-            if st.button("⭐ Avaliar um atendimento"):
-                st.session_state["opcao_menu"] = "avaliar"
-                st.rerun()
+                if st.button("⭐ Avaliar um atendimento", key="btn_avaliar_atendimento"):
+                    st.session_state["opcao_menu"] = "avaliar"
+                    st.rerun()
 
         elif st.session_state["opcao_menu"] == "abrir":
             if st.session_state["etapa_abertura"] == 1:

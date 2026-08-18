@@ -1213,14 +1213,15 @@ st.markdown(
 
         .st-key-painel_admin_tabela [data-testid="stColumn"] {{
             padding: 0 !important;
-            border: 1px solid #3B3D35 !important;
         }}
 
         .st-key-painel_admin_tabela .header-box {{
             background-color: #3B3D35 !important;
             color: #FFFFFF !important;
+            border: none !important;
             border-radius: 0 !important;
             box-shadow: none !important;
+            font-size: 11px !important;
         }}
 
         .st-key-painel_admin_tabela .celula-texto,
@@ -1228,6 +1229,7 @@ st.markdown(
             color: #FFFFFF !important;
             text-align: center !important;
             padding: 8px 10px !important;
+            font-size: 12px !important;
         }}
 
         /* Os seletores de Atendente/Status continuam funcionais (não dá pra
@@ -1236,9 +1238,11 @@ st.markdown(
         .st-key-painel_admin_tabela .stSelectbox div[data-baseweb="select"] {{
             background-color: #3B3D35 !important;
             border: none !important;
+            box-shadow: none !important;
             border-radius: 20px !important;
             color: #FFFFFF !important;
             margin: 4px 8px !important;
+            font-size: 12px !important;
         }}
 
         .tabela-consulta .badge-status {{

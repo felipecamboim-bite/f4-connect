@@ -543,6 +543,12 @@ st.markdown(
             transform: none !important;
         }}
 
+        /* Campos de Usuário/Senha na sidebar: fundo branco (o resto dos campos
+           da tela principal continua com o fundo azul-escuro original) */
+        section[data-testid="stSidebar"] .stTextInput input {{
+            background-color: #FFFFFF !important;
+        }}
+
         .main .block-container {{
             padding-top: 3rem !important;
             padding-bottom: 2rem !important;

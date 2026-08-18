@@ -483,9 +483,10 @@ st.markdown(
     section[data-testid="stSidebar"] {{ /* <--- Dupla */
         width: 280px !important;
         min-width: 280px !important;
+        background-color: #0a192f !important;
         background-image: url("https://github.com/user-attachments/assets/9d9bf266-02b4-493e-b90e-3ff5f2125473") !important;
-        background-size: cover !important;
-        background-position: center !important;
+        background-size: contain !important;
+        background-position: top center !important;
         background-repeat: no-repeat !important;
         backdrop-filter: blur(8px) !important;
         border-right: 1px solid rgba(0, 183, 255, 0.3) !important;

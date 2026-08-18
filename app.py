@@ -1,6 +1,7 @@
 import random
 import string
 import hashlib
+import html
 import streamlit as st
 from datetime import datetime, timedelta, timezone
 from supabase import create_client, Client
@@ -1032,33 +1033,63 @@ st.markdown(
             font-family: 'Inter', sans-serif;
         }}
 
-        /* "Resultado da Consulta" (Acompanhar meu chamado) em formato de
-           planilha: container de fundo #7C845D com grade separando as células */
-        .st-key-resultado_consulta_tabela {{
-            background-color: #7C845D !important;
-            border-radius: 10px !important;
-            padding: 10px !important;
+        /* "Resultado da Consulta" (Acompanhar meu chamado): título com um
+           respiro maior em relação ao robô/menu logo acima */
+        .titulo-resultado-consulta {{
+            color: #FFFFFF !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 22px;
+            font-weight: 800;
+            margin-top: 48px !important;
+            margin-bottom: 16px !important;
         }}
 
-        .st-key-resultado_consulta_tabela [data-testid="stColumn"] {{
-            padding: 0 !important;
+        /* Tabela em formato de planilha (Excel-like): container de fundo
+           #7C845D, tabela HTML de verdade — colunas/linhas sempre alinhadas,
+           sem sobrepor texto entre células */
+        .tabela-consulta-wrap {{
+            background-color: #7C845D;
+            border-radius: 10px;
+            padding: 12px;
+            overflow-x: auto;
         }}
 
-        .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] {{
-            gap: 0 !important;
+        .tabela-consulta {{
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-family: 'Inter', sans-serif;
         }}
 
-        .grade-celula {{
-            border: 1px solid rgba(0, 0, 0, 0.35) !important;
-            padding: 8px 10px !important;
-            margin: 0 !important;
-            min-height: 44px !important;
-            display: flex !important;
-            align-items: center !important;
+        .tabela-consulta th,
+        .tabela-consulta td {{
+            border: 1px solid rgba(0, 0, 0, 0.35);
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 13px;
+            color: #FFFFFF;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            vertical-align: top;
         }}
 
-        .header-box.grade-celula {{
-            justify-content: center !important;
+        .tabela-consulta thead th {{
+            background-color: rgba(10, 25, 47, 0.85);
+            color: #00d4ff;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }}
+
+        .tabela-consulta tbody tr:nth-child(even) {{
+            background-color: rgba(0, 0, 0, 0.12);
+        }}
+
+        .tabela-consulta td.col-protocolo {{
+            color: #38bdf8;
+            font-weight: 800;
         }}
 
         /* ========================================================= */
@@ -1841,30 +1872,40 @@ else:
             if not resultados:
                 st.error("❌ Nenhum chamado foi encontrado com essa informação.")
             else:
-                st.markdown("### 📋 Resultado da Consulta:")
+                st.markdown(
+                    '<div class="titulo-resultado-consulta">📋 Resultado da Consulta:</div>',
+                    unsafe_allow_html=True,
+                )
 
-                col_widths = [1.1, 1.2, 1.6, 1.2, 1.3, 1.1, 1.4, 1.8, 1.5]
                 headers = ["Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status"]
 
-                with st.container(key="resultado_consulta_tabela"):
-                    cols_head = st.columns(col_widths)
-                    for col, h in zip(cols_head, headers):
-                        col.markdown(f'<div class="header-box grade-celula">{h}</div>', unsafe_allow_html=True)
+                linhas_html = ""
+                for c in resultados:
+                    linhas_html += "<tr>"
+                    linhas_html += f'<td class="col-protocolo">{html.escape(str(c.get("protocolo", "-")))}</td>'
+                    linhas_html += f'<td>{html.escape(str(c.get("nome_solicitante", "-")))}</td>'
+                    linhas_html += f'<td>{html.escape(str(c.get("email_solicitante", "-")))}</td>'
+                    linhas_html += f'<td>{html.escape(str(c.get("empresa", "-")))}</td>'
+                    linhas_html += f'<td>{html.escape(str(c.get("ferramenta", "-")))}</td>'
+                    linhas_html += f'<td>{html.escape(str(c.get("severidade", "-")))}</td>'
+                    linhas_html += f'<td>{html.escape(str(c.get("assunto", "-")))}</td>'
+                    linhas_html += f'<td>{html.escape(str(c.get("descricao", "-")))}</td>'
+                    linhas_html += f'<td><span class="badge-status">📌 {html.escape(str(c.get("status", "-")))}</span></td>'
+                    linhas_html += "</tr>"
 
-                    for c in resultados:
-                        c_proto, c_nome, c_mail, c_emp, c_ferr, c_sev, c_ass, c_desc, c_stat = st.columns(col_widths)
-
-                        c_proto.markdown(f'<div class="celula-protocolo grade-celula"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}</div>', unsafe_allow_html=True)
-                        c_nome.markdown(f'<div class="celula-texto grade-celula"><span class="mobile-label">Solicitante:</span>{c.get("nome_solicitante", "-")}</div>', unsafe_allow_html=True)
-                        c_mail.markdown(f'<div class="celula-texto grade-celula"><span class="mobile-label">E-mail:</span>{c.get("email_solicitante", "-")}</div>', unsafe_allow_html=True)
-                        c_emp.markdown(f'<div class="celula-texto grade-celula"><span class="mobile-label">Empresa:</span>{c.get("empresa", "-")}</div>', unsafe_allow_html=True)
-                        c_ferr.markdown(f'<div class="celula-texto grade-celula"><span class="mobile-label">Ferramenta:</span>{c.get("ferramenta", "-")}</div>', unsafe_allow_html=True)
-                        c_sev.markdown(f'<div class="celula-texto grade-celula"><span class="mobile-label">Severidade:</span>{c.get("severidade", "-")}</div>', unsafe_allow_html=True)
-                        c_ass.markdown(f'<div class="celula-texto grade-celula"><span class="mobile-label">Assunto:</span>{c.get("assunto", "-")}</div>', unsafe_allow_html=True)
-                        c_desc.markdown(f'<div class="celula-texto grade-celula"><span class="mobile-label">Descrição:</span>{c.get("descricao", "-")}</div>', unsafe_allow_html=True)
-
-                        # STATUS APENAS COMO SELO LEITURA (SEM EDITAR)
-                        c_stat.markdown(f'<div class="celula-texto grade-celula"><span class="mobile-label">Status:</span><span class="badge-status">📌 {c.get("status", "-")}</span></div>', unsafe_allow_html=True)
+                tabela_html = f"""
+                <div class="tabela-consulta-wrap">
+                    <table class="tabela-consulta">
+                        <thead>
+                            <tr>{"".join(f"<th>{h}</th>" for h in headers)}</tr>
+                        </thead>
+                        <tbody>
+                            {linhas_html}
+                        </tbody>
+                    </table>
+                </div>
+                """
+                st.markdown(tabela_html, unsafe_allow_html=True)
 
         if st.button("← Voltar ao Menu", key="btn_voltar_menu_acompanhar"):
             st.session_state["opcao_menu"] = "inicio"

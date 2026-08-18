@@ -1222,6 +1222,7 @@ st.markdown(
             border-radius: 0 !important;
             box-shadow: none !important;
             font-size: 11px !important;
+            margin-bottom: 14px !important;
         }}
 
         .st-key-painel_admin_tabela .celula-texto,

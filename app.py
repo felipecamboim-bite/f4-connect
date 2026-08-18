@@ -490,7 +490,7 @@ st.markdown(
         section[data-testid="stSidebar"] {{
         width: 280px !important;
         min-width: 280px !important;
-        background-color: #72A703 !important;
+        background-color: #1D5902 !important;
         border-right: 1px solid rgba(0, 183, 255, 0.3) !important;
         }}
 
@@ -570,7 +570,7 @@ st.markdown(
         }}
 
         section[data-testid="stSidebar"] .stButton > button:hover {{
-            background-color: #1D5902 !important;
+            background-color: #CDF27E !important;
             box-shadow: none !important;
             transform: none !important;
         }}
@@ -1300,7 +1300,7 @@ with st.sidebar:
                 f'.st-key-{k} .stButton > button' for k in _keys_ativas
             )
             st.markdown(
-                f"<style>{_seletores_ativos} {{ background-color: #1D5902 !important; }}</style>",
+                f"<style>{_seletores_ativos} {{ background-color: #CDF27E !important; }}</style>",
                 unsafe_allow_html=True,
             )
 

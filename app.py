@@ -576,19 +576,19 @@ st.markdown(
             caret-color: #0a192f !important;
         }}
 
-        /* Botão "olhinho" (mostrar/ocultar senha): o ícone em si é claro (branco),
-           por isso precisa de um fundo escuro por trás pra ficar visível em cima
-           do campo branco — sem fundo, ele "sumia" (branco no branco). */
+        /* Botão "olhinho" (mostrar/ocultar senha): sem fundo/círculo, só o
+           ícone em si pintado de escuro (mantendo o tamanho/posição padrão
+           do Streamlit, pra não ficar torto/deslocado) */
         section[data-testid="stSidebar"] .stTextInput button {{
-            background-color: #0a192f !important;
+            background-color: transparent !important;
             border: none !important;
-            border-radius: 50% !important;
-            width: 28px !important;
-            height: 28px !important;
-            min-width: 28px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            color: #0a192f !important;
+        }}
+
+        section[data-testid="stSidebar"] .stTextInput button svg,
+        section[data-testid="stSidebar"] .stTextInput button svg path {{
+            fill: #0a192f !important;
+            color: #0a192f !important;
         }}
 
         section[data-testid="stSidebar"] .stTextInput input:focus,

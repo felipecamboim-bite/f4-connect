@@ -576,6 +576,18 @@ st.markdown(
             caret-color: #0a192f !important;
         }}
 
+        /* Botão "olhinho" (mostrar/ocultar senha): tira o fundo escuro e
+           deixa o ícone em cor escura, visível sobre o campo branco */
+        section[data-testid="stSidebar"] .stTextInput button {{
+            background-color: transparent !important;
+            border: none !important;
+        }}
+
+        section[data-testid="stSidebar"] .stTextInput button svg {{
+            fill: #0a192f !important;
+            color: #0a192f !important;
+        }}
+
         section[data-testid="stSidebar"] .stTextInput input:focus,
         section[data-testid="stSidebar"] .stTextInput div[data-baseweb]:focus-within,
         section[data-testid="stSidebar"] div[data-testid="stTextInputRootElement"]:focus-within {{

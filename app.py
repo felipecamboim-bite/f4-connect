@@ -547,6 +547,7 @@ st.markdown(
            da tela principal continua com o fundo azul-escuro original) */
         section[data-testid="stSidebar"] .stTextInput input {{
             background-color: #FFFFFF !important;
+            border: none !important;
         }}
 
         .main .block-container {{

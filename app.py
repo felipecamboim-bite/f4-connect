@@ -576,16 +576,19 @@ st.markdown(
             caret-color: #0a192f !important;
         }}
 
-        /* Botão "olhinho" (mostrar/ocultar senha): tira o fundo escuro e
-           deixa o ícone em cor escura, visível sobre o campo branco */
+        /* Botão "olhinho" (mostrar/ocultar senha): o ícone em si é claro (branco),
+           por isso precisa de um fundo escuro por trás pra ficar visível em cima
+           do campo branco — sem fundo, ele "sumia" (branco no branco). */
         section[data-testid="stSidebar"] .stTextInput button {{
-            background-color: transparent !important;
+            background-color: #0a192f !important;
             border: none !important;
-        }}
-
-        section[data-testid="stSidebar"] .stTextInput button svg {{
-            fill: #0a192f !important;
-            color: #0a192f !important;
+            border-radius: 50% !important;
+            width: 28px !important;
+            height: 28px !important;
+            min-width: 28px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }}
 
         section[data-testid="stSidebar"] .stTextInput input:focus,
@@ -910,7 +913,7 @@ with st.sidebar:
         f'<div class="logo-sidebar-box"><img src="{sidebar_src}"></div>',
         unsafe_allow_html=True,
     )
-    st.markdown("### Área Administrativa")
+    st.markdown("### 🔐 Área Administrativa")
 
     if not st.session_state["usuario_logado"]:
         usuario = st.text_input("Usuário", key="user_admin")

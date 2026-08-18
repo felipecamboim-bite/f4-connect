@@ -883,6 +883,17 @@ st.markdown(
             box-shadow: none !important;
         }}
 
+        /* Campo "Digite o Protocolo ou E-mail" (etapa Acompanhar): mais estreito
+           (como o campo Nome da etapa Abrir chamado) e mesma cor escura dos
+           campos da etapa Detalhes do Chamado */
+        .st-key-input_busca_protocolo,
+        .st-key-input_busca_protocolo input {{
+            max-width: 380px !important;
+            background-color: #24261F !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+
         /* Botões "Enviar Chamado" / "Voltar Etapa": menores, sem azul/borda,
            cor #24261F (igual aos campos da etapa 2) */
         .st-key-etapa2_botoes .stButton > button {{
@@ -1632,12 +1643,13 @@ else:
 
         elif st.session_state["opcao_menu"] == "acompanhar":
             st.markdown(
-                '<div class="fala-titulo-card">🔍 Consulte seu chamado:</div>',
+                '<div class="fala-titulo-sem-balao titulo-identificacao">🔍 Consulte seu chamado:</div>',
                 unsafe_allow_html=True,
             )
             termo_busca = st.text_input(
                 "Digite o Protocolo ou E-mail",
-                placeholder="Ex: F4-PXA6A4 ou seuemail@empresa.com"
+                placeholder="Ex: F4-PXA6A4 ou seuemail@empresa.com",
+                key="input_busca_protocolo"
             )
 
             if st.button("🔍 Pesquisar"):

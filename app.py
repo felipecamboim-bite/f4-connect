@@ -522,15 +522,39 @@ st.markdown(
             font-family: 'Inter', sans-serif !important;
         }}
 
-        /* PADRÃO DE BOTÃO COMPACTO PARA A SIDEBAR (menor que os botões da tela principal) */
+        /* Painel administrativo: sidebar sem barra de rolagem — a lista de
+           opções não é grande a ponto de precisar rolar */
+        section[data-testid="stSidebar"],
+        section[data-testid="stSidebar"] > div,
+        section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+        section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
+            overflow-y: hidden !important;
+            overflow: hidden !important;
+        }}
+
+        /* Aviso "Logado como: ..." em verde-escuro */
+        section[data-testid="stSidebar"] .stAlert,
+        section[data-testid="stSidebar"] .stAlert p,
+        section[data-testid="stSidebar"] .stAlert div,
+        section[data-testid="stSidebar"] [data-testid="stAlertContentSuccess"] {{
+            color: #1D5902 !important;
+        }}
+
+        /* PAINEL ADMINISTRATIVO (pós-login): os botões da sidebar viram só texto
+           clicável — sem fundo, sem borda, sem sombra, sem "cara" de botão */
         section[data-testid="stSidebar"] .stButton > button {{
             width: 100% !important;
             max-width: 100% !important;
             margin-bottom: 8px !important;
-            padding: 8px 12px !important;
-            border-radius: 8px !important;
-            min-height: 36px !important;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+            padding: 4px 0 !important;
+            background: none !important;
+            background-color: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            min-height: auto !important;
+            text-align: left !important;
+            justify-content: flex-start !important;
         }}
 
         section[data-testid="stSidebar"] .stButton > button p {{
@@ -540,15 +564,25 @@ st.markdown(
         }}
 
         section[data-testid="stSidebar"] .stButton > button:hover {{
+            background: none !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
             transform: none !important;
         }}
 
-        /* Botão "Entrar" (login) na cor solicitada, sem borda */
+        /* Botão "Entrar" (tela de login) continua com a aparência de botão de
+           antes — as regras acima "texto puro" são só para o painel pós-login */
         .st-key-btn_entrar_login .stButton > button,
         .st-key-btn_entrar_login button {{
             background-color: #1D5902 !important;
             border: none !important;
             border-color: transparent !important;
+            border-radius: 8px !important;
+            padding: 8px 12px !important;
+            min-height: 36px !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+            text-align: center !important;
+            justify-content: center !important;
         }}
 
         .st-key-btn_entrar_login .stButton > button:hover,
@@ -913,7 +947,7 @@ with st.sidebar:
         f'<div class="logo-sidebar-box"><img src="{sidebar_src}"></div>',
         unsafe_allow_html=True,
     )
-    st.markdown("### Área Administrativa")
+    st.markdown("### 🔐 Área Administrativa")
 
     if not st.session_state["usuario_logado"]:
         usuario = st.text_input("Usuário", key="user_admin")

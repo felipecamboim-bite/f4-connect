@@ -544,8 +544,12 @@ st.markdown(
             color: #FFFFFF !important;
         }}
 
+        section[data-testid="stSidebar"] .stAlert,
+        section[data-testid="stSidebar"] .stAlert > div,
+        section[data-testid="stSidebar"] .stAlert div,
         section[data-testid="stSidebar"] [data-testid="stAlertContainer"],
-        section[data-testid="stSidebar"] .stAlert {{
+        section[data-testid="stSidebar"] [data-testid="stNotification"],
+        section[data-testid="stSidebar"] [data-testid="stAlertContentSuccess"] {{
             background-color: #72A703 !important;
             border: none !important;
         }}

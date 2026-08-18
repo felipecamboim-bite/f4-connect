@@ -546,7 +546,8 @@ st.markdown(
         /* Campos de Usuário/Senha na sidebar: fundo branco (o resto dos campos
            da tela principal continua com o fundo azul-escuro original) */
         section[data-testid="stSidebar"] .stTextInput input,
-        section[data-testid="stSidebar"] .stTextInput div[data-baseweb] {{
+        section[data-testid="stSidebar"] .stTextInput div[data-baseweb],
+        section[data-testid="stSidebar"] div[data-testid="stTextInputRootElement"] {{
             background-color: #FFFFFF !important;
             border: none !important;
             border-color: transparent !important;
@@ -554,12 +555,32 @@ st.markdown(
             outline: none !important;
         }}
 
+        /* Com o fundo do campo branco, o texto digitado (herdava branco da regra
+           geral) ficava invisível — escurece só o texto digitado nesses campos */
+        section[data-testid="stSidebar"] .stTextInput input {{
+            color: #0a192f !important;
+            caret-color: #0a192f !important;
+        }}
+
         section[data-testid="stSidebar"] .stTextInput input:focus,
-        section[data-testid="stSidebar"] .stTextInput div[data-baseweb]:focus-within {{
+        section[data-testid="stSidebar"] .stTextInput div[data-baseweb]:focus-within,
+        section[data-testid="stSidebar"] div[data-testid="stTextInputRootElement"]:focus-within {{
             border: none !important;
             border-color: transparent !important;
             box-shadow: none !important;
             outline: none !important;
+        }}
+
+        /* O Chrome/Edge pintam o campo de escuro (autofill) quando o usuário
+           escolhe uma sugestão salva do navegador — isso ignora o CSS normal
+           de background-color, precisa desse truque específico pra manter
+           o campo branco com o texto legível mesmo depois do autofill. */
+        section[data-testid="stSidebar"] .stTextInput input:-webkit-autofill,
+        section[data-testid="stSidebar"] .stTextInput input:-webkit-autofill:hover,
+        section[data-testid="stSidebar"] .stTextInput input:-webkit-autofill:focus {{
+            -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+            -webkit-text-fill-color: #0a192f !important;
+            caret-color: #0a192f !important;
         }}
 
         .main .block-container {{

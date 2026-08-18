@@ -745,6 +745,13 @@ st.markdown(
             margin-bottom: 22px;
         }}
 
+        /* "Identificação Inicial:" deslocado um pouco para a esquerda,
+           só esse título (o resto continua centralizado como estava) */
+        .titulo-identificacao {{
+            text-align: left !important;
+            margin-left: -12px !important;
+        }}
+
         /* CARD DE TÍTULO/FALA EXPANDIDO */
         .fala-titulo-card {{
             width: 100% !important;
@@ -1460,7 +1467,7 @@ else:
         elif st.session_state["opcao_menu"] == "abrir":
             if st.session_state["etapa_abertura"] == 1:
                 st.markdown(
-                    '<div class="fala-titulo-sem-balao">👤 Identificação Inicial:</div>',
+                    '<div class="fala-titulo-sem-balao titulo-identificacao">👤 Identificação Inicial:</div>',
                     unsafe_allow_html=True,
                 )
 

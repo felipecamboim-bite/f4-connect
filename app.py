@@ -543,6 +543,20 @@ st.markdown(
             transform: none !important;
         }}
 
+        /* Botão "Entrar" (login) na cor solicitada, sem borda */
+        .st-key-btn_entrar_login .stButton > button,
+        .st-key-btn_entrar_login button {{
+            background-color: #1D5902 !important;
+            border: none !important;
+            border-color: transparent !important;
+        }}
+
+        .st-key-btn_entrar_login .stButton > button:hover,
+        .st-key-btn_entrar_login button:hover {{
+            border: none !important;
+            border-color: transparent !important;
+        }}
+
         /* Campos de Usuário/Senha na sidebar: fundo branco (o resto dos campos
            da tela principal continua com o fundo azul-escuro original) */
         section[data-testid="stSidebar"] .stTextInput input,
@@ -884,13 +898,13 @@ with st.sidebar:
         f'<div class="logo-sidebar-box"><img src="{sidebar_src}"></div>',
         unsafe_allow_html=True,
     )
-    st.markdown("### 🔐 Área Administrativa")
+    st.markdown("### Área Administrativa")
 
     if not st.session_state["usuario_logado"]:
         usuario = st.text_input("Usuário", key="user_admin")
         senha = st.text_input("Senha", type="password", key="pass_admin")
 
-        if st.button("🔑 Entrar"):
+        if st.button("🔑 Entrar", key="btn_entrar_login"):
             if verificar_login(usuario, senha):
                 st.session_state["usuario_logado"] = usuario.strip().lower()
                 st.success(f"Bem-vindo, {usuario}!")

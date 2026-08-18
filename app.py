@@ -907,7 +907,7 @@ st.markdown(
             width: 100% !important;
             max-width: 460px !important;
             background-color: #72A703 !important;
-            border: 1px solid #10b981;
+            border: none !important;
             border-radius: 14px;
             padding: 18px;
             color: #ffffff;

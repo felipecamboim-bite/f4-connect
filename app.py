@@ -1266,10 +1266,16 @@ st.markdown(
             border: none !important;
             box-shadow: none !important;
             border-radius: 20px !important;
-            font-size: 11px !important;
+            font-size: 12px !important;
             padding: 4px 10px !important;
             min-height: auto !important;
             margin: 4px 8px !important;
+        }}
+
+        .st-key-painel_cadastros_tabela .stButton > button p,
+        .st-key-painel_usuarios_admin_tabela .stButton > button p {{
+            font-size: 12px !important;
+            font-weight: 400 !important;
         }}
 
         .tabela-consulta .badge-status {{

@@ -546,18 +546,18 @@ st.markdown(
         /* Campos de Usuário/Senha na sidebar: fundo branco (o resto dos campos
            da tela principal continua com o fundo azul-escuro original) */
         section[data-testid="stSidebar"] .stTextInput input,
-        section[data-testid="stSidebar"] .stTextInput div[data-baseweb="input"],
-        section[data-testid="stSidebar"] .stTextInput div[data-baseweb="base-input"] {{
+        section[data-testid="stSidebar"] .stTextInput div {{
             background-color: #FFFFFF !important;
             border: none !important;
+            border-color: transparent !important;
             box-shadow: none !important;
             outline: none !important;
         }}
 
         section[data-testid="stSidebar"] .stTextInput input:focus,
-        section[data-testid="stSidebar"] .stTextInput div[data-baseweb="input"]:focus-within,
-        section[data-testid="stSidebar"] .stTextInput div[data-baseweb="base-input"]:focus-within {{
+        section[data-testid="stSidebar"] .stTextInput div:focus-within {{
             border: none !important;
+            border-color: transparent !important;
             box-shadow: none !important;
             outline: none !important;
         }}

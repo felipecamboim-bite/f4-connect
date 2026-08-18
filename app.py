@@ -412,21 +412,19 @@ if "codigo_senha_enviado" not in st.session_state:
     st.session_state["codigo_senha_enviado"] = False
 
 # ---------------------------------------------------------
-# CSS DA INTERFACE CORRIGIDO
+# CSS DA INTERFACE
 # ---------------------------------------------------------
 st.markdown(
     f"""
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
-        /* CORREÇÃO DO FUNDO DA TELA PRINCIPAL */
         .stApp {{
             background-image: url("{fundo_src}") !important;
             background-size: cover !important;
             background-position: center !important;
             background-repeat: no-repeat !important;
             background-attachment: fixed !important;
-            background-color: #064e3b !important;
         }}
 
         header[data-testid="stHeader"] {{
@@ -497,15 +495,15 @@ st.markdown(
         .main .block-container {{
             padding-top: 1.5rem !important;
             padding-bottom: 2rem !important;
-            padding-left: 2rem !important;
-            padding-right: 2rem !important;
+            padding-left: 3rem !important;
+            padding-right: 3rem !important;
             max-width: 100% !important;
         }}
 
         @media (max-width: 768px) {{
             .main .block-container {{
-                padding-left: 1rem !important;
-                padding-right: 1rem !important;
+                padding-left: 1.25rem !important;
+                padding-right: 1.25rem !important;
                 padding-top: 1rem !important;
             }}
         }}
@@ -513,91 +511,93 @@ st.markdown(
         .titulo-topo {{
             text-align: center;
             font-family: 'Inter', sans-serif !important;
-            font-size: clamp(24px, 5vw, 42px);
+            font-size: clamp(24px, 6vw, 46px);
             font-weight: 900;
             color: #FFFFFF !important;
             text-transform: uppercase;
-            letter-spacing: clamp(1px, 0.5vw, 4px);
-            margin-bottom: clamp(10px, 2vw, 20px);
+            letter-spacing: clamp(1px, 0.6vw, 5px);
+            margin-bottom: clamp(16px, 3vw, 30px);
             text-shadow: 0px 4px 12px rgba(0, 0, 0, 0.7);
         }}
 
-        /* ALINHAMENTO DO ROBÔ E BOTÕES NA MESMA LINHA */
+        /* ROBÔ RESPONSIVO SEM VAZAR A TELA */
         .robo-box {{
             display: flex !important;
             justify-content: center !important;
             align-items: center !important;
             width: 100% !important;
+            margin-top: 10px;
         }}
 
         .robo-box img {{
             width: 100% !important;
-            max-width: 300px !important;
+            max-width: 420px !important;
             height: auto !important;
-            filter: drop-shadow(0px 10px 20px rgba(0,0,0,0.5));
+            filter: drop-shadow(0px 12px 22px rgba(0,0,0,0.5));
         }}
 
-        [data-testid="stHorizontalBlock"] {{
+        [data-testid="stColumns"] {{
+            transform: none !important;
             align-items: center !important;
         }}
 
         /* CARD DE TÍTULO */
         .fala-titulo-card {{
             width: 100% !important;
-            max-width: 440px !important;
-            font-size: clamp(15px, 2.5vw, 19px);
+            max-width: 460px !important;
+            font-size: clamp(17px, 3.2vw, 22px);
             font-weight: 800;
             color: #FFFFFF !important;
             font-family: 'Inter', sans-serif !important;
             background-color: rgba(10, 25, 47, 0.6) !important;
             border: 1px solid rgba(0, 183, 255, 0.35);
             border-radius: 14px;
-            padding: 14px 18px;
+            padding: 16px clamp(16px, 4vw, 22px);
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
             text-align: center !important;
-            margin-bottom: 16px;
+            margin-bottom: 22px;
             backdrop-filter: blur(6px);
         }}
 
-        /* BOTÕES PRINCIPAIS DA TELA PÚBLICA */
-        .main .stButton > button {{
+        /* BOTÕES PRINCIPAIS */
+        .stButton > button {{
             width: 100% !important;
-            max-width: 440px !important;
+            max-width: 460px !important;
             background-color: rgba(10, 25, 47, 0.55) !important;
             color: #FFFFFF !important;
             border: 1px solid rgba(0, 183, 255, 0.35) !important;
-            border-radius: 12px !important;
-            padding: 12px 16px !important;
+            border-radius: 14px !important;
+            padding: 16px 20px !important;
             transition: all 0.2s ease-in-out;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-            margin-bottom: 12px !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            margin-bottom: 16px !important;
             backdrop-filter: blur(6px);
         }}
 
-        .main .stButton > button p {{
-            font-size: clamp(14px, 2vw, 17px) !important;
+        .stButton > button p {{
+            font-size: clamp(16px, 2.6vw, 19px) !important;
             font-weight: 700 !important;
             font-family: 'Inter', sans-serif !important;
             color: #FFFFFF !important;
             margin: 0 !important;
         }}
 
-        .main .stButton > button:hover {{
+        .stButton > button:hover {{
             background-color: rgba(0, 122, 255, 0.7) !important;
             border-color: #00d4ff !important;
-            transform: translateY(-2px) !important;
-            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.35);
+            transform: translateY(-3px) !important;
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.35);
         }}
 
         .stTextInput label, .stSelectbox label, .stTextArea label {{
-            font-size: 14px !important;
+            font-size: 15px !important;
             font-weight: 600 !important;
             color: #FFFFFF !important;
             font-family: 'Inter', sans-serif !important;
         }}
 
         .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {{
-            font-size: 15px !important;
+            font-size: 16px !important;
             border-radius: 8px !important;
             background-color: rgba(10, 25, 47, 0.7) !important;
             color: #FFFFFF !important;
@@ -606,15 +606,15 @@ st.markdown(
 
         .card-sucesso {{
             width: 100% !important;
-            max-width: 440px !important;
+            max-width: 460px !important;
             background-color: rgba(6, 78, 59, 0.75) !important;
             border: 1px solid #10b981;
             border-radius: 14px;
-            padding: 16px;
+            padding: 18px;
             color: #ffffff;
             font-family: 'Inter', sans-serif;
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }}
 
         .header-box {{
@@ -1080,7 +1080,7 @@ if st.session_state["usuario_logado"]:
 
 # ------------------ VISÃO PÚBLICA (SOLICITANTE) ------------------
 else:
-    col_robo, col_balao = st.columns([1, 1])
+    col_robo, col_balao = st.columns([0.85, 1.6])
     with col_robo:
         st.markdown(
             f'<div class="robo-box"><img src="{robo_src}"></div>',

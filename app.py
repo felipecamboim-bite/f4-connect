@@ -951,6 +951,63 @@ st.markdown(
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
         }}
 
+        /* Card com Protocolo/Solicitante/Assunto na etapa Avaliar atendimento:
+           fundo #7C845D, textos em branco, sem o azul do protocolo */
+        .card-avaliacao-info {{
+            width: 100% !important;
+            max-width: 460px !important;
+            background-color: #7C845D !important;
+            border: none !important;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+        }}
+
+        .card-avaliacao-info .celula-protocolo,
+        .card-avaliacao-info .celula-texto {{
+            color: #FFFFFF !important;
+        }}
+
+        .card-avaliacao-info .badge-status {{
+            background-color: transparent !important;
+            border: 1px solid #ABD904 !important;
+            color: #ABD904 !important;
+        }}
+
+        /* "Como foi o seu atendimento?" com um respiro maior acima */
+        .titulo-como-foi {{
+            color: #FFFFFF !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 18px;
+            font-weight: 800;
+            margin-top: 28px !important;
+            margin-bottom: 10px !important;
+        }}
+
+        /* Campo de comentários da avaliação: um pouco mais escuro que #3B3D35 */
+        .st-key-textarea_comentario_avaliacao textarea {{
+            background-color: #24261F !important;
+        }}
+
+        /* "Enviar Avaliação" no mesmo tom do botão "Voltar ao Menu" */
+        .st-key-btn_enviar_avaliacao .stButton > button {{
+            background-color: #3B3D35 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+            max-width: 220px !important;
+            padding: 8px 14px !important;
+        }}
+
+        .st-key-btn_enviar_avaliacao .stButton > button p {{
+            font-size: 14px !important;
+        }}
+
+        .st-key-btn_enviar_avaliacao .stButton > button:hover {{
+            background-color: #3B3D35 !important;
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
+        }}
+
         .st-key-btn_pesquisar_chamado .stButton > button p,
         .st-key-btn_voltar_menu_acompanhar .stButton > button p {{
             font-size: 14px !important;
@@ -1868,17 +1925,17 @@ else:
                 else:
                     st.markdown(
                         f"""
-                        <div class="chamado-card-container" style="margin-top: 15px;">
+                        <div class="card-avaliacao-info" style="margin-top: 15px;">
                             <div class="celula-protocolo">Protocolo: {chamado.get('protocolo')}</div>
                             <div class="celula-texto"><b>Solicitante:</b> {chamado.get('nome_solicitante')}</div>
                             <div class="celula-texto"><b>Assunto:</b> {chamado.get('assunto')}</div>
-                            <div class="badge-status" style="margin-top: 8px;">📌 {chamado.get('status')}</div>
+                            <div class="badge-status" style="margin-top: 8px;">{chamado.get('status')}</div>
                         </div>
                         """,
                         unsafe_allow_html=True,
                     )
 
-                    st.markdown("#### Como foi o seu atendimento?")
+                    st.markdown('<div class="titulo-como-foi">Como foi o seu atendimento?</div>', unsafe_allow_html=True)
 
                     # Componente nativo de Estrelas (disponível no Streamlit recente)
                     # Caso sua versão do Streamlit não tenha st.feedback, usamos um seletor numérico amigável
@@ -1891,10 +1948,11 @@ else:
 
                     comentario = st.text_area(
                         "Opções de melhoria / Comentários (Opcional)",
-                        placeholder="Conte-nos o que achou do atendimento ou o que podemos melhorar..."
+                        placeholder="Conte-nos o que achou do atendimento ou o que podemos melhorar...",
+                        key="textarea_comentario_avaliacao"
                     )
 
-                    if st.button("🚀 Enviar Avaliação"):
+                    if st.button("🚀 Enviar Avaliação", key="btn_enviar_avaliacao"):
                         if supabase:
                             supabase.table("chamados").update({
                                 "nota_avaliacao": nota_final,

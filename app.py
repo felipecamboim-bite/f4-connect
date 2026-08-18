@@ -489,7 +489,7 @@ st.markdown(
         section[data-testid="stSidebar"] {{
         width: 280px !important;
         min-width: 280px !important;
-        background-color: #7C845D !important;
+        background-color: #CDF27E !important;
         border-right: 1px solid rgba(0, 183, 255, 0.3) !important;
         }}
 

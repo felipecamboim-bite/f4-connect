@@ -1646,7 +1646,7 @@ def painel_cadastros(tipo):
             c_user.markdown(f'<div class="celula-centro"><span class="mobile-label">Usuário:</span>{item.get("criado_por") or "-"}</div>', unsafe_allow_html=True)
             c_data.markdown(f'<div class="celula-centro"><span class="mobile-label">Data:</span>{data_formatada}</div>', unsafe_allow_html=True)
 
-            if c_del.button("🗑️", key=f"del_{tipo}_{item.get('nome')}"):
+            if c_del.button("Excluir", key=f"del_{tipo}_{item.get('nome')}"):
                 func_remover(item.get("nome"))
                 st.toast(f"'{item.get('nome')}' removido.")
                 st.rerun(scope="fragment")
@@ -1702,7 +1702,7 @@ def painel_usuarios_admin():
             if eh_voce_mesmo or eh_ultimo_admin:
                 c_del.markdown('<div class="celula-centro">—</div>', unsafe_allow_html=True)
             else:
-                if c_del.button("🗑️", key=f"del_admin_{usuario_da_linha}"):
+                if c_del.button("Excluir", key=f"del_admin_{usuario_da_linha}"):
                     remover_usuario_admin(usuario_da_linha)
                     st.toast(f"Administrador '{usuario_da_linha}' removido.")
                     st.rerun(scope="fragment")

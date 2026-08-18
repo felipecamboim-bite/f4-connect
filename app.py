@@ -461,7 +461,7 @@ st.markdown(
         }}
 
         .stApp {{
-            background-color: #3B3D35 !important;
+            background-color: #FFFFFF !important;
             overflow-x: hidden !important;
         }}
 

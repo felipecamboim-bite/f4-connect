@@ -984,9 +984,12 @@ st.markdown(
             margin-bottom: 10px !important;
         }}
 
-        /* Campo de comentários da avaliação: um pouco mais escuro que #3B3D35 */
+        /* Campo de comentários da avaliação: um pouco mais escuro que #3B3D35,
+           sem borda azul */
         .st-key-textarea_comentario_avaliacao textarea {{
             background-color: #24261F !important;
+            border: none !important;
+            box-shadow: none !important;
         }}
 
         /* "Enviar Avaliação" no mesmo tom do botão "Voltar ao Menu" */

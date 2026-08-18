@@ -535,12 +535,19 @@ st.markdown(
             overflow-x: hidden !important;
         }}
 
-        /* Aviso "Logado como: ..." em verde-escuro */
+        /* Aviso "Logado como: ..." em branco, com fundo mais claro pra
+           destacar (o fundo padrão do alerta ficava meio apagado) */
         section[data-testid="stSidebar"] .stAlert,
         section[data-testid="stSidebar"] .stAlert p,
         section[data-testid="stSidebar"] .stAlert div,
         section[data-testid="stSidebar"] [data-testid="stAlertContentSuccess"] {{
-            color: #1D5902 !important;
+            color: #FFFFFF !important;
+        }}
+
+        section[data-testid="stSidebar"] [data-testid="stAlertContainer"],
+        section[data-testid="stSidebar"] .stAlert {{
+            background-color: #72A703 !important;
+            border: none !important;
         }}
 
         /* PAINEL ADMINISTRATIVO (pós-login): os botões da sidebar viram só texto

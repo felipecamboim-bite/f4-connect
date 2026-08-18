@@ -523,14 +523,16 @@ st.markdown(
             font-family: 'Inter', sans-serif !important;
         }}
 
-        /* Painel administrativo: sidebar sem barra de rolagem — a lista de
-           opções não é grande a ponto de precisar rolar */
+        /* Painel administrativo: sidebar sem barra de rolagem à toa, mas
+           volta a rolar automaticamente se o conteúdo crescer (algum painel
+           aberto empurrando os itens abaixo) e não couber na tela — assim
+           nada fica inacessível */
         section[data-testid="stSidebar"],
         section[data-testid="stSidebar"] > div,
         section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
         section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
-            overflow-y: hidden !important;
-            overflow: hidden !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
         }}
 
         /* Aviso "Logado como: ..." em verde-escuro */

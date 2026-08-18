@@ -822,13 +822,6 @@ st.markdown(
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
         }}
 
-        /* Campo "Digite seu Nome e Sobrenome": fundo #5A5E4F, sem borda */
-        .st-key-input_nome_solicitante input {{
-            background-color: #5A5E4F !important;
-            border: none !important;
-            box-shadow: none !important;
-        }}
-
         .stTextInput label, .stSelectbox label, .stTextArea label {{
             font-size: 15px !important;
             font-weight: 600 !important;
@@ -842,6 +835,23 @@ st.markdown(
             background-color: rgba(10, 25, 47, 0.7) !important;
             color: #FFFFFF !important;
             border: 1px solid rgba(0, 183, 255, 0.3) !important;
+        }}
+
+        /* Campo "Digite seu Nome e Sobrenome": fundo #5A5E4F, sem borda (essa
+           regra precisa vir DEPOIS da regra geral acima pra vencer o empate) */
+        .st-key-input_nome_solicitante input {{
+            background-color: #5A5E4F !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+
+        /* Campos "Qual empresa você faz parte?" e "Digite seu Nome e Sobrenome":
+           estavam esticando quase até a borda da tela — largura mais contida */
+        .st-key-select_empresa_etapa1,
+        .st-key-select_empresa_etapa1 div[data-baseweb="select"],
+        .st-key-input_nome_solicitante,
+        .st-key-input_nome_solicitante input {{
+            max-width: 380px !important;
         }}
 
         .card-sucesso {{
@@ -1470,7 +1480,8 @@ else:
                 empresa = st.selectbox(
                     "Qual empresa você faz parte?",
                     ["Selecione..."] + empresas_cadastradas + ["Outra"],
-                    index=0
+                    index=0,
+                    key="select_empresa_etapa1"
                 )
 
                 nome = st.text_input(

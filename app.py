@@ -883,6 +883,26 @@ st.markdown(
             box-shadow: none !important;
         }}
 
+        /* Botões "Enviar Chamado" / "Voltar Etapa": menores, sem azul/borda,
+           cor #24261F (igual aos campos da etapa 2) */
+        .st-key-etapa2_botoes .stButton > button {{
+            background-color: #24261F !important;
+            border: none !important;
+            box-shadow: none !important;
+            max-width: 220px !important;
+            padding: 8px 14px !important;
+        }}
+
+        .st-key-etapa2_botoes .stButton > button p {{
+            font-size: 14px !important;
+        }}
+
+        .st-key-etapa2_botoes .stButton > button:hover {{
+            background-color: #24261F !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+
         .card-sucesso {{
             width: 100% !important;
             max-width: 460px !important;
@@ -1568,46 +1588,47 @@ else:
                     assunto = st.text_input("Assunto do chamado")
                     descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
 
-                if st.button("🚀 Enviar Chamado"):
-                    if not email or "@" not in email:
-                        st.warning("⚠️ Digite um e-mail válido.")
-                    elif ferramenta == "Selecione...":
-                        st.warning("⚠️ Selecione a ferramenta.")
-                    elif severidade == "Selecione...":
-                        st.warning("⚠️ Selecione a severidade do chamado.")
-                    elif not assunto.strip():
-                        st.warning("⚠️ Informe o assunto.")
-                    elif not descricao.strip():
-                        st.warning("⚠️ Descreva detalhadamente o problema.")
-                    else:
-                        # 1. Salva no banco
-                        protocolo = salvar_chamado_supabase(
-                            st.session_state["temp_nome"],
-                            email,
-                            st.session_state["temp_empresa"],
-                            ferramenta,
-                            assunto,
-                            descricao,
-                            severidade # <--- PASSANDO A SEVERIDADE
-                        )
-                        # 2. --- DISPARA O E-MAIL INICIAL ---
-                        email_enviado = enviar_email_status(
-                            email_destino=email,
-                            nome_solicitante=st.session_state["temp_nome"],
-                            protocolo=protocolo,
-                            assunto_chamado=assunto,
-                            status_atual="Aguardando atendimento"
-                        )
-                        st.session_state["ultimo_protocolo"] = protocolo
-                        st.session_state["ultimo_email_falhou"] = not email_enviado
-                        st.session_state["etapa_abertura"] = 1
-                        st.session_state["temp_nome"] = ""
-                        st.session_state["temp_empresa"] = "Selecione..."
-                        st.rerun()
+                with st.container(key="etapa2_botoes"):
+                    if st.button("🚀 Enviar Chamado", key="btn_enviar_chamado"):
+                        if not email or "@" not in email:
+                            st.warning("⚠️ Digite um e-mail válido.")
+                        elif ferramenta == "Selecione...":
+                            st.warning("⚠️ Selecione a ferramenta.")
+                        elif severidade == "Selecione...":
+                            st.warning("⚠️ Selecione a severidade do chamado.")
+                        elif not assunto.strip():
+                            st.warning("⚠️ Informe o assunto.")
+                        elif not descricao.strip():
+                            st.warning("⚠️ Descreva detalhadamente o problema.")
+                        else:
+                            # 1. Salva no banco
+                            protocolo = salvar_chamado_supabase(
+                                st.session_state["temp_nome"],
+                                email,
+                                st.session_state["temp_empresa"],
+                                ferramenta,
+                                assunto,
+                                descricao,
+                                severidade # <--- PASSANDO A SEVERIDADE
+                            )
+                            # 2. --- DISPARA O E-MAIL INICIAL ---
+                            email_enviado = enviar_email_status(
+                                email_destino=email,
+                                nome_solicitante=st.session_state["temp_nome"],
+                                protocolo=protocolo,
+                                assunto_chamado=assunto,
+                                status_atual="Aguardando atendimento"
+                            )
+                            st.session_state["ultimo_protocolo"] = protocolo
+                            st.session_state["ultimo_email_falhou"] = not email_enviado
+                            st.session_state["etapa_abertura"] = 1
+                            st.session_state["temp_nome"] = ""
+                            st.session_state["temp_empresa"] = "Selecione..."
+                            st.rerun()
 
-                if st.button("← Voltar Etapa"):
-                    st.session_state["etapa_abertura"] = 1
-                    st.rerun()
+                    if st.button("← Voltar Etapa", key="btn_voltar_etapa2"):
+                        st.session_state["etapa_abertura"] = 1
+                        st.rerun()
 
         elif st.session_state["opcao_menu"] == "acompanhar":
             st.markdown(

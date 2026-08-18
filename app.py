@@ -808,6 +808,27 @@ st.markdown(
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
         }}
 
+        /* Botões "Avançar" / "Voltar ao Menu" da 1ª etapa de abertura de chamado:
+           mesmo tratamento (sem azul), mas na cor exata #3B3D35 pedida */
+        .st-key-etapa1_botoes .stButton > button {{
+            background-color: #3B3D35 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+        }}
+
+        .st-key-etapa1_botoes .stButton > button:hover {{
+            background-color: #3B3D35 !important;
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
+        }}
+
+        /* Campo "Digite seu Nome e Sobrenome": fundo #5A5E4F, sem borda */
+        .st-key-input_nome_solicitante input {{
+            background-color: #5A5E4F !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+
         .stTextInput label, .stSelectbox label, .stTextArea label {{
             font-size: 15px !important;
             font-weight: 600 !important;
@@ -1423,7 +1444,7 @@ else:
         elif st.session_state["opcao_menu"] == "abrir":
             if st.session_state["etapa_abertura"] == 1:
                 st.markdown(
-                    '<div class="fala-titulo-card">👤 Identificação Inicial:</div>',
+                    '<div class="fala-titulo-sem-balao">👤 Identificação Inicial:</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -1455,26 +1476,28 @@ else:
                 nome = st.text_input(
                     "Digite seu Nome e Sobrenome",
                     value=st.session_state["temp_nome"],
-                    placeholder="Ex: João Silva"
+                    placeholder="Ex: João Silva",
+                    key="input_nome_solicitante"
                 )
 
-                if st.button("Avançar →"):
-                    nome_limpo = nome.strip()
-                    partes_nome = nome_limpo.split()
+                with st.container(key="etapa1_botoes"):
+                    if st.button("Avançar →", key="btn_avancar_etapa1"):
+                        nome_limpo = nome.strip()
+                        partes_nome = nome_limpo.split()
 
-                    if empresa == "Selecione...":
-                        st.warning("⚠️ Selecione a empresa da qual você faz parte.")
-                    elif len(partes_nome) < 2:
-                        st.warning("⚠️ Digite seu nome completo (no mínimo Nome e Sobrenome).")
-                    else:
-                        st.session_state["temp_empresa"] = empresa
-                        st.session_state["temp_nome"] = nome_limpo
-                        st.session_state["etapa_abertura"] = 2
+                        if empresa == "Selecione...":
+                            st.warning("⚠️ Selecione a empresa da qual você faz parte.")
+                        elif len(partes_nome) < 2:
+                            st.warning("⚠️ Digite seu nome completo (no mínimo Nome e Sobrenome).")
+                        else:
+                            st.session_state["temp_empresa"] = empresa
+                            st.session_state["temp_nome"] = nome_limpo
+                            st.session_state["etapa_abertura"] = 2
+                            st.rerun()
+
+                    if st.button("← Voltar ao Menu", key="btn_voltar_etapa1"):
+                        st.session_state["opcao_menu"] = "inicio"
                         st.rerun()
-
-                if st.button("← Voltar ao Menu"):
-                    st.session_state["opcao_menu"] = "inicio"
-                    st.rerun()
 
             elif st.session_state["etapa_abertura"] == 2:
                 st.markdown(

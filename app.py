@@ -541,20 +541,23 @@ st.markdown(
         }}
 
         /* PAINEL ADMINISTRATIVO (pós-login): os botões da sidebar viram só texto
-           clicável — sem fundo, sem borda, sem sombra, sem "cara" de botão */
+           clicável — sem fundo, sem borda, sem sombra, sem "cara" de botão.
+           Ao passar o mouse, ganham um fundo verde-escuro (like "selecionado"),
+           e voltam ao normal quando o mouse sai. */
         section[data-testid="stSidebar"] .stButton > button {{
             width: 100% !important;
             max-width: 100% !important;
             margin-bottom: 8px !important;
-            padding: 4px 0 !important;
+            padding: 6px 10px !important;
             background: none !important;
             background-color: transparent !important;
             border: none !important;
-            border-radius: 0 !important;
+            border-radius: 8px !important;
             box-shadow: none !important;
             min-height: auto !important;
             text-align: left !important;
             justify-content: flex-start !important;
+            transition: background-color 0.15s ease-in-out !important;
         }}
 
         section[data-testid="stSidebar"] .stButton > button p {{
@@ -564,8 +567,7 @@ st.markdown(
         }}
 
         section[data-testid="stSidebar"] .stButton > button:hover {{
-            background: none !important;
-            background-color: transparent !important;
+            background-color: #1D5902 !important;
             box-shadow: none !important;
             transform: none !important;
         }}
@@ -963,14 +965,38 @@ with st.sidebar:
     else:
         st.success(f"👋 Logado como: **{st.session_state['usuario_logado']}**")
 
-        if st.button("📋 Chamados"):
+        # Destaca (fundo verde-escuro) a opção da sidebar correspondente à
+        # tela que está aberta agora, do mesmo jeito que o efeito de hover
+        _mapa_aba_para_key = {
+            "chamados": "nav_chamados",
+            "empresa": "nav_empresa",
+            "ferramenta": "nav_ferramenta",
+            "usuarios": "nav_admin",
+        }
+        _keys_ativas = []
+        _key_aba_atual = _mapa_aba_para_key.get(st.session_state["aba_admin"])
+        if _key_aba_atual:
+            _keys_ativas.append(_key_aba_atual)
+        if st.session_state["mostrar_alterar_senha"]:
+            _keys_ativas.append("nav_senha")
+
+        if _keys_ativas:
+            _seletores_ativos = ", ".join(
+                f'.st-key-{k} .stButton > button' for k in _keys_ativas
+            )
+            st.markdown(
+                f"<style>{_seletores_ativos} {{ background-color: #1D5902 !important; }}</style>",
+                unsafe_allow_html=True,
+            )
+
+        if st.button("📋 Chamados", key="nav_chamados"):
             st.session_state["aba_admin"] = "chamados"
             st.rerun()
 
         st.markdown("---")
 
         # ---- CADASTRAR EMPRESA ----
-        if st.button("🏢 Cadastrar empresa"):
+        if st.button("🏢 Cadastrar empresa", key="nav_empresa"):
             # clicar de novo no mesmo texto fecha o campo
             if st.session_state["aba_admin"] == "empresa":
                 st.session_state["aba_admin"] = "chamados"
@@ -989,7 +1015,7 @@ with st.sidebar:
                     st.warning("Digite o nome da empresa.")
 
         # ---- CADASTRAR FERRAMENTA ----
-        if st.button("🛠️ Cadastrar Ferramenta"):
+        if st.button("🛠️ Cadastrar Ferramenta", key="nav_ferramenta"):
             if st.session_state["aba_admin"] == "ferramenta":
                 st.session_state["aba_admin"] = "chamados"
             else:
@@ -1007,7 +1033,7 @@ with st.sidebar:
                     st.warning("Digite o nome da ferramenta.")
 
         # ---- CADASTRAR ADMINISTRADOR ----
-        if st.button("👤 Cadastrar Administrador"):
+        if st.button("👤 Cadastrar Administrador", key="nav_admin"):
             if st.session_state["aba_admin"] == "usuarios":
                 st.session_state["aba_admin"] = "chamados"
             else:
@@ -1047,7 +1073,7 @@ with st.sidebar:
         st.markdown("---")
 
         # ---- ALTERAR SENHA (via código enviado por e-mail, sem precisar da senha atual) ----
-        if st.button("🔑 Alterar senha"):
+        if st.button("🔑 Alterar senha", key="nav_senha"):
             abrir = not st.session_state["mostrar_alterar_senha"]
             st.session_state["mostrar_alterar_senha"] = abrir
             if abrir:
@@ -1108,7 +1134,7 @@ with st.sidebar:
                     st.rerun()
 
         st.markdown("---")
-        if st.button("🚪 Sair (Logout)"):
+        if st.button("🚪 Sair (Logout)", key="nav_logout"):
             st.session_state["usuario_logado"] = None
             st.session_state["aba_admin"] = "chamados"
             st.session_state["mostrar_alterar_senha"] = False

@@ -1652,7 +1652,7 @@ def painel_cadastros(tipo):
         for col, h in zip(cols_head, headers):
             col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
 
-        for item in itens:
+        for i, item in enumerate(itens):
             c_nome, c_user, c_data, c_del = st.columns(col_widths)
 
             data_formatada = "-"
@@ -1668,7 +1668,7 @@ def painel_cadastros(tipo):
             c_user.markdown(f'<div class="celula-centro"><span class="mobile-label">Usuário:</span>{item.get("criado_por") or "-"}</div>', unsafe_allow_html=True)
             c_data.markdown(f'<div class="celula-centro"><span class="mobile-label">Data:</span>{data_formatada}</div>', unsafe_allow_html=True)
 
-            if c_del.button("Excluir", key=f"del_{tipo}_{item.get('nome')}"):
+            if c_del.button("Excluir", key=f"del_{tipo}_{i}_{item.get('nome')}"):
                 func_remover(item.get("nome"))
                 st.toast(f"'{item.get('nome')}' removido.")
                 st.rerun(scope="fragment")

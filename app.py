@@ -909,6 +909,12 @@ st.markdown(
             padding: 8px 14px !important;
         }}
 
+        /* "Voltar ao Menu" (abaixo da tabela de resultado): mais espaço em
+           relação à tabela, que estava muito colada */
+        .st-key-btn_voltar_menu_acompanhar {{
+            margin-top: 24px !important;
+        }}
+
         .st-key-btn_pesquisar_chamado .stButton > button p,
         .st-key-btn_voltar_menu_acompanhar .stButton > button p {{
             font-size: 14px !important;
@@ -1063,7 +1069,7 @@ st.markdown(
 
         .tabela-consulta th,
         .tabela-consulta td {{
-            border: 1px solid rgba(0, 0, 0, 0.35);
+            border: 1px solid #3B3D35;
             padding: 10px 12px;
             text-align: left;
             font-size: 13px;
@@ -1074,8 +1080,8 @@ st.markdown(
         }}
 
         .tabela-consulta thead th {{
-            background-color: rgba(10, 25, 47, 0.85);
-            color: #00d4ff;
+            background-color: #3B3D35;
+            color: #FFFFFF;
             font-size: 12px;
             font-weight: 800;
             text-transform: uppercase;
@@ -1088,8 +1094,14 @@ st.markdown(
         }}
 
         .tabela-consulta td.col-protocolo {{
-            color: #38bdf8;
+            color: #FFFFFF;
             font-weight: 800;
+        }}
+
+        .tabela-consulta .badge-status {{
+            background-color: transparent;
+            border: 1px solid #FFFFFF;
+            color: #FFFFFF;
         }}
 
         /* ========================================================= */

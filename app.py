@@ -894,6 +894,30 @@ st.markdown(
             box-shadow: none !important;
         }}
 
+        /* Botões "Pesquisar" / "Voltar ao Menu" da etapa Acompanhar: mesmo
+           padrão dos botões "Avançar" / "Voltar ao Menu" da Identificação
+           Inicial (sem azul/borda, cor #3B3D35, tamanho menor) */
+        .st-key-btn_pesquisar_chamado .stButton > button,
+        .st-key-btn_voltar_menu_acompanhar .stButton > button {{
+            background-color: #3B3D35 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+            max-width: 220px !important;
+            padding: 8px 14px !important;
+        }}
+
+        .st-key-btn_pesquisar_chamado .stButton > button p,
+        .st-key-btn_voltar_menu_acompanhar .stButton > button p {{
+            font-size: 14px !important;
+        }}
+
+        .st-key-btn_pesquisar_chamado .stButton > button:hover,
+        .st-key-btn_voltar_menu_acompanhar .stButton > button:hover {{
+            background-color: #3B3D35 !important;
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
+        }}
+
         /* Botões "Enviar Chamado" / "Voltar Etapa": menores, sem azul/borda,
            cor #24261F (igual aos campos da etapa 2) */
         .st-key-etapa2_botoes .stButton > button {{
@@ -1652,7 +1676,7 @@ else:
                 key="input_busca_protocolo"
             )
 
-            if st.button("🔍 Pesquisar"):
+            if st.button("🔍 Pesquisar", key="btn_pesquisar_chamado"):
                 termo_limpo = termo_busca.strip()
 
                 if not termo_limpo:
@@ -1721,7 +1745,7 @@ else:
 
                             st.markdown('</div>', unsafe_allow_html=True)
 
-            if st.button("← Voltar ao Menu"):
+            if st.button("← Voltar ao Menu", key="btn_voltar_menu_acompanhar"):
                 st.session_state["opcao_menu"] = "inicio"
                 if "resultado_busca" in st.session_state:
                     del st.session_state["resultado_busca"]

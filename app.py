@@ -411,6 +411,12 @@ LOGO_SIDEBAR_B64 = (
 )
 sidebar_src = f"data:image/png;base64,{LOGO_SIDEBAR_B64}"
 
+# Logo nova (ícone + "F4 Helpdesk" + tagline), hospedada num Release do GitHub
+# igual o GIF do robô — exibida só na sidebar do computador (ver CSS de
+# .logo-sidebar-box .logo-desktop). No celular/tablet a marca antiga acima
+# continua sendo usada, sem alteração.
+sidebar_desktop_src = "https://github.com/user-attachments/assets/5e860b6c-ed61-4c29-ba9e-d49ccc8554cc"
+
 if "opcao_menu" not in st.session_state:
     st.session_state["opcao_menu"] = "inicio"
 
@@ -564,7 +570,9 @@ st.markdown(
             }}
         }}
 
-        /* Logo F4 Helpdesk no topo da sidebar (tamanho fixo, sem esticar) */
+        /* Logo no topo da sidebar (tamanho fixo, sem esticar).
+           No computador exibe a logo nova (ícone + "F4 Helpdesk" + tagline);
+           no celular/tablet continua com a marca antiga, sem mudança. */
         .logo-sidebar-box {{
             display: flex !important;
             justify-content: center !important;
@@ -574,6 +582,21 @@ st.markdown(
         .logo-sidebar-box img {{
             max-width: 170px !important;
             height: auto !important;
+        }}
+
+        .logo-sidebar-box .logo-desktop {{
+            display: none !important;
+        }}
+
+        @media (min-width: 769px) {{
+            .logo-sidebar-box .logo-mobile {{
+                display: none !important;
+            }}
+
+            .logo-sidebar-box .logo-desktop {{
+                display: block !important;
+                max-width: 210px !important;
+            }}
         }}
 
         section[data-testid="stSidebar"] .stMarkdown,
@@ -1402,7 +1425,10 @@ st.markdown(
 # ---------------------------------------------------------
 with st.sidebar:
     st.markdown(
-        f'<div class="logo-sidebar-box"><img src="{sidebar_src}"></div>',
+        f'<div class="logo-sidebar-box">'
+        f'<img class="logo-mobile" src="{sidebar_src}">'
+        f'<img class="logo-desktop" src="{sidebar_desktop_src}">'
+        f'</div>',
         unsafe_allow_html=True,
     )
     st.markdown("### 🔐 Área Administrativa")

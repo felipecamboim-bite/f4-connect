@@ -930,23 +930,22 @@ st.markdown(
             box-shadow: 0 10px 25px rgba(0, 212, 255, 0.35);
         }}
 
-        /* Os 3 botões de menu da tela inicial (Abrir/Acompanhar/Avaliar): fundo
-           branco-acinzentado (não o branco puro da página, pra dar contraste
-           de "isso é um botão") com sombra, e texto na cor verde da marca */
+        /* Os 3 botões de menu da tela inicial (Abrir/Acompanhar/Avaliar): teste
+           com fundo verde da marca e texto branco */
         .st-key-menu_home_botoes .stButton > button {{
-            background-color: #F1F1EA !important;
-            border: 1px solid #E0E0D6 !important;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+            background-color: #1D5902 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
         }}
 
         .st-key-menu_home_botoes .stButton > button p {{
-            color: #1D5902 !important;
+            color: #FFFFFF !important;
         }}
 
         .st-key-menu_home_botoes .stButton > button:hover {{
-            background-color: #E7E7DC !important;
-            border-color: #D2D2C4 !important;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
+            background-color: #164602 !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
         }}
 
         /* Botões "Avançar" / "Voltar ao Menu" da 1ª etapa de abertura de chamado:

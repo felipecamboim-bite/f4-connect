@@ -598,12 +598,16 @@ st.markdown(
                 max-width: 270px !important;
             }}
 
-            /* Reduz o espaço padrão do Streamlit acima do conteúdo da sidebar,
-               só no computador, pra logo ficar mais colada no topo em vez de
-               descer tanto antes do título "Área Administrativa" */
+            /* Remove o espaço padrão do Streamlit acima do conteúdo da sidebar,
+               só no computador, pra logo subir e ocupar o vão vazio no topo */
+            section[data-testid="stSidebar"] > div,
             section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
             section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
-                padding-top: 0.75rem !important;
+                padding-top: 0rem !important;
+            }}
+
+            .logo-sidebar-box {{
+                margin-top: 0.25rem !important;
             }}
         }}
 

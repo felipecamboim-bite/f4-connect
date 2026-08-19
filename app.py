@@ -417,6 +417,12 @@ sidebar_src = f"data:image/png;base64,{LOGO_SIDEBAR_B64}"
 # continua sendo usada, sem alteração.
 sidebar_desktop_src = "https://github.com/user-attachments/assets/5e860b6c-ed61-4c29-ba9e-d49ccc8554cc"
 
+# Mesma logo, com o texto "F4 HELPDESK / CONECTANDO AS PONTAS" recolorido de
+# branco para preto (o original é branco, feito pra fundo escuro da sidebar) —
+# usada só no cabeçalho de boas-vindas da tela inicial pública (fundo branco).
+# Hospedada num Release do GitHub, igual as outras artes.
+logo_boas_vindas_src = "https://github.com/user-attachments/assets/c90b7644-6935-4aaa-acdc-6371c97c1069"
+
 if "opcao_menu" not in st.session_state:
     st.session_state["opcao_menu"] = "inicio"
 
@@ -1676,7 +1682,7 @@ _mostrar_boas_vindas_logo = (
 if _mostrar_boas_vindas_logo:
     st.markdown(
         f'<div class="logo-boas-vindas-box">'
-        f'<img src="{sidebar_desktop_src}">'
+        f'<img src="{logo_boas_vindas_src}">'
         f'<div class="boas-vindas-texto">Seja bem-vindo ao Help Desk! No que podemos ajudar?</div>'
         f'</div>',
         unsafe_allow_html=True,

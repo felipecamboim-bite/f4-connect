@@ -595,7 +595,15 @@ st.markdown(
 
             .logo-sidebar-box .logo-desktop {{
                 display: block !important;
-                max-width: 210px !important;
+                max-width: 270px !important;
+            }}
+
+            /* Reduz o espaço padrão do Streamlit acima do conteúdo da sidebar,
+               só no computador, pra logo ficar mais colada no topo em vez de
+               descer tanto antes do título "Área Administrativa" */
+            section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+            section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
+                padding-top: 0.75rem !important;
             }}
         }}
 

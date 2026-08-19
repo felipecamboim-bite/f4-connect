@@ -450,6 +450,13 @@ if "codigo_senha_enviado" not in st.session_state:
 # ---------------------------------------------------------
 # CSS DA INTERFACE & CONTAINERS DA TABELA ADMIN
 # ---------------------------------------------------------
+# Fundo da tela pública (não logada / tela inicial do solicitante) é branco;
+# o painel do administrador (logado) continua na cor #3B3D35.
+_tela_publica = not st.session_state["usuario_logado"]
+_cor_fundo_app = "#FFFFFF" if _tela_publica else "#3B3D35"
+_cor_titulo_topo = "#3B3D35" if _tela_publica else "#FFFFFF"
+_cor_label_campo = "#3B3D35" if _tela_publica else "#FFFFFF"
+
 st.markdown(
     f"""
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -462,7 +469,7 @@ st.markdown(
         }}
 
         .stApp {{
-            background-color: #3B3D35 !important;
+            background-color: {_cor_fundo_app} !important;
             overflow-x: hidden !important;
         }}
 
@@ -496,13 +503,42 @@ st.markdown(
 
         /* Reforço: mesmo que algum clique consiga acionar o estado "recolhido"
            internamente, a sidebar continua sendo forçada a aparecer do mesmo
-           jeito (mesma largura/visibilidade) — trava visual, não só o botão. */
+           jeito (mesma largura/visibilidade) — trava visual, não só o botão.
+           Isso vale só para telas largas (desktop); no celular/tablet essa
+           trava é desfeita logo abaixo, pra sidebar poder ser recolhida. */
         section[data-testid="stSidebar"][aria-expanded="false"] {{
             visibility: visible !important;
             width: 280px !important;
             min-width: 280px !important;
             margin-left: 0px !important;
             transform: none !important;
+        }}
+
+        /* CELULAR/TABLET: a sidebar fixa de 280px toma quase a tela toda nesses
+           aparelhos. Nessa faixa, volta a mostrar o botão de recolher/abrir
+           (padrão do Streamlit) e permite a sidebar realmente sumir quando
+           recolhida — assim dá pra liberar a tela cheia no celular. No
+           desktop (acima de 768px) nada muda: continua sempre travada aberta. */
+        @media (max-width: 768px) {{
+            button[kind="header"],
+            button[kind="headerNoPadding"],
+            [data-testid="baseButton-header"],
+            [data-testid="baseButton-headerNoPadding"],
+            [data-testid="stSidebarCollapseButton"],
+            [data-testid="stSidebarCollapsedControl"],
+            [data-testid="collapsedControl"] {{
+                display: flex !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+            }}
+
+            section[data-testid="stSidebar"][aria-expanded="false"] {{
+                visibility: hidden !important;
+                width: 0px !important;
+                min-width: 0px !important;
+                margin-left: -280px !important;
+                transform: translateX(-100%) !important;
+            }}
         }}
 
         /* Logo F4 Helpdesk no topo da sidebar (tamanho fixo, sem esticar) */
@@ -679,7 +715,7 @@ st.markdown(
             font-family: 'Inter', sans-serif !important;
             font-size: clamp(24px, 6vw, 46px);
             font-weight: 900;
-            color: #FFFFFF !important;
+            color: {_cor_titulo_topo} !important;
             text-transform: uppercase;
             letter-spacing: clamp(1px, 0.6vw, 5px);
             margin-bottom: clamp(16px, 3vw, 30px);
@@ -742,7 +778,7 @@ st.markdown(
             max-width: 460px !important;
             font-size: clamp(17px, 3.2vw, 22px);
             font-weight: 800;
-            color: #FFFFFF !important;
+            color: #3B3D35 !important;
             font-family: 'Inter', sans-serif !important;
             text-align: center !important;
             margin-bottom: 22px;
@@ -841,7 +877,7 @@ st.markdown(
         .stTextInput label, .stSelectbox label, .stTextArea label {{
             font-size: 15px !important;
             font-weight: 600 !important;
-            color: #FFFFFF !important;
+            color: {_cor_label_campo} !important;
             font-family: 'Inter', sans-serif !important;
         }}
 
@@ -978,7 +1014,7 @@ st.markdown(
 
         /* "Como foi o seu atendimento?" com um respiro maior acima */
         .titulo-como-foi {{
-            color: #FFFFFF !important;
+            color: #3B3D35 !important;
             font-family: 'Inter', sans-serif !important;
             font-size: 18px;
             font-weight: 800;
@@ -1140,7 +1176,7 @@ st.markdown(
         /* "Resultado da Consulta" (Acompanhar meu chamado): título com um
            respiro maior em relação ao robô/menu logo acima */
         .titulo-resultado-consulta {{
-            color: #FFFFFF !important;
+            color: #3B3D35 !important;
             font-family: 'Inter', sans-serif !important;
             font-size: 22px;
             font-weight: 800;

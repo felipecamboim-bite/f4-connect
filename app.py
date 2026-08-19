@@ -1683,7 +1683,7 @@ if _mostrar_boas_vindas_logo:
     st.markdown(
         f'<div class="logo-boas-vindas-box">'
         f'<img src="{logo_boas_vindas_src}">'
-        f'<div class="boas-vindas-texto">Seja bem-vindo ao Help Desk! No que podemos ajudar?</div>'
+        f'<div class="boas-vindas-texto">Seja bem-vindo ao Helpdesk! No que podemos ajudar?</div>'
         f'</div>',
         unsafe_allow_html=True,
     )

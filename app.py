@@ -608,6 +608,7 @@ st.markdown(
 
             .logo-sidebar-box {{
                 margin-top: 0.25rem !important;
+                margin-bottom: 40px !important;
             }}
         }}
 

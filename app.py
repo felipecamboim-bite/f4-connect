@@ -781,6 +781,32 @@ st.markdown(
             text-shadow: 0px 4px 12px rgba(0, 0, 0, 0.7);
         }}
 
+        /* Cabeçalho da tela inicial pública: logo grande + frase de boas-vindas,
+           no lugar do título "HelpDesk" — só aparece na tela inicial de quem
+           não está logado (ver uso condicional mais abaixo no Python) */
+        .logo-boas-vindas-box {{
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            margin-bottom: clamp(16px, 3vw, 30px);
+        }}
+
+        .logo-boas-vindas-box img {{
+            max-width: 320px !important;
+            width: 70% !important;
+            height: auto !important;
+            filter: drop-shadow(0px 4px 12px rgba(0, 0, 0, 0.25));
+        }}
+
+        .boas-vindas-texto {{
+            text-align: center !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: clamp(17px, 3.2vw, 22px);
+            font-weight: 800;
+            color: #3B3D35 !important;
+            margin-top: 14px;
+        }}
+
         /* ROBÔ ENCOSTADO NO LADO DIREITO DA SUA COLUNA (MAIS PRÓXIMO DOS TEXTOS) */
         .robo-box {{
             display: flex !important;
@@ -1639,10 +1665,27 @@ with st.sidebar:
 # ---------------------------------------------------------
 # INTERFACE PRINCIPAL
 # ---------------------------------------------------------
-st.markdown(
-    '<div class="titulo-topo">HelpDesk</div>',
-    unsafe_allow_html=True,
+# Na tela inicial pública (não logado), o título "HelpDesk" dá lugar à logo
+# grande + frase de boas-vindas. Nas demais telas (admin ou outras etapas do
+# fluxo público) o título de sempre continua igual.
+_mostrar_boas_vindas_logo = (
+    not st.session_state["usuario_logado"]
+    and st.session_state["opcao_menu"] == "inicio"
 )
+
+if _mostrar_boas_vindas_logo:
+    st.markdown(
+        f'<div class="logo-boas-vindas-box">'
+        f'<img src="{sidebar_desktop_src}">'
+        f'<div class="boas-vindas-texto">Seja bem-vindo ao Help Desk! No que podemos ajudar?</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+else:
+    st.markdown(
+        '<div class="titulo-topo">HelpDesk</div>',
+        unsafe_allow_html=True,
+    )
 
 # ------------------ VISÃO ADMIN (TABELA COM CARDS) ------------------
 @st.fragment
@@ -1851,10 +1894,9 @@ else:
         if st.session_state["opcao_menu"] == "inicio":
             st.session_state["ultimo_protocolo"] = None
             st.session_state["etapa_abertura"] = 1
-            st.markdown(
-                '<div class="fala-titulo-sem-balao">💬 Olá! Como posso te ajudar hoje?</div>',
-                unsafe_allow_html=True,
-            )
+            # A saudação "Olá! Como posso te ajudar hoje?" foi removida daqui
+            # pra não duplicar com a nova frase de boas-vindas exibida junto
+            # da logo, acima (ver .logo-boas-vindas-box / _mostrar_boas_vindas_logo).
 
             with st.container(key="menu_home_botoes"):
                 if st.button("📝 Abrir um novo chamado", key="btn_abrir_chamado"):

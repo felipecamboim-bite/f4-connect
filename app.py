@@ -539,6 +539,24 @@ st.markdown(
                 margin-left: -280px !important;
                 transform: translateX(-100%) !important;
             }}
+
+            /* Seta "abrir sidebar" (aparece sobre o fundo branco da tela
+               principal, com a sidebar fechada): preta, pra ficar visível.
+               Seta "fechar sidebar" (aparece dentro da própria sidebar verde,
+               com ela aberta): continua branca. */
+            [data-testid="stSidebarCollapsedControl"] svg,
+            [data-testid="stSidebarCollapsedControl"] svg path,
+            [data-testid="collapsedControl"] svg,
+            [data-testid="collapsedControl"] svg path {{
+                fill: #000000 !important;
+                color: #000000 !important;
+            }}
+
+            [data-testid="stSidebarCollapseButton"] svg,
+            [data-testid="stSidebarCollapseButton"] svg path {{
+                fill: #FFFFFF !important;
+                color: #FFFFFF !important;
+            }}
         }}
 
         /* Logo F4 Helpdesk no topo da sidebar (tamanho fixo, sem esticar) */

@@ -543,19 +543,24 @@ st.markdown(
             /* Seta "abrir sidebar" (aparece sobre o fundo branco da tela
                principal, com a sidebar fechada): preta, pra ficar visível.
                Seta "fechar sidebar" (aparece dentro da própria sidebar verde,
-               com ela aberta): continua branca. */
-            [data-testid="stSidebarCollapsedControl"] svg,
-            [data-testid="stSidebarCollapsedControl"] svg path,
-            [data-testid="collapsedControl"] svg,
-            [data-testid="collapsedControl"] svg path {{
-                fill: #000000 !important;
+               com ela aberta): continua branca. Cobre tanto o ícone em SVG
+               quanto o ícone em fonte (Material Symbols) usado em versões
+               mais novas do Streamlit — por isso o "*" pegando qualquer
+               elemento filho, não só svg/path. */
+            [data-testid="stSidebarCollapsedControl"],
+            [data-testid="stSidebarCollapsedControl"] *,
+            [data-testid="collapsedControl"],
+            [data-testid="collapsedControl"] * {{
                 color: #000000 !important;
+                fill: #000000 !important;
+                opacity: 1 !important;
             }}
 
-            [data-testid="stSidebarCollapseButton"] svg,
-            [data-testid="stSidebarCollapseButton"] svg path {{
-                fill: #FFFFFF !important;
+            [data-testid="stSidebarCollapseButton"],
+            [data-testid="stSidebarCollapseButton"] * {{
                 color: #FFFFFF !important;
+                fill: #FFFFFF !important;
+                opacity: 1 !important;
             }}
         }}
 

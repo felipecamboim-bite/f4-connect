@@ -685,6 +685,7 @@ st.markdown(
             min-height: 38px !important;
             max-height: 38px !important;
             box-sizing: border-box !important;
+            overflow: hidden !important;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
             text-align: center !important;
             display: flex !important;
@@ -692,8 +693,15 @@ st.markdown(
             justify-content: center !important;
         }}
 
+        /* O <p> que o Streamlit coloca dentro do botão vem com margem própria
+           (padrão do navegador) — isso "empurrava" a altura visível do botão
+           pra além dos 38px travados acima, mesmo com overflow:hidden cortando
+           o excesso (cortava o ícone/texto). Zerando a margem, o conteúdo
+           cabe certinho dentro dos 38px sem cortar nada. */
         .st-key-btn_entrar_login .stButton > button p {{
             font-size: 14px !important;
+            margin: 0 !important;
+            line-height: 1 !important;
         }}
 
         .st-key-btn_entrar_login .stButton > button:hover,

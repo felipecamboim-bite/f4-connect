@@ -780,19 +780,30 @@ st.markdown(
             font-weight: 700 !important;
             font-size: 14px !important;
             white-space: nowrap !important;
-            text-align: right !important;
-            padding-top: 8px !important;
+            height: 38px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
         }}
 
         /* Campos de Usuário/Senha: fundo branco (diferente do fundo azul-escuro
            padrão dos outros campos do app), mesmo tratamento que já valia
            quando esses campos ficavam na sidebar */
-        .st-key-login_topo_direita .stTextInput input,
         .st-key-login_topo_direita .stTextInput div[data-baseweb],
         .st-key-login_topo_direita div[data-testid="stTextInputRootElement"] {{
             background-color: #FFFFFF !important;
             border: 1px solid rgba(0, 0, 0, 0.15) !important;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+            outline: none !important;
+            height: 38px !important;
+            min-height: 38px !important;
+            box-sizing: border-box !important;
+        }}
+
+        .st-key-login_topo_direita .stTextInput input {{
+            background-color: #FFFFFF !important;
+            border: none !important;
+            box-shadow: none !important;
             outline: none !important;
         }}
 
@@ -801,6 +812,10 @@ st.markdown(
             caret-color: #0a192f !important;
             width: 140px !important;
             min-width: 100px !important;
+            height: 38px !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            box-sizing: border-box !important;
         }}
 
         .st-key-login_topo_direita .stTextInput button {{
@@ -833,8 +848,22 @@ st.markdown(
 
         .st-key-login_topo_direita .stButton > button {{
             white-space: nowrap !important;
-            padding: 8px 14px !important;
-            min-height: 36px !important;
+            padding: 0 14px !important;
+            height: 38px !important;
+            min-height: 38px !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }}
+
+        /* A coluna do botão também precisa ficar alinhada com a mesma altura
+           dos campos (sem isso, o wrapper interno do Streamlit deixa uma
+           folga e o botão parece "flutuar" mais alto/baixo que os campos) */
+        .st-key-login_topo_direita .stButton {{
+            display: flex !important;
+            align-items: center !important;
+            height: 38px !important;
         }}
 
         .main .block-container {{
@@ -1836,9 +1865,8 @@ with st.sidebar:
         f'</div>',
         unsafe_allow_html=True,
     )
-    st.markdown("### 🔐 Área Administrativa")
-
-    # Os campos de Usuário/Senha/Entrar não ficam mais aqui na sidebar — foram
+    # O texto "Área Administrativa" foi removido (pedido do usuário) — os
+    # campos de Usuário/Senha/Entrar não ficam mais aqui na sidebar — foram
     # movidos pro canto superior direito da tela principal (pedido do
     # usuário, layout em PC). Ver bloco "LOGIN ADMIN (CANTO SUPERIOR
     # DIREITO)", logo depois do fechamento dessa sidebar.

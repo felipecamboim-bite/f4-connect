@@ -857,15 +857,6 @@ st.markdown(
                 flex: 1 1 100% !important;
                 max-width: 100% !important;
             }}
-            /* Os botões (Abrir/Acompanhar/Avaliar) ainda ficavam grudados à
-               esquerda dentro da coluna — cada um tem largura própria
-               (não necessariamente 100% do espaço disponível), então força
-               centralizar o bloco inteiro dentro da coluna. */
-            .st-key-menu_home_botoes {{
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-            }}
         }}
 
         /* ALINHAMENTO CENTRALIZADO DAS COLUNAS */
@@ -982,9 +973,16 @@ st.markdown(
         }}
 
         @media (max-width: 768px) {{
+            /* Largura fixa em vw (relativa à tela, não ao elemento pai) +
+               margem automática: garante os três exatamente do mesmo
+               tamanho e centralizados, sem depender de como o Streamlit
+               organiza os elementos por dentro da coluna. */
             .st-key-menu_home_botoes .stButton > button {{
-                width: 100% !important;
-                max-width: 460px !important;
+                width: 85vw !important;
+                max-width: 380px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+                display: block !important;
             }}
         }}
 

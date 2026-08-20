@@ -842,9 +842,19 @@ st.markdown(
 
         /* Espaçamento extra no topo do bloco de conteúdo público (antes ficava
            "colado" no robô que foi removido; sem ele, esse respiro evita que
-           o menu/formulário comece grudado no cabeçalho/logo). */
+           o menu/formulário comece grudado no cabeçalho/logo).
+           Também centraliza tudo (título, campos, botões) na tela — antes o
+           conjunto ficava "centralizado" só porque o robô ao lado empurrava
+           visualmente a coluna estreita pro meio; sem o robô, o conteúdo
+           ocupa a largura toda e, sem essa regra, tudo cai pra esquerda.
+           Vale pra todas as etapas públicas (Identificação Inicial, Detalhes
+           do Chamado, Consulte seu chamado, Avaliar atendimento) e pras duas
+           telas (PC e celular). */
         .st-key-conteudo_publico {{
             margin-top: 50px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
         }}
 
         /* Saudação da tela inicial ("Olá! Como posso te ajudar hoje?") sem balão —
@@ -1018,12 +1028,21 @@ st.markdown(
             border: 1px solid rgba(0, 183, 255, 0.3) !important;
         }}
 
-        /* Campo "Digite seu Nome e Sobrenome": fundo #5A5E4F, sem borda (essa
-           regra precisa vir DEPOIS da regra geral acima pra vencer o empate) */
-        .st-key-input_nome_solicitante input {{
-            background-color: #5A5E4F !important;
+        /* Campos de preenchimento (texto/textarea) e de seleção (selectbox) das
+           telas PÚBLICAS (Identificação Inicial, Detalhes do Chamado, Consulte
+           seu chamado, Avaliar atendimento): sem borda, fundo num branco levemente
+           diferente do branco da tela (pra não "sumir") e com sombra — substitui
+           os fundos escuros que essas telas usavam antes (herdados do tema escuro
+           do admin, que não combinavam com o fundo branco público). Escopado no
+           .st-key-conteudo_publico pra não afetar os campos do painel admin, que
+           continuam com o tema escuro original. */
+        .st-key-conteudo_publico .stTextInput input,
+        .st-key-conteudo_publico .stTextArea textarea,
+        .st-key-conteudo_publico .stSelectbox div[data-baseweb="select"] {{
+            background-color: #F1F1EA !important;
+            color: #24261F !important;
             border: none !important;
-            box-shadow: none !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
         }}
 
         /* Campos "Qual empresa você faz parte?" e "Digite seu Nome e Sobrenome":
@@ -1035,33 +1054,10 @@ st.markdown(
             max-width: 380px !important;
         }}
 
-        /* Campos da etapa 2 (Seu E-mail, ferramenta, severidade, assunto,
-           descrição): fundo mais escuro que o da tela (#3B3D35 ficava
-           "transparente" de tão parecido com o fundo) */
-        .st-key-etapa2_campos input,
-        .st-key-etapa2_campos textarea,
-        .st-key-etapa2_campos div[data-baseweb="select"] {{
-            background-color: #24261F !important;
-        }}
-
-        /* Sem borda nos campos de texto (E-mail, Assunto, Descrição) */
-        .st-key-etapa2_campos input,
-        .st-key-etapa2_campos textarea {{
-            border: none !important;
-            box-shadow: none !important;
-        }}
-
         /* Campo "Digite o Protocolo ou E-mail" (etapa Acompanhar): mais estreito
-           (como o campo Nome da etapa Abrir chamado) e mesma cor escura dos
-           campos da etapa Detalhes do Chamado */
+           (como o campo Nome da etapa Abrir chamado) */
         .st-key-input_busca_protocolo {{
             max-width: 380px !important;
-        }}
-
-        .st-key-input_busca_protocolo input {{
-            background-color: #24261F !important;
-            border: none !important;
-            box-shadow: none !important;
         }}
 
         /* Botões "Pesquisar" / "Voltar ao Menu" da etapa Acompanhar: mesmo
@@ -1083,19 +1079,11 @@ st.markdown(
         }}
 
 
-        /* Campo "Número do Protocolo Concluído" e botões "Buscar Chamado" /
-           "Voltar ao Menu" da etapa Avaliar atendimento: mesmo visual da
-           etapa Consulte seu chamado (campo estreito/escuro, botões #3B3D35
-           sem azul) */
+        /* Campo "Número do Protocolo Concluído" (etapa Avaliar atendimento):
+           mesma largura contida do campo da etapa Consulte seu chamado */
         .st-key-input_protocolo_avaliar,
         .st-key-input_protocolo_avaliar input {{
             max-width: 380px !important;
-        }}
-
-        .st-key-input_protocolo_avaliar input {{
-            background-color: #24261F !important;
-            border: none !important;
-            box-shadow: none !important;
         }}
 
         .st-key-btn_buscar_chamado_avaliar .stButton > button,
@@ -1152,13 +1140,6 @@ st.markdown(
             margin-bottom: 10px !important;
         }}
 
-        /* Campo de comentários da avaliação: um pouco mais escuro que #3B3D35,
-           sem borda azul */
-        .st-key-textarea_comentario_avaliacao textarea {{
-            background-color: #24261F !important;
-            border: none !important;
-            box-shadow: none !important;
-        }}
 
         /* "Enviar Avaliação" no mesmo tom verde da marca dos outros botões */
         .st-key-btn_enviar_avaliacao .stButton > button {{

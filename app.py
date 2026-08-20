@@ -1565,13 +1565,18 @@ st.markdown(
                 display: none !important;
             }}
 
-            /* Encolhe a tabela inteira (fica "afastada", como no computador)
-               e compensa a largura pra não sobrar vão nem cortar conteúdo —
-               dá pra usar o zoom de pinça do celular pra ler de perto. */
+            /* Encolhe a tabela inteira (fica "afastada", como no computador).
+               A 1ª tentativa usou transform:scale + largura 200% — só que
+               isso alarga a PÁGINA INTEIRA de verdade (as colunas do app têm
+               overflow:visible de propósito, pra não cortar menus suspensos
+               em outras telas), e o celular reagia dando zoom-out automático
+               em tudo (título, sidebar, etc.), não só na tabela. "zoom" (ao
+               contrário de transform) encolhe também o espaço reservado no
+               layout — sem alargar nada, sem vão sobrando embaixo. Dá pra
+               usar o zoom de pinça do celular pra ler de perto. */
             .st-key-painel_admin_tabela {{
-                transform: scale(0.5);
-                transform-origin: top left;
-                width: 200% !important;
+                zoom: 0.4;
+                overflow-x: auto !important;
             }}
         }}
     </style>

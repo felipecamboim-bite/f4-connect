@@ -687,13 +687,6 @@ st.markdown(
             justify-content: center !important;
         }}
 
-        /* No login do canto superior direito, o botão "Entrar" ficava um
-           pouco mais alto que os campos de Usuário/Senha ao lado — desce
-           alguns pixels pra ficar na mesma linha */
-        .st-key-login_topo_direita .st-key-btn_entrar_login {{
-            margin-top: 10px !important;
-        }}
-
         .st-key-btn_entrar_login .stButton > button:hover,
         .st-key-btn_entrar_login button:hover {{
             border: none !important;
@@ -778,6 +771,23 @@ st.markdown(
                 width: auto !important;
                 min-width: 0 !important;
                 flex: none !important;
+                display: flex !important;
+                align-items: center !important;
+            }}
+
+            /* Zera qualquer respiro padrão que o Streamlit deixa entre
+               elementos empilhados (pensado pra layout vertical) — aqui é
+               tudo numa linha só, então cada elemento (rótulo, campo, botão)
+               deve ocupar só a altura dele mesmo, sem sobra em cima/embaixo,
+               pra alinhar de verdade com os vizinhos */
+            .st-key-login_topo_direita [data-testid="stElementContainer"] {{
+                margin: 0 !important;
+                width: 100% !important;
+            }}
+
+            .st-key-login_topo_direita .stTextInput,
+            .st-key-login_topo_direita .stButton {{
+                margin: 0 !important;
             }}
         }}
 
@@ -791,7 +801,6 @@ st.markdown(
             display: flex !important;
             align-items: center !important;
             justify-content: flex-end !important;
-            transform: translateY(-6px) !important;
         }}
 
         /* Campos de Usuário/Senha: fundo branco (diferente do fundo azul-escuro

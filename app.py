@@ -848,6 +848,15 @@ st.markdown(
             [data-testid="stColumn"]:has(.robo-box) {{
                 display: none !important;
             }}
+            /* A coluna do robô tinha uma largura fixa (proporção do
+               st.columns); escondê-la sozinha deixava a coluna dos botões
+               "presa" na largura antiga, empurrada pro canto esquerdo com um
+               vão vazio à direita. Aqui ela passa a ocupar 100% da linha. */
+            [data-testid="stHorizontalBlock"]:has(.robo-box) [data-testid="stColumn"]:not(:has(.robo-box)) {{
+                width: 100% !important;
+                flex: 1 1 100% !important;
+                max-width: 100% !important;
+            }}
         }}
 
         /* ALINHAMENTO CENTRALIZADO DAS COLUNAS */

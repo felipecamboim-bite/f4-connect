@@ -928,6 +928,18 @@ st.markdown(
             color: #FFFFFF !important;
         }}
 
+        /* Botões centralizados no bloco (flex column + align-items:center).
+           Antes isso só valia pro celular (no PC o robô ao lado "empurrava"
+           visualmente o conjunto pro centro da coluna estreita que sobrava).
+           Como o robô foi removido de vez e o conteúdo passou a ocupar a
+           largura toda da tela, sem essa regra os botões ficam grudados na
+           esquerda também no PC — por isso agora vale pras duas telas. */
+        .st-key-menu_home_botoes {{
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+        }}
+
         /* No computador, largura fixa (baseada no texto mais longo,
            "Acompanhar meu chamado", numa linha só) pra os três ficarem do
            mesmo tamanho. No celular, os três ocupam a largura da coluna
@@ -948,16 +960,11 @@ st.markdown(
                maior que a tela visível (provavelmente sobra da sidebar
                recolhida), por isso qualquer coisa em vw saía puxada pra
                esquerda. Voltando pro método que já tinha funcionado certinho
-               pra centralizar (flex column + align-items:center no bloco) —
-               e, pra deixar os botões largos (quase toda a largura da tela,
-               como no desenho que você mandou), a largura agora é uma % do
-               próprio bloco container (não da página/vw), então não sofre
-               desse desvio. */
-            .st-key-menu_home_botoes {{
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-            }}
+               pra centralizar (flex column + align-items:center no bloco,
+               regra acima) — e, pra deixar os botões largos (quase toda a
+               largura da tela, como no desenho que você mandou), a largura
+               agora é uma % do próprio bloco container (não da página/vw),
+               então não sofre desse desvio. */
             .st-key-menu_home_botoes .stButton > button {{
                 width: 260px !important;
                 max-width: 92% !important;

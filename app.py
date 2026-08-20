@@ -1124,11 +1124,6 @@ st.markdown(
             padding: 8px 14px !important;
         }}
 
-        /* "Voltar ao Menu" (abaixo da tabela de resultado): mais espaço em
-           relação à tabela, que estava muito colada */
-        .st-key-btn_voltar_menu_acompanhar {{
-            margin-top: 24px !important;
-        }}
 
         /* Campo "Número do Protocolo Concluído" e botões "Buscar Chamado" /
            "Voltar ao Menu" da etapa Avaliar atendimento: mesmo visual da
@@ -1831,8 +1826,12 @@ if _mostrar_boas_vindas_logo:
         unsafe_allow_html=True,
     )
 elif not st.session_state["usuario_logado"]:
+    # Demais etapas públicas (Abrir chamado, Acompanhar, Avaliar): só a logo,
+    # sem o texto "HelpDesk" e sem a frase de boas-vindas (que é só da inicial).
     st.markdown(
-        '<div class="titulo-topo">HelpDesk</div>',
+        f'<div class="logo-boas-vindas-box">'
+        f'<img src="{logo_boas_vindas_src}">'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -2216,41 +2215,52 @@ else:
                 key="input_busca_protocolo"
             )
 
-            if st.button("🔍 Pesquisar", key="btn_pesquisar_chamado"):
-                termo_limpo = termo_busca.strip()
+            # "Pesquisar" e "Voltar ao Menu" lado a lado (antes o Voltar ficava
+            # lá embaixo, depois da tabela de resultado, bem longe do Pesquisar).
+            # O resultado da consulta (tabela) continua sendo renderizado MAIS
+            # ABAIXO, fora dessa coluna estreita — veja o bloco "RESULTADO DA
+            # CONSULTA (LARGURA TOTAL)" após o fechamento das colunas
+            # col_robo/col_balao.
+            col_pesquisar, col_voltar_acompanhar = st.columns(2)
 
-                if not termo_limpo:
-                    st.warning("⚠️ Digite um número de protocolo ou e-mail para pesquisar.")
-                else:
-                    if supabase:
-                        # 1. Busca por E-MAIL (Histórico dos últimos 15 dias)
-                        if "@" in termo_limpo:
-                            data_limite = (datetime.now() - timedelta(days=15)).strftime("%Y-%m-%d")
-                            res = (
-                                supabase.table("chamados")
-                                .select("*")
-                                .ilike("email_solicitante", termo_limpo)
-                                .gte("created_at", data_limite)
-                                .order("id", desc=True)
-                                .execute()
-                            )
-                            st.session_state["resultado_busca"] = res.data
+            with col_pesquisar:
+                if st.button("🔍 Pesquisar", key="btn_pesquisar_chamado"):
+                    termo_limpo = termo_busca.strip()
 
-                        # 2. Busca por PROTOCOLO EXATO (ex: F4-X8K92P ou #F4-X8K92P)
-                        else:
-                            proto_exato = termo_limpo if termo_limpo.startswith("#") else f"#{termo_limpo}"
-                            res = (
-                                supabase.table("chamados")
-                                .select("*")
-                                .eq("protocolo", proto_exato)
-                                .execute()
-                            )
-                            st.session_state["resultado_busca"] = res.data
+                    if not termo_limpo:
+                        st.warning("⚠️ Digite um número de protocolo ou e-mail para pesquisar.")
+                    else:
+                        if supabase:
+                            # 1. Busca por E-MAIL (Histórico dos últimos 15 dias)
+                            if "@" in termo_limpo:
+                                data_limite = (datetime.now() - timedelta(days=15)).strftime("%Y-%m-%d")
+                                res = (
+                                    supabase.table("chamados")
+                                    .select("*")
+                                    .ilike("email_solicitante", termo_limpo)
+                                    .gte("created_at", data_limite)
+                                    .order("id", desc=True)
+                                    .execute()
+                                )
+                                st.session_state["resultado_busca"] = res.data
 
-            # O resultado da consulta (tabela) e o botão "Voltar ao Menu" dessa
-            # etapa são renderizados MAIS ABAIXO, fora dessa coluna estreita —
-            # veja o bloco "RESULTADO DA CONSULTA (LARGURA TOTAL)" após o
-            # fechamento das colunas col_robo/col_balao.
+                            # 2. Busca por PROTOCOLO EXATO (ex: F4-X8K92P ou #F4-X8K92P)
+                            else:
+                                proto_exato = termo_limpo if termo_limpo.startswith("#") else f"#{termo_limpo}"
+                                res = (
+                                    supabase.table("chamados")
+                                    .select("*")
+                                    .eq("protocolo", proto_exato)
+                                    .execute()
+                                )
+                                st.session_state["resultado_busca"] = res.data
+
+            with col_voltar_acompanhar:
+                if st.button("← Voltar ao Menu", key="btn_voltar_menu_acompanhar"):
+                    st.session_state["opcao_menu"] = "inicio"
+                    if "resultado_busca" in st.session_state:
+                        del st.session_state["resultado_busca"]
+                    st.rerun()
 
         elif st.session_state["opcao_menu"] == "avaliar":
             st.markdown(
@@ -2386,9 +2396,6 @@ else:
                 </div>
                 """
                 st.markdown(tabela_html, unsafe_allow_html=True)
-
-        if st.button("← Voltar ao Menu", key="btn_voltar_menu_acompanhar"):
-            st.session_state["opcao_menu"] = "inicio"
-            if "resultado_busca" in st.session_state:
-                del st.session_state["resultado_busca"]
-            st.rerun()
+        # O botão "Voltar ao Menu" dessa etapa foi movido pra cima, ao lado do
+        # "Pesquisar" (ver col_pesquisar/col_voltar_acompanhar) — não fica
+        # mais aqui embaixo, sozinho e longe do resto.

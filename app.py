@@ -1032,9 +1032,9 @@ st.markdown(
         }}
 
         /* Botões "Avançar" / "Voltar ao Menu" da 1ª etapa de abertura de chamado:
-           mesmo tratamento (sem azul), mas na cor exata #3B3D35 pedida */
+           mesmo tratamento (sem azul), cor verde da marca #1D5902 */
         .st-key-etapa1_botoes .stButton > button {{
-            background-color: #3B3D35 !important;
+            background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
             max-width: 220px !important;
@@ -1046,7 +1046,7 @@ st.markdown(
         }}
 
         .st-key-etapa1_botoes .stButton > button:hover {{
-            background-color: #3B3D35 !important;
+            background-color: #164602 !important;
             border-color: rgba(255, 255, 255, 0.25) !important;
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
         }}
@@ -1114,10 +1114,10 @@ st.markdown(
 
         /* Botões "Pesquisar" / "Voltar ao Menu" da etapa Acompanhar: mesmo
            padrão dos botões "Avançar" / "Voltar ao Menu" da Identificação
-           Inicial (sem azul/borda, cor #3B3D35, tamanho menor) */
+           Inicial (sem azul/borda, cor verde da marca #1D5902, tamanho menor) */
         .st-key-btn_pesquisar_chamado .stButton > button,
         .st-key-btn_voltar_menu_acompanhar .stButton > button {{
-            background-color: #3B3D35 !important;
+            background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
             max-width: 220px !important;
@@ -1147,7 +1147,7 @@ st.markdown(
 
         .st-key-btn_buscar_chamado_avaliar .stButton > button,
         .st-key-btn_voltar_menu_avaliar .stButton > button {{
-            background-color: #3B3D35 !important;
+            background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
             max-width: 220px !important;
@@ -1161,7 +1161,7 @@ st.markdown(
 
         .st-key-btn_buscar_chamado_avaliar .stButton > button:hover,
         .st-key-btn_voltar_menu_avaliar .stButton > button:hover {{
-            background-color: #3B3D35 !important;
+            background-color: #164602 !important;
             border-color: rgba(255, 255, 255, 0.25) !important;
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
         }}
@@ -1207,9 +1207,9 @@ st.markdown(
             box-shadow: none !important;
         }}
 
-        /* "Enviar Avaliação" no mesmo tom do botão "Voltar ao Menu" */
+        /* "Enviar Avaliação" no mesmo tom verde da marca dos outros botões */
         .st-key-btn_enviar_avaliacao .stButton > button {{
-            background-color: #3B3D35 !important;
+            background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
             max-width: 220px !important;
@@ -1221,7 +1221,7 @@ st.markdown(
         }}
 
         .st-key-btn_enviar_avaliacao .stButton > button:hover {{
-            background-color: #3B3D35 !important;
+            background-color: #164602 !important;
             border-color: rgba(255, 255, 255, 0.25) !important;
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
         }}
@@ -1233,17 +1233,17 @@ st.markdown(
 
         .st-key-btn_pesquisar_chamado .stButton > button:hover,
         .st-key-btn_voltar_menu_acompanhar .stButton > button:hover {{
-            background-color: #3B3D35 !important;
+            background-color: #164602 !important;
             border-color: rgba(255, 255, 255, 0.25) !important;
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
         }}
 
-        /* Botões "Enviar Chamado" / "Voltar Etapa": menores, sem azul/borda,
-           cor #24261F (igual aos campos da etapa 2) */
+        /* Botões "Enviar Chamado" / "Voltar Etapa": cor verde da marca #1D5902,
+           igual aos outros botões de avançar/voltar do fluxo */
         .st-key-etapa2_botoes .stButton > button {{
-            background-color: #24261F !important;
-            border: none !important;
-            box-shadow: none !important;
+            background-color: #1D5902 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
             max-width: 220px !important;
             padding: 8px 14px !important;
         }}
@@ -1253,9 +1253,9 @@ st.markdown(
         }}
 
         .st-key-etapa2_botoes .stButton > button:hover {{
-            background-color: #24261F !important;
-            border: none !important;
-            box-shadow: none !important;
+            background-color: #164602 !important;
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
         }}
 
         .card-sucesso {{

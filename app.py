@@ -687,6 +687,13 @@ st.markdown(
             justify-content: center !important;
         }}
 
+        /* No login do canto superior direito, o botão "Entrar" ficava um
+           pouco mais alto que os campos de Usuário/Senha ao lado — desce
+           alguns pixels pra ficar na mesma linha */
+        .st-key-login_topo_direita .st-key-btn_entrar_login {{
+            margin-top: 10px !important;
+        }}
+
         .st-key-btn_entrar_login .stButton > button:hover,
         .st-key-btn_entrar_login button:hover {{
             border: none !important;

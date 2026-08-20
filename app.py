@@ -763,9 +763,9 @@ st.markdown(
         @media (min-width: 769px) {{
             .st-key-login_topo_direita {{
                 position: fixed !important;
-                top: 68px !important;
+                top: 10px !important;
                 right: 28px !important;
-                z-index: 999 !important;
+                z-index: 1000000 !important;
                 width: auto !important;
             }}
 

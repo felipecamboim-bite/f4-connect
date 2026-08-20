@@ -1012,6 +1012,17 @@ st.markdown(
             align-items: center !important;
         }}
 
+        /* Reforço: centraliza também a "linha" de cada botão (o wrapper que o
+           Streamlit gera pra cada st.button), caso ela mesma ocupe 100% da
+           largura do container acima (nesse caso o align-items:center sozinho
+           não centraliza, só o display:flex + justify-content:center aqui
+           dentro resolve) */
+        .st-key-etapa1_botoes .stButton {{
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }}
+
         .st-key-etapa1_botoes .stButton > button {{
             background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -1117,14 +1128,30 @@ st.markdown(
 
         /* Botões "Pesquisar" / "Voltar ao Menu" da etapa Acompanhar: mesmo
            padrão dos botões "Avançar" / "Voltar ao Menu" da Identificação
-           Inicial (sem azul/borda, cor verde da marca #1D5902, tamanho menor) */
+           Inicial (sem azul/borda, cor verde da marca #1D5902, tamanho menor,
+           centralizados). Cada botão aqui não tem um container próprio
+           envolvendo os dois juntos (são dois st.button() soltos), então a
+           centralização é feita direto em cada .st-key-btn_xxx (cada um vira
+           uma linha flex de largura toda, com o botão centralizado dentro). */
+        .st-key-btn_pesquisar_chamado,
+        .st-key-btn_voltar_menu_acompanhar {{
+            display: flex !important;
+            justify-content: center !important;
+        }}
+
         .st-key-btn_pesquisar_chamado .stButton > button,
         .st-key-btn_voltar_menu_acompanhar .stButton > button {{
             background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
-            max-width: 220px !important;
+            width: 220px !important;
+            max-width: 92% !important;
             padding: 8px 14px !important;
+        }}
+
+        .st-key-btn_pesquisar_chamado .stButton > button p,
+        .st-key-btn_voltar_menu_acompanhar .stButton > button p {{
+            white-space: nowrap !important;
         }}
 
         /* Espaço bom entre "Pesquisar" e "Voltar ao Menu", agora empilhados
@@ -1141,18 +1168,48 @@ st.markdown(
             max-width: 380px !important;
         }}
 
+        /* Campos de "Detalhes do Chamado" (E-mail, ferramenta, severidade,
+           assunto, descrição): sem largura própria, ficavam esticados quase
+           de ponta a ponta da tela depois que o robô (que antes limitava esse
+           espaço) foi removido. Uma largura só no container que agrupa todos
+           eles é suficiente — cada campo já ocupa 100% do que sobrar dentro
+           dele — e o align-items:center do conteudo_publico centraliza esse
+           bloco inteiro, igual já fazia com os campos da Identificação Inicial. */
+        .st-key-etapa2_campos {{
+            width: 100% !important;
+            max-width: 460px !important;
+        }}
+
+        /* Campo "Opções de melhoria / Comentários" (etapa Avaliar atendimento):
+           mesmo ajuste de largura */
+        .st-key-textarea_comentario_avaliacao {{
+            width: 100% !important;
+            max-width: 460px !important;
+        }}
+
+        /* "Buscar Chamado" / "Voltar ao Menu" (Avaliar atendimento): mesma
+           centralização dos botões das outras etapas — cada um é um
+           st.button() solto, então centraliza direto no .st-key-btn_xxx */
+        .st-key-btn_buscar_chamado_avaliar,
+        .st-key-btn_voltar_menu_avaliar {{
+            display: flex !important;
+            justify-content: center !important;
+        }}
+
         .st-key-btn_buscar_chamado_avaliar .stButton > button,
         .st-key-btn_voltar_menu_avaliar .stButton > button {{
             background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
-            max-width: 220px !important;
+            width: 220px !important;
+            max-width: 92% !important;
             padding: 8px 14px !important;
         }}
 
         .st-key-btn_buscar_chamado_avaliar .stButton > button p,
         .st-key-btn_voltar_menu_avaliar .stButton > button p {{
             font-size: 14px !important;
+            white-space: nowrap !important;
         }}
 
         .st-key-btn_buscar_chamado_avaliar .stButton > button:hover,
@@ -1196,17 +1253,25 @@ st.markdown(
         }}
 
 
-        /* "Enviar Avaliação" no mesmo tom verde da marca dos outros botões */
+        /* "Enviar Avaliação": mesmo tom verde da marca e centralizado como os
+           outros botões soltos (sem container próprio) */
+        .st-key-btn_enviar_avaliacao {{
+            display: flex !important;
+            justify-content: center !important;
+        }}
+
         .st-key-btn_enviar_avaliacao .stButton > button {{
             background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
-            max-width: 220px !important;
+            width: 220px !important;
+            max-width: 92% !important;
             padding: 8px 14px !important;
         }}
 
         .st-key-btn_enviar_avaliacao .stButton > button p {{
             font-size: 14px !important;
+            white-space: nowrap !important;
         }}
 
         .st-key-btn_enviar_avaliacao .stButton > button:hover {{
@@ -1228,17 +1293,33 @@ st.markdown(
         }}
 
         /* Botões "Enviar Chamado" / "Voltar Etapa": cor verde da marca #1D5902,
-           igual aos outros botões de avançar/voltar do fluxo */
+           centralizados (mesma técnica de flex column + align-items:center
+           da Identificação Inicial, já que aqui os dois botões dividem um
+           container próprio: st.container(key="etapa2_botoes")) */
+        .st-key-etapa2_botoes {{
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+        }}
+
+        .st-key-etapa2_botoes .stButton {{
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }}
+
         .st-key-etapa2_botoes .stButton > button {{
             background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
-            max-width: 220px !important;
+            width: 220px !important;
+            max-width: 92% !important;
             padding: 8px 14px !important;
         }}
 
         .st-key-etapa2_botoes .stButton > button p {{
             font-size: 14px !important;
+            white-space: nowrap !important;
         }}
 
         .st-key-etapa2_botoes .stButton > button:hover {{
@@ -2128,7 +2209,7 @@ else:
 
             elif st.session_state["etapa_abertura"] == 2:
                 st.markdown(
-                    '<div class="fala-titulo-sem-balao">📝 Detalhes do Chamado:</div>',
+                    '<div class="fala-titulo-sem-balao titulo-identificacao">📝 Detalhes do Chamado:</div>',
                     unsafe_allow_html=True,
                 )
 

@@ -993,12 +993,9 @@ st.markdown(
                 flex-direction: column !important;
                 align-items: center !important;
             }}
-            .st-key-menu_home_botoes .stButton {{
-                width: 96% !important;
-            }}
             .st-key-menu_home_botoes .stButton > button {{
-                width: 100% !important;
-                max-width: 420px !important;
+                width: 260px !important;
+                max-width: 92% !important;
                 padding-left: 10px !important;
                 padding-right: 10px !important;
             }}

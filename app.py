@@ -680,11 +680,20 @@ st.markdown(
             border: none !important;
             border-color: transparent !important;
             border-radius: 8px !important;
-            padding: 8px 12px !important;
-            min-height: 36px !important;
+            padding: 0 14px !important;
+            height: 38px !important;
+            min-height: 38px !important;
+            max-height: 38px !important;
+            box-sizing: border-box !important;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
             text-align: center !important;
+            display: flex !important;
+            align-items: center !important;
             justify-content: center !important;
+        }}
+
+        .st-key-btn_entrar_login .stButton > button p {{
+            font-size: 14px !important;
         }}
 
         .st-key-btn_entrar_login .stButton > button:hover,

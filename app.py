@@ -1154,10 +1154,16 @@ st.markdown(
             white-space: nowrap !important;
         }}
 
-        /* Espaço bom entre "Pesquisar" e "Voltar ao Menu", agora empilhados
-           um debaixo do outro (no PC e no celular) */
+        /* Só nessa tela (Consulte seu chamado): mais respiro entre o campo de
+           busca e o "Pesquisar" (empurrando ele um pouco pra baixo) e, com
+           isso, menos espaço entre "Pesquisar" e "Voltar ao Menu" — os dois
+           botões ficam mais próximos um do outro */
+        .st-key-btn_pesquisar_chamado {{
+            margin-top: 20px !important;
+        }}
+
         .st-key-btn_voltar_menu_acompanhar {{
-            margin-top: 16px !important;
+            margin-top: 8px !important;
         }}
 
 

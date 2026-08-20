@@ -787,9 +787,10 @@ st.markdown(
             text-shadow: 0px 4px 12px rgba(0, 0, 0, 0.7);
         }}
 
-        /* Título do Painel de Controle (Central de Chamados): ocupa o lugar
-           onde ficava "HelpDesk" no topo dessa tela — centralizado, com fonte
-           um pouco menor no celular (o texto é bem mais longo que "HelpDesk"). */
+        /* Título de cada tela do admin (Painel de Controle, Empresas,
+           Ferramentas e Administradores cadastrados): ocupa o lugar onde
+           ficava "HelpDesk" no topo — centralizado, com fonte um pouco menor
+           no celular (os textos são mais longos que "HelpDesk"). */
         .titulo-painel-chamados {{
             text-align: center;
             font-family: 'Inter', sans-serif !important;
@@ -1810,18 +1811,15 @@ with st.sidebar:
 # INTERFACE PRINCIPAL
 # ---------------------------------------------------------
 # Na tela inicial pública (não logado), o título "HelpDesk" dá lugar à logo
-# grande + frase de boas-vindas. Nas demais telas (admin ou outras etapas do
-# fluxo público) o título de sempre continua igual — exceto no Painel de
-# Controle (Central de Chamados), onde o próprio título do painel toma o
-# lugar do "HelpDesk" (ver painel_admin()), pra não ficar duplicado.
+# grande + frase de boas-vindas. No fluxo público das outras etapas, o título
+# de sempre continua igual. Já logado (qualquer uma das 4 telas do admin —
+# Painel de Controle, Empresas, Ferramentas ou Administradores cadastrados),
+# o "HelpDesk" some e o próprio título de cada tela toma esse lugar no topo
+# (ver painel_admin() / painel_cadastros() / painel_usuarios_admin()), pra
+# não ficar duplicado.
 _mostrar_boas_vindas_logo = (
     not st.session_state["usuario_logado"]
     and st.session_state["opcao_menu"] == "inicio"
-)
-
-_eh_painel_chamados = (
-    st.session_state["usuario_logado"]
-    and st.session_state["aba_admin"] not in ("empresa", "ferramenta", "usuarios")
 )
 
 if _mostrar_boas_vindas_logo:
@@ -1832,7 +1830,7 @@ if _mostrar_boas_vindas_logo:
         f'</div>',
         unsafe_allow_html=True,
     )
-elif not _eh_painel_chamados:
+elif not st.session_state["usuario_logado"]:
     st.markdown(
         '<div class="titulo-topo">HelpDesk</div>',
         unsafe_allow_html=True,
@@ -1936,11 +1934,17 @@ def painel_cadastros(tipo):
     Mostra a lista de itens cadastrados com nome, usuário que cadastrou e data.
     """
     if tipo == "empresa":
-        st.markdown("## 🏢 Empresas Cadastradas")
+        st.markdown(
+            '<div class="titulo-painel-chamados">🏢 Empresas Cadastradas</div>',
+            unsafe_allow_html=True,
+        )
         itens = listar_empresas_detalhado()
         func_remover = remover_empresa
     else:
-        st.markdown("## 🛠️ Ferramentas Cadastradas")
+        st.markdown(
+            '<div class="titulo-painel-chamados">🛠️ Ferramentas Cadastradas</div>',
+            unsafe_allow_html=True,
+        )
         itens = listar_ferramentas_detalhado()
         func_remover = remover_ferramenta
 
@@ -1981,7 +1985,10 @@ def painel_cadastros(tipo):
 # ------------------ VISÃO ADMIN: LISTA DE ADMINISTRADORES CADASTRADOS ------------------
 @st.fragment
 def painel_usuarios_admin():
-    st.markdown("## 👤 Administradores Cadastrados")
+    st.markdown(
+        '<div class="titulo-painel-chamados">👤 Administradores Cadastrados</div>',
+        unsafe_allow_html=True,
+    )
 
     itens = listar_usuarios_admin_detalhado()
 

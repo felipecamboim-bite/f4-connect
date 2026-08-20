@@ -1474,6 +1474,35 @@ st.markdown(
             overflow-x: auto;
         }}
 
+        /* No celular/tablet, mesma ideia do Painel de Controle do admin: em vez
+           de espremer as 9 colunas ou empilhar em cards, a tabela toda encolhe
+           (zoom) mantendo a grade igual à do computador — dá pra usar o zoom
+           de pinça do celular pra ler de perto.
+           Só o zoom sozinho não bastava aqui: como essa tabela é HTML puro
+           (table-layout: fixed, largura 100%), o navegador ainda calculava a
+           largura de cada coluna em cima da tela estreita do celular ANTES de
+           encolher — daí cada palavra quebrava letra por letra. No celular,
+           a tabela passa a ter largura livre (baseada no conteúdo, como no
+           computador) e as células não quebram no meio da palavra; o zoom
+           encolhe esse resultado "largo" inteiro, do mesmo jeito que fez com
+           a grade do Painel de Controle. */
+        @media (max-width: 1000px) {{
+            .tabela-consulta-wrap {{
+                zoom: 0.4;
+                overflow-x: auto !important;
+            }}
+            .tabela-consulta {{
+                table-layout: auto !important;
+                width: max-content !important;
+            }}
+            .tabela-consulta th,
+            .tabela-consulta td {{
+                white-space: nowrap !important;
+                word-wrap: normal !important;
+                overflow-wrap: normal !important;
+            }}
+        }}
+
         .tabela-consulta {{
             width: 100%;
             border-collapse: collapse;

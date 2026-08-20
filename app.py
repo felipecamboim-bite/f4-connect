@@ -1193,6 +1193,25 @@ st.markdown(
             margin-right: auto !important;
         }}
 
+        /* Avisos (st.warning, ex: "Selecione a empresa...") nas telas públicas:
+           vinham na largura toda da tela e com o texto branco (herdado do tema
+           escuro padrão do app), invisível no fundo amarelo claro do aviso.
+           Aqui: caixa mais estreita e centralizada (mesmo padrão dos campos) e
+           texto numa cor escura, legível em cima do amarelo. */
+        .st-key-conteudo_publico .stAlert {{
+            max-width: 460px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding: 10px 14px !important;
+        }}
+
+        .st-key-conteudo_publico .stAlert p,
+        .st-key-conteudo_publico .stAlert div,
+        .st-key-conteudo_publico [data-testid="stAlertContentWarning"] {{
+            color: #664d03 !important;
+            font-size: 14px !important;
+        }}
+
         /* "Buscar Chamado" / "Voltar ao Menu" (Avaliar atendimento): mesma
            centralização dos botões das outras etapas — cada um é um
            st.button() solto, então centraliza direto no .st-key-btn_xxx */
@@ -1337,6 +1356,8 @@ st.markdown(
         .card-sucesso {{
             width: 100% !important;
             max-width: 460px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
             background-color: #72A703 !important;
             border: none !important;
             border-radius: 14px;

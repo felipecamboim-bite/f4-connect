@@ -858,10 +858,16 @@ st.markdown(
         }}
 
         /* Saudação da tela inicial ("Olá! Como posso te ajudar hoje?") sem balão —
-           só o texto, sem fundo/borda/sombra (variante do .fala-titulo-card) */
+           só o texto, sem fundo/borda/sombra (variante do .fala-titulo-card).
+           margin: 0 auto centraliza a caixa (que é mais estreita que a tela,
+           por causa do max-width) na largura toda da tela — sem essa regra ela
+           ficava grudada na esquerda, já que o antigo robô ao lado não existe
+           mais pra "empurrar" o conjunto visualmente pro centro. */
         .fala-titulo-sem-balao {{
             width: 100% !important;
             max-width: 460px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
             font-size: clamp(17px, 3.2vw, 22px);
             font-weight: 800;
             color: #3B3D35 !important;
@@ -870,11 +876,13 @@ st.markdown(
             margin-bottom: 22px;
         }}
 
-        /* "Identificação Inicial:" deslocado um pouco para a esquerda,
-           só esse título (o resto continua centralizado como estava) */
+        /* "Identificação Inicial:" (e títulos parecidos) deslocados um pouco
+           pra esquerda DENTRO da própria caixa já centralizada — por isso o
+           deslocamento agora é via transform (que não briga com o margin:auto
+           que centraliza a caixa acima), em vez de margin-left negativo. */
         .titulo-identificacao {{
             text-align: left !important;
-            margin-left: -12px !important;
+            transform: translateX(-12px) !important;
         }}
 
         /* CARD DE TÍTULO/FALA EXPANDIDO */
@@ -994,7 +1002,15 @@ st.markdown(
         }}
 
         /* Botões "Avançar" / "Voltar ao Menu" da 1ª etapa de abertura de chamado:
-           mesmo tratamento (sem azul), cor verde da marca #1D5902 */
+           centralizados (mesma técnica de flex column + align-items:center
+           que já funcionava certinho pros 3 botões da tela inicial), cor
+           verde da marca #1D5902 */
+        .st-key-etapa1_botoes {{
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+        }}
+
         .st-key-etapa1_botoes .stButton > button {{
             background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -1052,6 +1068,24 @@ st.markdown(
         .st-key-input_nome_solicitante,
         .st-key-input_nome_solicitante input {{
             max-width: 380px !important;
+        }}
+
+        /* "Qual empresa você faz parte?" continuava com o fundo escuro antigo
+           mesmo depois da regra genérica acima (o componente de select usa uma
+           caixa interna própria pra pintar o fundo/borda) — aplicando direto
+           nesse campo específico, na caixa de fora E na caixa de dentro, pra
+           garantir que pega o elemento certo. */
+        .st-key-select_empresa_etapa1 div[data-baseweb="select"],
+        .st-key-select_empresa_etapa1 div[data-baseweb="select"] > div,
+        .st-key-select_empresa_etapa1 div[data-baseweb="select"] > div > div {{
+            background-color: #F1F1EA !important;
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        }}
+
+        .st-key-select_empresa_etapa1 div[data-baseweb="select"] * {{
+            color: #24261F !important;
+            fill: #24261F !important;
         }}
 
         /* Campo "Digite o Protocolo ou E-mail" (etapa Acompanhar): mais estreito

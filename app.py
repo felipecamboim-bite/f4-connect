@@ -848,14 +848,20 @@ st.markdown(
             [data-testid="stColumn"]:has(.robo-box) {{
                 display: none !important;
             }}
-            /* A coluna do robô tinha uma largura fixa (proporção do
-               st.columns); escondê-la sozinha deixava a coluna dos botões
-               "presa" na largura antiga, empurrada pro canto esquerdo com um
-               vão vazio à direita. Aqui ela passa a ocupar 100% da linha. */
-            [data-testid="stHorizontalBlock"]:has(.robo-box) [data-testid="stColumn"]:not(:has(.robo-box)) {{
+            /* A linha inteira (flex/grid de 2 colunas) ainda reservava o
+               espaço da coluna do robô mesmo escondida, sobrando uma folga
+               desigual dos lados. Em vez de tentar fazer a coluna que sobrou
+               "esticar", a linha inteira vira um bloco comum — sem grid/flex,
+               sem cálculo de proporção — e a coluna dos botões ocupa 100%
+               por comportamento padrão de bloco. */
+            [data-testid="stHorizontalBlock"]:has(.robo-box) {{
+                display: block !important;
+            }}
+            [data-testid="stHorizontalBlock"]:has(.robo-box) [data-testid="stColumn"] {{
+                display: block !important;
                 width: 100% !important;
-                flex: 1 1 100% !important;
                 max-width: 100% !important;
+                flex: none !important;
             }}
         }}
 

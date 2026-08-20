@@ -979,20 +979,26 @@ st.markdown(
         }}
 
         @media (max-width: 768px) {{
-            /* margin:auto não estava centralizando de verdade (a coluna
-               herdada do layout com o robô deixa uma folga desigual dos
-               lados). Troca pra text-align:center no container (bem mais
-               confiável) + botão como inline-block, em vez de depender da
-               margem automática de um bloco. */
+            /* "vw" tava sendo calculado em cima de uma largura de página
+               maior que a tela visível (provavelmente sobra da sidebar
+               recolhida), por isso qualquer coisa em vw saía puxada pra
+               esquerda. Voltando pro método que já tinha funcionado certinho
+               pra centralizar (flex column + align-items:center no bloco) —
+               e, pra deixar os botões largos (quase toda a largura da tela,
+               como no desenho que você mandou), a largura agora é uma % do
+               próprio bloco container (não da página/vw), então não sofre
+               desse desvio. */
+            .st-key-menu_home_botoes {{
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+            }}
             .st-key-menu_home_botoes .stButton {{
-                text-align: center !important;
-                width: 100% !important;
-                margin-left: 0 !important;
+                width: 92% !important;
             }}
             .st-key-menu_home_botoes .stButton > button {{
-                width: 85vw !important;
+                width: 100% !important;
                 max-width: 380px !important;
-                display: inline-block !important;
             }}
         }}
 

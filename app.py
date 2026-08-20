@@ -1171,20 +1171,26 @@ st.markdown(
         /* Campos de "Detalhes do Chamado" (E-mail, ferramenta, severidade,
            assunto, descrição): sem largura própria, ficavam esticados quase
            de ponta a ponta da tela depois que o robô (que antes limitava esse
-           espaço) foi removido. Uma largura só no container que agrupa todos
-           eles é suficiente — cada campo já ocupa 100% do que sobrar dentro
-           dele — e o align-items:center do conteudo_publico centraliza esse
-           bloco inteiro, igual já fazia com os campos da Identificação Inicial. */
+           espaço) foi removido. A largura fica só no container que agrupa
+           todos eles (cada campo ocupa 100% do que sobrar dentro dele) — mas,
+           diferente dos campos soltos da Identificação Inicial, esse container
+           (por ser um st.container(), não um widget direto) não centraliza
+           sozinho com o align-items:center lá de cima; por isso o
+           margin: auto aqui, que centraliza mesmo dentro de um item flex. */
         .st-key-etapa2_campos {{
             width: 100% !important;
             max-width: 460px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
         }}
 
         /* Campo "Opções de melhoria / Comentários" (etapa Avaliar atendimento):
-           mesmo ajuste de largura */
+           mesmo ajuste de largura + centralização */
         .st-key-textarea_comentario_avaliacao {{
             width: 100% !important;
             max-width: 460px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
         }}
 
         /* "Buscar Chamado" / "Voltar ao Menu" (Avaliar atendimento): mesma

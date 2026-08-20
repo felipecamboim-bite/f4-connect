@@ -1055,16 +1055,49 @@ st.markdown(
            seu chamado, Avaliar atendimento): sem borda, fundo num branco levemente
            diferente do branco da tela (pra não "sumir") e com sombra — substitui
            os fundos escuros que essas telas usavam antes (herdados do tema escuro
-           do admin, que não combinavam com o fundo branco público). Escopado no
+           do admin, que não combinavam com o fundo branco público).
+           Vale pra caixa de fora inteira (não só o <input>/<select> em si) —
+           usando o mesmo padrão de seletor "div[data-baseweb]" (sem valor fixo)
+           e "stTextInputRootElement" que já funcionava certinho nos campos de
+           usuário/senha da sidebar, porque a cor/borda desses componentes fica
+           numa caixinha própria por dentro, não no elemento nativo. Escopado no
            .st-key-conteudo_publico pra não afetar os campos do painel admin, que
            continuam com o tema escuro original. */
         .st-key-conteudo_publico .stTextInput input,
+        .st-key-conteudo_publico .stTextInput div[data-baseweb],
+        .st-key-conteudo_publico div[data-testid="stTextInputRootElement"],
         .st-key-conteudo_publico .stTextArea textarea,
-        .st-key-conteudo_publico .stSelectbox div[data-baseweb="select"] {{
+        .st-key-conteudo_publico .stTextArea div[data-baseweb],
+        .st-key-conteudo_publico .stSelectbox div[data-baseweb] {{
             background-color: #F1F1EA !important;
             color: #24261F !important;
             border: none !important;
+            border-color: transparent !important;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            outline: none !important;
+        }}
+
+        /* Texto/ícone de dentro do selectbox (ex: "Selecione...", a setinha) —
+           herdavam branco da regra escura antiga e ficavam invisíveis no fundo
+           claro novo */
+        .st-key-conteudo_publico .stSelectbox div[data-baseweb] * {{
+            color: #24261F !important;
+            fill: #24261F !important;
+        }}
+
+        /* Mantém a mesma aparência (sem borda, com sombra) quando o campo está
+           em foco — sem isso, o navegador volta a desenhar um contorno azul
+           padrão ao clicar no campo */
+        .st-key-conteudo_publico .stTextInput input:focus,
+        .st-key-conteudo_publico .stTextInput div[data-baseweb]:focus-within,
+        .st-key-conteudo_publico div[data-testid="stTextInputRootElement"]:focus-within,
+        .st-key-conteudo_publico .stTextArea textarea:focus,
+        .st-key-conteudo_publico .stTextArea div[data-baseweb]:focus-within,
+        .st-key-conteudo_publico .stSelectbox div[data-baseweb]:focus-within {{
+            border: none !important;
+            border-color: transparent !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            outline: none !important;
         }}
 
         /* Campos "Qual empresa você faz parte?" e "Digite seu Nome e Sobrenome":
@@ -1074,24 +1107,6 @@ st.markdown(
         .st-key-input_nome_solicitante,
         .st-key-input_nome_solicitante input {{
             max-width: 380px !important;
-        }}
-
-        /* "Qual empresa você faz parte?" continuava com o fundo escuro antigo
-           mesmo depois da regra genérica acima (o componente de select usa uma
-           caixa interna própria pra pintar o fundo/borda) — aplicando direto
-           nesse campo específico, na caixa de fora E na caixa de dentro, pra
-           garantir que pega o elemento certo. */
-        .st-key-select_empresa_etapa1 div[data-baseweb="select"],
-        .st-key-select_empresa_etapa1 div[data-baseweb="select"] > div,
-        .st-key-select_empresa_etapa1 div[data-baseweb="select"] > div > div {{
-            background-color: #F1F1EA !important;
-            border: none !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-        }}
-
-        .st-key-select_empresa_etapa1 div[data-baseweb="select"] * {{
-            color: #24261F !important;
-            fill: #24261F !important;
         }}
 
         /* Campo "Digite o Protocolo ou E-mail" (etapa Acompanhar): mais estreito

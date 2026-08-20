@@ -1016,12 +1016,17 @@ st.markdown(
             background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
-            max-width: 220px !important;
+            width: 220px !important;
+            max-width: 92% !important;
             padding: 8px 14px !important;
         }}
 
+        /* "Avançar →" e "← Voltar ao Menu" do mesmo tamanho (largura fixa
+           baseada no texto mais longo, "← Voltar ao Menu", igual foi feito
+           pros 3 botões da tela inicial) */
         .st-key-etapa1_botoes .stButton > button p {{
             font-size: 14px !important;
+            white-space: nowrap !important;
         }}
 
         .st-key-etapa1_botoes .stButton > button:hover {{

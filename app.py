@@ -465,6 +465,21 @@ _cor_fundo_app = "#FFFFFF" if _tela_publica else "#3B3D35"
 _cor_titulo_topo = "#3B3D35" if _tela_publica else "#FFFFFF"
 _cor_label_campo = "#3B3D35" if _tela_publica else "#FFFFFF"
 
+# Pedido do usuário: remover o sidebar só na tela inicial pública, só na
+# visualização de computador (celular continua igual).
+_ocultar_sidebar_home = _tela_publica and st.session_state["opcao_menu"] == "inicio"
+_css_ocultar_sidebar_home = (
+    """
+    @media (min-width: 769px) {
+        section[data-testid="stSidebar"] {
+            display: none !important;
+        }
+    }
+    """
+    if _ocultar_sidebar_home
+    else ""
+)
+
 st.markdown(
     f"""
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -1894,6 +1909,8 @@ st.markdown(
                 overflow-x: auto !important;
             }}
         }}
+
+        {_css_ocultar_sidebar_home}
     </style>
     """,
     unsafe_allow_html=True,
@@ -1903,13 +1920,7 @@ st.markdown(
 # SIDEBAR (LOGIN ADMIN)
 # ---------------------------------------------------------
 with st.sidebar:
-    st.markdown(
-        f'<div class="logo-sidebar-box">'
-        f'<img class="logo-mobile" src="{sidebar_src}">'
-        f'<img class="logo-desktop" src="{sidebar_desktop_src}">'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
+    # A logo do sidebar foi removida (pedido do usuário).
     # O texto "Área Administrativa" foi removido (pedido do usuário) — os
     # campos de Usuário/Senha/Entrar não ficam mais aqui na sidebar — foram
     # movidos pro canto superior direito da tela principal (pedido do

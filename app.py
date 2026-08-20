@@ -837,11 +837,16 @@ st.markdown(
             }}
         }}
 
-        /* Colunas empilham abaixo de 640px (comportamento nativo do Streamlit).
-           Nessa faixa o robô fica centralizado em vez de colado à direita. */
-        @media (max-width: 640px) {{
+        /* No celular/tablet o robô ficava sobreposto aos botões (colunas
+           empilhando e o robô "flutuando" por cima do menu). Pra resolver,
+           o robô/gif some nessa faixa e aparece só no computador — a coluna
+           inteira dele é removida do layout pra não sobrar espaço vazio. */
+        @media (max-width: 768px) {{
             .robo-box {{
-                justify-content: center !important;
+                display: none !important;
+            }}
+            [data-testid="stColumn"]:has(.robo-box) {{
+                display: none !important;
             }}
         }}
 
@@ -930,20 +935,39 @@ st.markdown(
             box-shadow: 0 10px 25px rgba(0, 212, 255, 0.35);
         }}
 
-        /* Os 3 botões de menu da tela inicial (Abrir/Acompanhar/Avaliar): teste
-           com fundo verde da marca e texto branco. Largura fixa (baseada no
-           texto mais longo, "Acompanhar meu chamado") pra os três ficarem do
-           mesmo tamanho, em vez de cada um se ajustar ao próprio texto. */
+        /* Os 3 botões de menu da tela inicial (Abrir/Acompanhar/Avaliar):
+           fundo verde da marca e texto branco. Vale pra computador e celular,
+           já que essa regra não é restrita por media query. */
         .st-key-menu_home_botoes .stButton > button {{
             background-color: #1D5902 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
-            width: 320px !important;
-            max-width: 100% !important;
         }}
 
         .st-key-menu_home_botoes .stButton > button p {{
             color: #FFFFFF !important;
+        }}
+
+        /* No computador, largura fixa (baseada no texto mais longo,
+           "Acompanhar meu chamado", numa linha só) pra os três ficarem do
+           mesmo tamanho. No celular, os três ocupam a largura da coluna
+           (mesmo padrão dos outros botões do app), com quebra de linha
+           liberada caso a tela seja bem estreita. */
+        @media (min-width: 769px) {{
+            .st-key-menu_home_botoes .stButton > button {{
+                width: 380px !important;
+                max-width: 100% !important;
+            }}
+            .st-key-menu_home_botoes .stButton > button p {{
+                white-space: nowrap !important;
+            }}
+        }}
+
+        @media (max-width: 768px) {{
+            .st-key-menu_home_botoes .stButton > button {{
+                width: 100% !important;
+                max-width: 460px !important;
+            }}
         }}
 
         .st-key-menu_home_botoes .stButton > button:hover {{

@@ -691,6 +691,13 @@ st.markdown(
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+            /* Medido via DevTools: mesmo com altura idêntica ao campo de texto
+               (38px), o botão renderiza ~8px mais alto (top:2px vs top:10px do
+               campo) porque o align-items:center da coluna centraliza cada
+               wrapper com base numa caixa diferente. Corrige com um pequeno
+               deslocamento visual (position:relative), sem afetar o layout. */
+            position: relative !important;
+            top: 8px !important;
         }}
 
         /* O <p> que o Streamlit coloca dentro do botão vem com margem própria

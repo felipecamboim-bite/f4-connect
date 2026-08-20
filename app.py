@@ -825,6 +825,10 @@ st.markdown(
             display: flex !important;
             align-items: center !important;
             justify-content: flex-end !important;
+            /* Pedido do usuário: deixar o texto "flutuando" um pouco mais pra
+               cima em relação ao centro do campo ao lado */
+            position: relative !important;
+            top: -4px !important;
         }}
 
         /* Campos de Usuário/Senha: fundo branco (diferente do fundo azul-escuro

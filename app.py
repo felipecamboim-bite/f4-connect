@@ -876,13 +876,14 @@ st.markdown(
             margin-bottom: 22px;
         }}
 
-        /* "Identificação Inicial:" (e títulos parecidos) deslocados um pouco
-           pra esquerda DENTRO da própria caixa já centralizada — por isso o
-           deslocamento agora é via transform (que não briga com o margin:auto
-           que centraliza a caixa acima), em vez de margin-left negativo. */
+        /* "Identificação Inicial:" (e títulos parecidos): a caixa agora usa a
+           mesma largura (380px) e o mesmo centro dos campos/botões logo
+           abaixo, pra a borda esquerda do texto ficar alinhada com a borda
+           esquerda deles — em vez do deslocamento fixo de antes, que
+           desalinhava o título do resto do formulário. */
         .titulo-identificacao {{
             text-align: left !important;
-            transform: translateX(-12px) !important;
+            max-width: 380px !important;
         }}
 
         /* CARD DE TÍTULO/FALA EXPANDIDO */

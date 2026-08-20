@@ -994,11 +994,17 @@ st.markdown(
                 align-items: center !important;
             }}
             .st-key-menu_home_botoes .stButton {{
-                width: 92% !important;
+                width: 96% !important;
             }}
             .st-key-menu_home_botoes .stButton > button {{
                 width: 100% !important;
-                max-width: 380px !important;
+                max-width: 420px !important;
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }}
+            .st-key-menu_home_botoes .stButton > button p {{
+                white-space: nowrap !important;
+                font-size: 15px !important;
             }}
         }}
 

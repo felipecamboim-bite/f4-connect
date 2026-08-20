@@ -787,6 +787,25 @@ st.markdown(
             text-shadow: 0px 4px 12px rgba(0, 0, 0, 0.7);
         }}
 
+        /* Título do Painel de Controle (Central de Chamados): ocupa o lugar
+           onde ficava "HelpDesk" no topo dessa tela — centralizado, com fonte
+           um pouco menor no celular (o texto é bem mais longo que "HelpDesk"). */
+        .titulo-painel-chamados {{
+            text-align: center;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 900;
+            color: #FFFFFF !important;
+            font-size: clamp(20px, 3.4vw, 32px);
+            margin-bottom: clamp(16px, 3vw, 30px);
+            text-shadow: 0px 4px 12px rgba(0, 0, 0, 0.7);
+        }}
+
+        @media (max-width: 768px) {{
+            .titulo-painel-chamados {{
+                font-size: 17px;
+            }}
+        }}
+
         /* Cabeçalho da tela inicial pública: logo grande + frase de boas-vindas,
            no lugar do título "HelpDesk" — só aparece na tela inicial de quem
            não está logado (ver uso condicional mais abaixo no Python) */
@@ -1792,10 +1811,17 @@ with st.sidebar:
 # ---------------------------------------------------------
 # Na tela inicial pública (não logado), o título "HelpDesk" dá lugar à logo
 # grande + frase de boas-vindas. Nas demais telas (admin ou outras etapas do
-# fluxo público) o título de sempre continua igual.
+# fluxo público) o título de sempre continua igual — exceto no Painel de
+# Controle (Central de Chamados), onde o próprio título do painel toma o
+# lugar do "HelpDesk" (ver painel_admin()), pra não ficar duplicado.
 _mostrar_boas_vindas_logo = (
     not st.session_state["usuario_logado"]
     and st.session_state["opcao_menu"] == "inicio"
+)
+
+_eh_painel_chamados = (
+    st.session_state["usuario_logado"]
+    and st.session_state["aba_admin"] not in ("empresa", "ferramenta", "usuarios")
 )
 
 if _mostrar_boas_vindas_logo:
@@ -1806,7 +1832,7 @@ if _mostrar_boas_vindas_logo:
         f'</div>',
         unsafe_allow_html=True,
     )
-else:
+elif not _eh_painel_chamados:
     st.markdown(
         '<div class="titulo-topo">HelpDesk</div>',
         unsafe_allow_html=True,
@@ -1815,7 +1841,13 @@ else:
 # ------------------ VISÃO ADMIN (TABELA COM CARDS) ------------------
 @st.fragment
 def painel_admin():
-    st.markdown("## 📊 Painel de Controle - Central de Chamados")
+    # Título centralizado, ocupando o lugar onde ficava "HelpDesk" no topo
+    # (que fica escondido só nessa tela — ver _eh_painel_chamados) pra não
+    # duplicar título.
+    st.markdown(
+        '<div class="titulo-painel-chamados">📊 Painel de Controle - Central de Chamados</div>',
+        unsafe_allow_html=True,
+    )
 
     chamados = listar_chamados()
     if not chamados:

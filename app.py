@@ -391,9 +391,6 @@ def atualizar_status_chamado(protocolo, novo_status):
 # ---------------------------------------------------------
 # IMAGENS & SESSÃO
 # ---------------------------------------------------------
-# As imagens do robô e do fundo animado continuam vindo de uma URL pública
-# (GitHub Releases), como já funcionava antes.
-robo_src = "https://github.com/felipecamboim-bite/f4-connect/releases/download/v1.0/roboanimado__semfundo.gif"
 # OBS: já testamos duas vezes usar a arte de capa (verde sólida com a logo num
 # canto) como imagem de fundo em tela cheia — o resultado é sempre a tela
 # "inundada" de verde, porque a arte em si é só um retângulo de cor sólida,
@@ -411,10 +408,9 @@ LOGO_SIDEBAR_B64 = (
 )
 sidebar_src = f"data:image/png;base64,{LOGO_SIDEBAR_B64}"
 
-# Logo nova (ícone + "F4 Helpdesk" + tagline), hospedada num Release do GitHub
-# igual o GIF do robô — exibida só na sidebar do computador (ver CSS de
-# .logo-sidebar-box .logo-desktop). No celular/tablet a marca antiga acima
-# continua sendo usada, sem alteração.
+# Logo nova (ícone + "F4 Helpdesk" + tagline), hospedada num Release do GitHub —
+# exibida só na sidebar do computador (ver CSS de .logo-sidebar-box .logo-desktop).
+# No celular/tablet a marca antiga acima continua sendo usada, sem alteração.
 sidebar_desktop_src = "https://github.com/user-attachments/assets/5e860b6c-ed61-4c29-ba9e-d49ccc8554cc"
 
 # Mesma logo, com o texto "F4 HELPDESK / CONECTANDO AS PONTAS" recolorido de
@@ -833,58 +829,6 @@ st.markdown(
             margin-top: 14px;
         }}
 
-        /* ROBÔ ENCOSTADO NO LADO DIREITO DA SUA COLUNA (MAIS PRÓXIMO DOS TEXTOS) */
-        .robo-box {{
-            display: flex !important;
-            justify-content: flex-end !important;
-            align-items: center !important;
-            width: 100% !important;
-            margin-top: 10px;
-        }}
-
-        .robo-box img {{
-            width: 100% !important;
-            max-width: 580px !important;
-            height: auto !important;
-            filter: drop-shadow(0px 12px 22px rgba(0,0,0,0.5));
-        }}
-
-        /* O deslocamento extra só faz sentido em telas largas, lado a lado com o menu.
-           Em telas estreitas o Streamlit empilha as colunas e isso "jogaria" o robô pra fora. */
-        @media (min-width: 1000px) {{
-            .robo-box img {{
-                transform: translateX(120px) !important;
-            }}
-        }}
-
-        /* No celular/tablet o robô ficava sobreposto aos botões (colunas
-           empilhando e o robô "flutuando" por cima do menu). Pra resolver,
-           o robô/gif some nessa faixa e aparece só no computador — a coluna
-           inteira dele é removida do layout pra não sobrar espaço vazio. */
-        @media (max-width: 768px) {{
-            .robo-box {{
-                display: none !important;
-            }}
-            [data-testid="stColumn"]:has(.robo-box) {{
-                display: none !important;
-            }}
-            /* A linha inteira (flex/grid de 2 colunas) ainda reservava o
-               espaço da coluna do robô mesmo escondida, sobrando uma folga
-               desigual dos lados. Em vez de tentar fazer a coluna que sobrou
-               "esticar", a linha inteira vira um bloco comum — sem grid/flex,
-               sem cálculo de proporção — e a coluna dos botões ocupa 100%
-               por comportamento padrão de bloco. */
-            [data-testid="stHorizontalBlock"]:has(.robo-box) {{
-                display: block !important;
-            }}
-            [data-testid="stHorizontalBlock"]:has(.robo-box) [data-testid="stColumn"] {{
-                display: block !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                flex: none !important;
-            }}
-        }}
-
         /* ALINHAMENTO CENTRALIZADO DAS COLUNAS */
         [data-testid="stColumns"] {{
             transform: none !important;
@@ -896,9 +840,10 @@ st.markdown(
             overflow: visible !important;
         }}
 
-        /* O espaçamento extra no topo é só para empurrar o bloco robô + menu para
-           baixo — escopado para não empurrar também cada linha da tabela de chamados */
-        [data-testid="stHorizontalBlock"]:has(.robo-box) {{
+        /* Espaçamento extra no topo do bloco de conteúdo público (antes ficava
+           "colado" no robô que foi removido; sem ele, esse respiro evita que
+           o menu/formulário comece grudado no cabeçalho/logo). */
+        .st-key-conteudo_publico {{
             margin-top: 50px !important;
         }}
 
@@ -1124,6 +1069,12 @@ st.markdown(
             padding: 8px 14px !important;
         }}
 
+        /* Espaço bom entre "Pesquisar" e "Voltar ao Menu", agora empilhados
+           um debaixo do outro (no PC e no celular) */
+        .st-key-btn_voltar_menu_acompanhar {{
+            margin-top: 16px !important;
+        }}
+
 
         /* Campo "Número do Protocolo Concluído" e botões "Buscar Chamado" /
            "Voltar ao Menu" da etapa Avaliar atendimento: mesmo visual da
@@ -1346,7 +1297,7 @@ st.markdown(
         }}
 
         /* "Resultado da Consulta" (Acompanhar meu chamado): título com um
-           respiro maior em relação ao robô/menu logo acima */
+           respiro maior em relação ao menu/formulário logo acima */
         .titulo-resultado-consulta {{
             color: #3B3D35 !important;
             font-family: 'Inter', sans-serif !important;
@@ -2046,13 +1997,12 @@ if st.session_state["usuario_logado"]:
 
 # ------------------ VISÃO PÚBLICA (SOLICITANTE) ------------------
 else:
-    col_robo, col_balao = st.columns([0.85, 1.6])
-    with col_robo:
-        st.markdown(
-            f'<div class="robo-box"><img src="{robo_src}"></div>',
-            unsafe_allow_html=True,
-        )
-
+    # O robô/gif foi removido definitivamente (pedido do usuário) — a coluna
+    # única "conteudo_publico" ocupa a largura toda no lugar do antigo par
+    # col_robo/col_balao. Mantive o container(key=...) (em vez de um bloco
+    # solto) só pra ter uma classe CSS (.st-key-conteudo_publico) pra aplicar
+    # o mesmo espaçamento no topo que antes vinha da regra do robô.
+    col_balao = st.container(key="conteudo_publico")
     with col_balao:
         if st.session_state["opcao_menu"] == "inicio":
             st.session_state["ultimo_protocolo"] = None
@@ -2215,52 +2165,51 @@ else:
                 key="input_busca_protocolo"
             )
 
-            # "Pesquisar" e "Voltar ao Menu" lado a lado (antes o Voltar ficava
-            # lá embaixo, depois da tabela de resultado, bem longe do Pesquisar).
+            # "Pesquisar" em cima e "Voltar ao Menu" embaixo, um debaixo do
+            # outro (empilhados, com espaço entre eles via CSS — ver
+            # .st-key-btn_voltar_menu_acompanhar). Já tentamos os dois lado a
+            # lado (st.columns(2)), mas em telas mais estreitas o "Voltar ao
+            # Menu" ficava cortado/vazando pra fora da tela.
             # O resultado da consulta (tabela) continua sendo renderizado MAIS
             # ABAIXO, fora dessa coluna estreita — veja o bloco "RESULTADO DA
-            # CONSULTA (LARGURA TOTAL)" após o fechamento das colunas
-            # col_robo/col_balao.
-            col_pesquisar, col_voltar_acompanhar = st.columns(2)
+            # CONSULTA (LARGURA TOTAL)" após o fechamento do container
+            # conteudo_publico.
+            if st.button("🔍 Pesquisar", key="btn_pesquisar_chamado"):
+                termo_limpo = termo_busca.strip()
 
-            with col_pesquisar:
-                if st.button("🔍 Pesquisar", key="btn_pesquisar_chamado"):
-                    termo_limpo = termo_busca.strip()
+                if not termo_limpo:
+                    st.warning("⚠️ Digite um número de protocolo ou e-mail para pesquisar.")
+                else:
+                    if supabase:
+                        # 1. Busca por E-MAIL (Histórico dos últimos 15 dias)
+                        if "@" in termo_limpo:
+                            data_limite = (datetime.now() - timedelta(days=15)).strftime("%Y-%m-%d")
+                            res = (
+                                supabase.table("chamados")
+                                .select("*")
+                                .ilike("email_solicitante", termo_limpo)
+                                .gte("created_at", data_limite)
+                                .order("id", desc=True)
+                                .execute()
+                            )
+                            st.session_state["resultado_busca"] = res.data
 
-                    if not termo_limpo:
-                        st.warning("⚠️ Digite um número de protocolo ou e-mail para pesquisar.")
-                    else:
-                        if supabase:
-                            # 1. Busca por E-MAIL (Histórico dos últimos 15 dias)
-                            if "@" in termo_limpo:
-                                data_limite = (datetime.now() - timedelta(days=15)).strftime("%Y-%m-%d")
-                                res = (
-                                    supabase.table("chamados")
-                                    .select("*")
-                                    .ilike("email_solicitante", termo_limpo)
-                                    .gte("created_at", data_limite)
-                                    .order("id", desc=True)
-                                    .execute()
-                                )
-                                st.session_state["resultado_busca"] = res.data
+                        # 2. Busca por PROTOCOLO EXATO (ex: F4-X8K92P ou #F4-X8K92P)
+                        else:
+                            proto_exato = termo_limpo if termo_limpo.startswith("#") else f"#{termo_limpo}"
+                            res = (
+                                supabase.table("chamados")
+                                .select("*")
+                                .eq("protocolo", proto_exato)
+                                .execute()
+                            )
+                            st.session_state["resultado_busca"] = res.data
 
-                            # 2. Busca por PROTOCOLO EXATO (ex: F4-X8K92P ou #F4-X8K92P)
-                            else:
-                                proto_exato = termo_limpo if termo_limpo.startswith("#") else f"#{termo_limpo}"
-                                res = (
-                                    supabase.table("chamados")
-                                    .select("*")
-                                    .eq("protocolo", proto_exato)
-                                    .execute()
-                                )
-                                st.session_state["resultado_busca"] = res.data
-
-            with col_voltar_acompanhar:
-                if st.button("← Voltar ao Menu", key="btn_voltar_menu_acompanhar"):
-                    st.session_state["opcao_menu"] = "inicio"
-                    if "resultado_busca" in st.session_state:
-                        del st.session_state["resultado_busca"]
-                    st.rerun()
+            if st.button("← Voltar ao Menu", key="btn_voltar_menu_acompanhar"):
+                st.session_state["opcao_menu"] = "inicio"
+                if "resultado_busca" in st.session_state:
+                    del st.session_state["resultado_busca"]
+                st.rerun()
 
         elif st.session_state["opcao_menu"] == "avaliar":
             st.markdown(
@@ -2353,8 +2302,8 @@ else:
                 st.rerun()
 
     # ------------------ RESULTADO DA CONSULTA (LARGURA TOTAL) ------------------
-    # Fica abaixo do robô/menu (fora da coluna estreita col_balao), ocupando a
-    # largura toda da tela — assim a tabela de 9 colunas não fica espremida.
+    # Fica fora do container conteudo_publico, ocupando a largura toda da
+    # tela — assim a tabela de 9 colunas não fica espremida.
     if st.session_state["opcao_menu"] == "acompanhar":
         if "resultado_busca" in st.session_state and st.session_state["resultado_busca"] is not None:
             resultados = st.session_state["resultado_busca"]

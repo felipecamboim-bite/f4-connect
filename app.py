@@ -791,6 +791,7 @@ st.markdown(
             display: flex !important;
             align-items: center !important;
             justify-content: flex-end !important;
+            transform: translateY(-6px) !important;
         }}
 
         /* Campos de Usuário/Senha: fundo branco (diferente do fundo azul-escuro

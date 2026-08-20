@@ -1526,6 +1526,54 @@ st.markdown(
                 margin: 6px 0 2px 0;
             }}
         }}
+
+        /* PAINEL ADMINISTRATIVO (Painel de Controle - Central de Chamados) no
+           celular/tablet: em vez da lista de cards empilhados (regra geral
+           acima), mostra a mesma grade de colunas do computador só que
+           "afastada" (encolhida) pra caber na tela — nem que fique miúdo, dá
+           pra dar zoom (pinça) pra ler. Só essa tela; as outras (cadastros,
+           consulta, avaliação) continuam com os cards empilhados de sempre. */
+        @media (max-width: 1000px) {{
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box),
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"]:has(.celula-protocolo) {{
+                display: flex !important;
+                flex-direction: row !important;
+                gap: 6px !important;
+            }}
+            /* Reproduz as mesmas proporções de coluna do computador
+               (Atendente 1.3, Protocolo 1.1, Solicitante 1.2, E-mail 1.6,
+               Empresa 1.1, Ferramenta 1.2, Severidade 1.1, Assunto 1.3,
+               Descrição 1.8, Status 1.5 — mesmos valores do col_widths do
+               Python), já que a regra geral de "vira card empilhado" força
+               100%/coluna única e precisa ser desfeita aqui. */
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
+                width: auto !important;
+                min-width: 0 !important;
+            }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1)  {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2)  {{ flex: 1.1 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3)  {{ flex: 1.2 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4)  {{ flex: 1.6 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ flex: 1.1 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ flex: 1.2 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ flex: 1.1 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ flex: 1.8 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ flex: 1.5 1 0px !important; }}
+
+            .st-key-painel_admin_tabela .mobile-label {{
+                display: none !important;
+            }}
+
+            /* Encolhe a tabela inteira (fica "afastada", como no computador)
+               e compensa a largura pra não sobrar vão nem cortar conteúdo —
+               dá pra usar o zoom de pinça do celular pra ler de perto. */
+            .st-key-painel_admin_tabela {{
+                transform: scale(0.5);
+                transform-origin: top left;
+                width: 200% !important;
+            }}
+        }}
     </style>
     """,
     unsafe_allow_html=True,

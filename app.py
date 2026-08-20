@@ -973,16 +973,20 @@ st.markdown(
         }}
 
         @media (max-width: 768px) {{
-            /* Largura fixa em vw (relativa à tela, não ao elemento pai) +
-               margem automática: garante os três exatamente do mesmo
-               tamanho e centralizados, sem depender de como o Streamlit
-               organiza os elementos por dentro da coluna. */
+            /* margin:auto não estava centralizando de verdade (a coluna
+               herdada do layout com o robô deixa uma folga desigual dos
+               lados). Troca pra text-align:center no container (bem mais
+               confiável) + botão como inline-block, em vez de depender da
+               margem automática de um bloco. */
+            .st-key-menu_home_botoes .stButton {{
+                text-align: center !important;
+                width: 100% !important;
+                margin-left: 0 !important;
+            }}
             .st-key-menu_home_botoes .stButton > button {{
                 width: 85vw !important;
                 max-width: 380px !important;
-                margin-left: auto !important;
-                margin-right: auto !important;
-                display: block !important;
+                display: inline-block !important;
             }}
         }}
 

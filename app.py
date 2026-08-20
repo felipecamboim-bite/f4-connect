@@ -748,6 +748,95 @@ st.markdown(
             caret-color: #0a192f !important;
         }}
 
+        /* Login (Usuário/Senha/Entrar) no canto superior direito da tela —
+           fixo, sempre visível mesmo rolando a página, numa linha só. Só no
+           computador (celular continua sem esse ajuste, conforme combinado). */
+        @media (min-width: 769px) {{
+            .st-key-login_topo_direita {{
+                position: fixed !important;
+                top: 68px !important;
+                right: 28px !important;
+                z-index: 999 !important;
+                width: auto !important;
+            }}
+
+            .st-key-login_topo_direita [data-testid="stHorizontalBlock"] {{
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                gap: 6px !important;
+            }}
+
+            .st-key-login_topo_direita [data-testid="stColumn"] {{
+                width: auto !important;
+                min-width: 0 !important;
+                flex: none !important;
+            }}
+        }}
+
+        .login-topo-label {{
+            color: #3B3D35 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 14px !important;
+            white-space: nowrap !important;
+            text-align: right !important;
+            padding-top: 8px !important;
+        }}
+
+        /* Campos de Usuário/Senha: fundo branco (diferente do fundo azul-escuro
+           padrão dos outros campos do app), mesmo tratamento que já valia
+           quando esses campos ficavam na sidebar */
+        .st-key-login_topo_direita .stTextInput input,
+        .st-key-login_topo_direita .stTextInput div[data-baseweb],
+        .st-key-login_topo_direita div[data-testid="stTextInputRootElement"] {{
+            background-color: #FFFFFF !important;
+            border: 1px solid rgba(0, 0, 0, 0.15) !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+            outline: none !important;
+        }}
+
+        .st-key-login_topo_direita .stTextInput input {{
+            color: #0a192f !important;
+            caret-color: #0a192f !important;
+            width: 140px !important;
+            min-width: 100px !important;
+        }}
+
+        .st-key-login_topo_direita .stTextInput button {{
+            background-color: transparent !important;
+            border: none !important;
+            color: #0a192f !important;
+        }}
+
+        .st-key-login_topo_direita .stTextInput button svg,
+        .st-key-login_topo_direita .stTextInput button svg path {{
+            fill: #0a192f !important;
+            color: #0a192f !important;
+        }}
+
+        .st-key-login_topo_direita .stTextInput input:focus,
+        .st-key-login_topo_direita .stTextInput div[data-baseweb]:focus-within,
+        .st-key-login_topo_direita div[data-testid="stTextInputRootElement"]:focus-within {{
+            border-color: rgba(29, 89, 2, 0.5) !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+            outline: none !important;
+        }}
+
+        .st-key-login_topo_direita .stTextInput input:-webkit-autofill,
+        .st-key-login_topo_direita .stTextInput input:-webkit-autofill:hover,
+        .st-key-login_topo_direita .stTextInput input:-webkit-autofill:focus {{
+            -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+            -webkit-text-fill-color: #0a192f !important;
+            caret-color: #0a192f !important;
+        }}
+
+        .st-key-login_topo_direita .stButton > button {{
+            white-space: nowrap !important;
+            padding: 8px 14px !important;
+            min-height: 36px !important;
+        }}
+
         .main .block-container {{
             padding-top: 3rem !important;
             padding-bottom: 2rem !important;
@@ -1749,18 +1838,11 @@ with st.sidebar:
     )
     st.markdown("### 🔐 Área Administrativa")
 
-    if not st.session_state["usuario_logado"]:
-        usuario = st.text_input("Usuário", key="user_admin")
-        senha = st.text_input("Senha", type="password", key="pass_admin")
-
-        if st.button("🔑 Entrar", key="btn_entrar_login"):
-            if verificar_login(usuario, senha):
-                st.session_state["usuario_logado"] = usuario.strip().lower()
-                st.success(f"Bem-vindo, {usuario}!")
-                st.rerun()
-            else:
-                st.error("Usuário ou senha incorretos.")
-    else:
+    # Os campos de Usuário/Senha/Entrar não ficam mais aqui na sidebar — foram
+    # movidos pro canto superior direito da tela principal (pedido do
+    # usuário, layout em PC). Ver bloco "LOGIN ADMIN (CANTO SUPERIOR
+    # DIREITO)", logo depois do fechamento dessa sidebar.
+    if st.session_state["usuario_logado"]:
         st.success(f"👋 Logado como: **{st.session_state['usuario_logado']}**")
 
         # Destaca (fundo verde-escuro) a opção da sidebar correspondente à
@@ -1938,6 +2020,38 @@ with st.sidebar:
             st.session_state["mostrar_alterar_senha"] = False
             st.session_state["codigo_senha_enviado"] = False
             st.rerun()
+
+# ---------------------------------------------------------
+# LOGIN ADMIN (CANTO SUPERIOR DIREITO)
+# ---------------------------------------------------------
+# Usuário / Senha / Entrar, antes na sidebar, agora numa linha só fixada no
+# canto superior direito da tela: [Usuário] [campo] [Senha] [campo] [Entrar].
+# Só aparece pra quem ainda não fez login (some assim que loga).
+if not st.session_state["usuario_logado"]:
+    with st.container(key="login_topo_direita"):
+        col_lbl_user, col_user, col_lbl_pass, col_pass, col_btn = st.columns(
+            [0.6, 1.1, 0.5, 1.1, 0.8]
+        )
+        with col_lbl_user:
+            st.markdown('<div class="login-topo-label">Usuário</div>', unsafe_allow_html=True)
+        with col_user:
+            usuario_topo = st.text_input(
+                "Usuário", key="user_admin", label_visibility="collapsed"
+            )
+        with col_lbl_pass:
+            st.markdown('<div class="login-topo-label">Senha</div>', unsafe_allow_html=True)
+        with col_pass:
+            senha_topo = st.text_input(
+                "Senha", type="password", key="pass_admin", label_visibility="collapsed"
+            )
+        with col_btn:
+            if st.button("🔑 Entrar", key="btn_entrar_login"):
+                if verificar_login(usuario_topo, senha_topo):
+                    st.session_state["usuario_logado"] = usuario_topo.strip().lower()
+                    st.success(f"Bem-vindo, {usuario_topo}!")
+                    st.rerun()
+                else:
+                    st.error("Usuário ou senha incorretos.")
 
 # ---------------------------------------------------------
 # INTERFACE PRINCIPAL

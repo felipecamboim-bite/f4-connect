@@ -388,6 +388,25 @@ def atualizar_status_chamado(protocolo, novo_status):
     if supabase:
         supabase.table("chamados").update({"status": novo_status}).eq("protocolo", protocolo).execute()
 
+def atualizar_chamado_solicitante(protocolo, email, empresa, ferramenta, severidade, assunto, descricao):
+    """
+    Atualiza os campos que o SOLICITANTE pode editar na tabela de
+    "Resultado da Consulta" (Acompanhar meu chamado). Protocolo, nome do
+    solicitante e status ficam de fora de propósito — não são editáveis
+    por ele.
+    """
+    if supabase:
+        supabase.table("chamados").update(
+            {
+                "email_solicitante": email,
+                "empresa": empresa,
+                "ferramenta": ferramenta,
+                "severidade": severidade,
+                "assunto": assunto,
+                "descricao": descricao,
+            }
+        ).eq("protocolo", protocolo).execute()
+
 # ---------------------------------------------------------
 # IMAGENS & SESSÃO
 # ---------------------------------------------------------
@@ -1910,6 +1929,142 @@ st.markdown(
             }}
         }}
 
+        /* ========================================================= */
+        /* RESULTADO DA CONSULTA (Acompanhar meu chamado): mesmo visual  */
+        /* de "planilha" das outras tabelas, mas com campos editáveis    */
+        /* pelo solicitante (E-mail, Empresa, Ferramenta, Severidade,    */
+        /* Assunto, Descrição). Protocolo/Solicitante/Status continuam   */
+        /* somente leitura (pedido do usuário).                          */
+        /* ========================================================= */
+        .st-key-resultado_consulta_tabela {{
+            background-color: #7C845D !important;
+            border-radius: 10px !important;
+            padding: 10px !important;
+        }}
+
+        .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] {{
+            gap: 6px !important;
+        }}
+
+        .st-key-resultado_consulta_tabela [data-testid="stColumn"] {{
+            padding: 2px !important;
+        }}
+
+        .st-key-resultado_consulta_tabela .header-box {{
+            background-color: #3B3D35 !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            font-size: 11px !important;
+            margin-bottom: 6px !important;
+        }}
+
+        /* Badge de Status: mantém o mesmo visual (contorno branco, sem
+           preenchimento) que a tabela antiga (.tabela-consulta) já usava,
+           em vez do padrão cyan/azul usado no resto do app */
+        .st-key-resultado_consulta_tabela .badge-status {{
+            background-color: transparent !important;
+            border: 1px solid #FFFFFF !important;
+            color: #FFFFFF !important;
+        }}
+
+        /* Campos editáveis (texto/textarea/seletor de severidade): fundo
+           escuro combinando com o resto da planilha, texto branco, compactos */
+        .st-key-resultado_consulta_tabela .stTextInput input,
+        .st-key-resultado_consulta_tabela .stTextInput div[data-baseweb],
+        .st-key-resultado_consulta_tabela div[data-testid="stTextInputRootElement"],
+        .st-key-resultado_consulta_tabela .stTextArea textarea,
+        .st-key-resultado_consulta_tabela .stTextArea div[data-baseweb],
+        .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb="select"] {{
+            background-color: #3B3D35 !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
+            border-radius: 8px !important;
+            font-size: 12px !important;
+        }}
+
+        .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb] * {{
+            color: #FFFFFF !important;
+            fill: #FFFFFF !important;
+        }}
+
+        .st-key-resultado_consulta_tabela .stTextArea textarea {{
+            min-height: 68px !important;
+        }}
+
+        .st-key-resultado_consulta_tabela .celula-protocolo,
+        .st-key-resultado_consulta_tabela .celula-texto {{
+            font-size: 12px !important;
+            padding: 8px 4px !important;
+        }}
+
+        /* Botão "Salvar": compacto, mesmo padrão dos botões "Excluir" das
+           outras planilhas administrativas — sobrescreve o estilo padrão
+           (largo, azul translúcido) usado nos outros botões da tela pública */
+        .st-key-resultado_consulta_tabela .stButton > button {{
+            background-color: #3B3D35 !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 20px !important;
+            width: auto !important;
+            max-width: none !important;
+            padding: 6px 12px !important;
+            min-height: auto !important;
+            margin: 4px 0 !important;
+        }}
+
+        .st-key-resultado_consulta_tabela .stButton > button p {{
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            color: #FFFFFF !important;
+        }}
+
+        .st-key-resultado_consulta_tabela .stButton > button:hover {{
+            background-color: #52543f !important;
+        }}
+
+        /* No celular/tablet: mesma técnica de "afastar" (zoom) já usada nas
+           outras planilhas — mantém a grade de colunas do computador em vez
+           de empilhar em cards, só encolhida (dá pra usar o zoom de pinça do
+           celular pra ler de perto). */
+        @media (max-width: 1000px) {{
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"]:has(.header-box),
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"]:has(.celula-protocolo) {{
+                display: flex !important;
+                flex-direction: row !important;
+                gap: 6px !important;
+            }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
+                width: auto !important;
+                min-width: 0 !important;
+            }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1)  {{ flex: 1.1 1 0px !important; }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2)  {{ flex: 1.2 1 0px !important; }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3)  {{ flex: 1.6 1 0px !important; }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4)  {{ flex: 1.1 1 0px !important; }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ flex: 1.2 1 0px !important; }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ flex: 1.3 1 0px !important; }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ flex: 1.3 1 0px !important; }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ flex: 1.8 1 0px !important; }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ flex: 1.3 1 0px !important; }}
+            .st-key-resultado_consulta_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ flex: 0.9 1 0px !important; }}
+
+            .st-key-resultado_consulta_tabela .mobile-label {{
+                display: none !important;
+            }}
+
+            .st-key-resultado_consulta_tabela {{
+                zoom: 0.4;
+                overflow-x: auto !important;
+            }}
+        }}
+
         {_css_ocultar_sidebar_home}
     </style>
     """,
@@ -2369,6 +2524,95 @@ def painel_usuarios_admin():
                     st.rerun(scope="fragment")
 
 
+# ------------------ RESULTADO DA CONSULTA: TABELA EDITÁVEL (SOLICITANTE) ------------------
+# Pedido do usuário: na tela "Acompanhar meu chamado", o solicitante pode
+# editar os dados do próprio chamado (E-mail, Empresa, Ferramenta,
+# Severidade, Assunto, Descrição) e salvar com um botão — só não pode mexer
+# em Protocolo, Solicitante e Status. Vale tanto no PC quanto no celular.
+@st.fragment
+def resultado_consulta_editavel(resultados):
+    st.markdown(
+        '<div class="titulo-resultado-consulta">📋 Resultado da Consulta:</div>',
+        unsafe_allow_html=True,
+    )
+
+    col_widths = [1.1, 1.2, 1.6, 1.1, 1.2, 1.3, 1.3, 1.8, 1.3, 0.9]
+    headers = ["Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status", ""]
+    opcoes_severidade = ["🟢 Baixa", "🟡 Média", "🟠 Alta", "🔴 Crítica"]
+
+    with st.container(key="resultado_consulta_tabela"):
+        cols_head = st.columns(col_widths)
+        for col, h in zip(cols_head, headers):
+            col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
+
+        for c in resultados:
+            protocolo = c.get("protocolo", "-")
+            (
+                c_proto, c_nome, c_mail, c_emp, c_ferr,
+                c_sev, c_ass, c_desc, c_stat, c_salvar,
+            ) = st.columns(col_widths)
+
+            c_proto.markdown(
+                f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{html.escape(str(protocolo))}</div>',
+                unsafe_allow_html=True,
+            )
+            c_nome.markdown(
+                f'<div class="celula-texto"><span class="mobile-label">Solicitante:</span>{html.escape(str(c.get("nome_solicitante", "-")))}</div>',
+                unsafe_allow_html=True,
+            )
+
+            novo_email = c_mail.text_input(
+                "E-mail", value=c.get("email_solicitante") or "", key=f"edit_email_{protocolo}",
+                label_visibility="collapsed",
+            )
+            novo_emp = c_emp.text_input(
+                "Empresa", value=c.get("empresa") or "", key=f"edit_empresa_{protocolo}",
+                label_visibility="collapsed",
+            )
+            novo_ferr = c_ferr.text_input(
+                "Ferramenta", value=c.get("ferramenta") or "", key=f"edit_ferramenta_{protocolo}",
+                label_visibility="collapsed",
+            )
+
+            sev_atual = c.get("severidade") or opcoes_severidade[0]
+            idx_sev = opcoes_severidade.index(sev_atual) if sev_atual in opcoes_severidade else 0
+            nova_sev = c_sev.selectbox(
+                "Severidade", opcoes_severidade, index=idx_sev, key=f"edit_severidade_{protocolo}",
+                label_visibility="collapsed",
+            )
+
+            novo_ass = c_ass.text_input(
+                "Assunto", value=c.get("assunto") or "", key=f"edit_assunto_{protocolo}",
+                label_visibility="collapsed",
+            )
+            nova_desc = c_desc.text_area(
+                "Descrição", value=c.get("descricao") or "", key=f"edit_descricao_{protocolo}",
+                label_visibility="collapsed", height=68,
+            )
+
+            c_stat.markdown(
+                f'<div class="celula-texto"><span class="mobile-label">Status:</span>'
+                f'<span class="badge-status">{html.escape(str(c.get("status", "-")))}</span></div>',
+                unsafe_allow_html=True,
+            )
+
+            if c_salvar.button("💾 Salvar", key=f"salvar_edicao_{protocolo}"):
+                atualizar_chamado_solicitante(
+                    protocolo, novo_email.strip(), novo_emp.strip(), novo_ferr.strip(),
+                    nova_sev, novo_ass.strip(), nova_desc.strip(),
+                )
+                # Atualiza a lista em memória pra refletir a mudança na hora,
+                # sem precisar pesquisar de novo
+                c["email_solicitante"] = novo_email.strip()
+                c["empresa"] = novo_emp.strip()
+                c["ferramenta"] = novo_ferr.strip()
+                c["severidade"] = nova_sev
+                c["assunto"] = novo_ass.strip()
+                c["descricao"] = nova_desc.strip()
+                st.toast(f"Chamado {protocolo} atualizado!")
+                st.rerun(scope="fragment")
+
+
 if st.session_state["usuario_logado"]:
     if st.session_state["aba_admin"] == "empresa":
         painel_cadastros("empresa")
@@ -2695,40 +2939,7 @@ else:
             if not resultados:
                 st.error("❌ Nenhum chamado foi encontrado com essa informação.")
             else:
-                st.markdown(
-                    '<div class="titulo-resultado-consulta">📋 Resultado da Consulta:</div>',
-                    unsafe_allow_html=True,
-                )
-
-                headers = ["Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status"]
-
-                linhas_html = ""
-                for c in resultados:
-                    linhas_html += "<tr>"
-                    linhas_html += f'<td class="col-protocolo">{html.escape(str(c.get("protocolo", "-")))}</td>'
-                    linhas_html += f'<td>{html.escape(str(c.get("nome_solicitante", "-")))}</td>'
-                    linhas_html += f'<td>{html.escape(str(c.get("email_solicitante", "-")))}</td>'
-                    linhas_html += f'<td>{html.escape(str(c.get("empresa", "-")))}</td>'
-                    linhas_html += f'<td>{html.escape(str(c.get("ferramenta", "-")))}</td>'
-                    linhas_html += f'<td>{html.escape(str(c.get("severidade", "-")))}</td>'
-                    linhas_html += f'<td>{html.escape(str(c.get("assunto", "-")))}</td>'
-                    linhas_html += f'<td>{html.escape(str(c.get("descricao", "-")))}</td>'
-                    linhas_html += f'<td><span class="badge-status">{html.escape(str(c.get("status", "-")))}</span></td>'
-                    linhas_html += "</tr>"
-
-                tabela_html = f"""
-                <div class="tabela-consulta-wrap">
-                    <table class="tabela-consulta">
-                        <thead>
-                            <tr>{"".join(f"<th>{h}</th>" for h in headers)}</tr>
-                        </thead>
-                        <tbody>
-                            {linhas_html}
-                        </tbody>
-                    </table>
-                </div>
-                """
-                st.markdown(tabela_html, unsafe_allow_html=True)
+                resultado_consulta_editavel(resultados)
         # O botão "Voltar ao Menu" dessa etapa foi movido pra cima, ao lado do
         # "Pesquisar" (ver col_pesquisar/col_voltar_acompanhar) — não fica
         # mais aqui embaixo, sozinho e longe do resto.

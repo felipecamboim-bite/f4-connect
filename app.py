@@ -2,6 +2,7 @@ import random
 import string
 import hashlib
 import html
+import re
 import streamlit as st
 from datetime import datetime, timedelta, timezone
 from supabase import create_client, Client
@@ -1360,7 +1361,34 @@ st.markdown(
         }}
 
         .st-key-btn_voltar_menu_acompanhar {{
-            margin-top: 8px !important;
+            margin-top: 2px !important;
+        }}
+
+        /* Dica "role a tela para ver sua consulta": aparece só depois de uma
+           pesquisa (logo abaixo do "Voltar ao Menu"), apontando pra baixo —
+           a tabela de resultado fica mais abaixo na tela e sem essa pista o
+           solicitante pode achar que a pesquisa não funcionou */
+        .dica-rolar-consulta {{
+            text-align: center !important;
+            color: #3B3D35 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            margin-top: 22px !important;
+            opacity: 0.75;
+            animation: dica-rolar-flutua 1.6s ease-in-out infinite;
+        }}
+
+        .dica-rolar-consulta .seta {{
+            display: block;
+            font-size: 20px !important;
+            line-height: 1 !important;
+            margin-bottom: 4px !important;
+        }}
+
+        @keyframes dica-rolar-flutua {{
+            0%, 100% {{ transform: translateY(0px); }}
+            50% {{ transform: translateY(6px); }}
         }}
 
 
@@ -1954,7 +1982,7 @@ st.markdown(
             background-color: #3B3D35 !important;
             color: #FFFFFF !important;
             border: none !important;
-            border-radius: 0 !important;
+            border-radius: 8px !important;
             box-shadow: none !important;
             font-size: 11px !important;
             margin-bottom: 6px !important;
@@ -2804,6 +2832,12 @@ else:
             # conteudo_publico.
             if st.button("🔍 Pesquisar", key="btn_pesquisar_chamado"):
                 termo_limpo = termo_busca.strip()
+                # Guardado pra, se a busca não encontrar nada, decidir qual aviso
+                # mostrar mais abaixo (formato incompleto x protocolo/e-mail
+                # corretos mas sem chamado cadastrado) — precisa ficar salvo na
+                # sessão porque esse trecho só roda no clique; o aviso em si é
+                # exibido depois, lá na seção de resultado.
+                st.session_state["ultimo_termo_busca"] = termo_limpo
 
                 if not termo_limpo:
                     st.warning("⚠️ Digite um número de protocolo ou e-mail para pesquisar.")
@@ -2838,6 +2872,20 @@ else:
                 if "resultado_busca" in st.session_state:
                     del st.session_state["resultado_busca"]
                 st.rerun()
+
+            # Dica pra rolar a tela: a tabela de resultado fica mais abaixo,
+            # fora dessa coluna estreita (ver "RESULTADO DA CONSULTA (LARGURA
+            # TOTAL)" mais abaixo) — sem essa pista, em zooms de tela mais
+            # altos (100%+) o solicitante não vê a tabela e acha que a busca
+            # não funcionou. Só aparece quando a busca realmente encontrou
+            # pelo menos um chamado (não faz sentido pedir pra rolar se não
+            # tem resultado nenhum pra ver).
+            if st.session_state.get("resultado_busca"):
+                st.markdown(
+                    '<div class="dica-rolar-consulta"><span class="seta">⌄</span>'
+                    "Role a tela para visualizar sua consulta</div>",
+                    unsafe_allow_html=True,
+                )
 
         elif st.session_state["opcao_menu"] == "avaliar":
             st.markdown(
@@ -2937,7 +2985,27 @@ else:
             resultados = st.session_state["resultado_busca"]
 
             if not resultados:
-                st.error("❌ Nenhum chamado foi encontrado com essa informação.")
+                # Dois avisos diferentes, dependendo do que a pessoa digitou:
+                # se não parece nem um e-mail nem um protocolo completo (ex:
+                # esqueceu o #, o "F4" ou o traço), ensina o formato certo.
+                # Se digitou algo no formato certo (ou um e-mail) e mesmo
+                # assim não achou nada, aí sim é "não encontrado de verdade".
+                termo_pesquisado = st.session_state.get("ultimo_termo_busca", "").strip()
+                eh_email = "@" in termo_pesquisado
+                eh_protocolo_completo = bool(
+                    re.match(r"^#?F4-[A-Za-z0-9]{6}$", termo_pesquisado, re.IGNORECASE)
+                )
+
+                if termo_pesquisado and not eh_email and not eh_protocolo_completo:
+                    st.warning(
+                        "⚠️ Digite o número do protocolo completo, incluindo o símbolo "
+                        "**#**, a sigla **F4** e o traço. Exemplo: **#F4-AXWR25**"
+                    )
+                else:
+                    st.error(
+                        "❌ Seu chamado não foi encontrado. Confirme se o protocolo "
+                        "ou e-mail digitado está correto."
+                    )
             else:
                 resultado_consulta_editavel(resultados)
         # O botão "Voltar ao Menu" dessa etapa foi movido pra cima, ao lado do

@@ -1443,6 +1443,24 @@ st.markdown(
             font-size: 14px !important;
         }}
 
+        /* Aviso de "chamado não encontrado" / "formato incompleto" na tela
+           Consulte seu chamado: fica FORA do .st-key-conteudo_publico (pra
+           não ficar preso na coluna estreita, já que o resultado da consulta
+           ocupa a largura toda), então precisa do mesmo tratamento (caixa
+           compacta e centralizada) à parte, com os mesmos valores usados nos
+           outros avisos do app. */
+        .st-key-aviso_busca_chamado .stAlert {{
+            max-width: 460px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding: 10px 14px !important;
+        }}
+
+        .st-key-aviso_busca_chamado .stAlert p,
+        .st-key-aviso_busca_chamado .stAlert div {{
+            font-size: 14px !important;
+        }}
+
         /* "Buscar Chamado" / "Voltar ao Menu" (Avaliar atendimento): mesma
            centralização dos botões das outras etapas — cada um é um
            st.button() solto, então centraliza direto no .st-key-btn_xxx */
@@ -2996,16 +3014,17 @@ else:
                     re.match(r"^#?F4-[A-Za-z0-9]{6}$", termo_pesquisado, re.IGNORECASE)
                 )
 
-                if termo_pesquisado and not eh_email and not eh_protocolo_completo:
-                    st.warning(
-                        "⚠️ Digite o número do protocolo completo, incluindo o símbolo "
-                        "**#**, a sigla **F4** e o traço. Exemplo: **#F4-AXWR25**"
-                    )
-                else:
-                    st.error(
-                        "❌ Seu chamado não foi encontrado. Confirme se o protocolo "
-                        "ou e-mail digitado está correto."
-                    )
+                with st.container(key="aviso_busca_chamado"):
+                    if termo_pesquisado and not eh_email and not eh_protocolo_completo:
+                        st.warning(
+                            "⚠️ Digite o número do protocolo completo, incluindo o símbolo "
+                            "**#**, a sigla **F4** e o traço. Exemplo: **#F4-AXWR25**"
+                        )
+                    else:
+                        st.error(
+                            "❌ Seu chamado não foi encontrado. Confirme se o protocolo "
+                            "ou e-mail digitado está correto."
+                        )
             else:
                 resultado_consulta_editavel(resultados)
         # O botão "Voltar ao Menu" dessa etapa foi movido pra cima, ao lado do

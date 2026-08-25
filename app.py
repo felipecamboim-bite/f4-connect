@@ -142,6 +142,111 @@ def remover_usuario_admin(usuario):
     if supabase:
         supabase.table("usuarios_admin").delete().eq("usuario", usuario.strip().lower()).execute()
 
+# ---------------------------------------------------------
+# CONTAS DE SOLICITANTES (login público, com aprovação do admin)
+# ---------------------------------------------------------
+# Pedido do usuário: agora o acesso à tela de abrir/acompanhar/avaliar
+# chamado também exige login. Como não existe uma base pra validar quem é
+# quem, a própria pessoa cria a conta ("Criar conta"), e ela fica pendente
+# até um administrador aprovar manualmente (ver notificação flutuante no
+# painel admin). Tabela separada da "usuarios_admin", pra não misturar
+# administrador com solicitante comum.
+REGEX_USUARIO_SOLICITANTE = re.compile(r"^[a-z]+(\.[a-z]+)*$")
+
+def validar_formato_usuario_solicitante(nome_usuario):
+    """Só letras minúsculas, sem espaço; nomes compostos separados por ponto
+    (ex: felipe.rodrigues)."""
+    return bool(REGEX_USUARIO_SOLICITANTE.match(nome_usuario or ""))
+
+def validar_formato_senha_solicitante(senha):
+    """Precisa ter pelo menos 1 caractere especial (número é opcional)."""
+    return bool(senha) and bool(re.search(r"[^A-Za-z0-9]", senha))
+
+def buscar_solicitante(nome_usuario):
+    if supabase:
+        res = (
+            supabase.table("solicitantes")
+            .select("nome_usuario, email, senha, status")
+            .eq("nome_usuario", (nome_usuario or "").strip().lower())
+            .execute()
+        )
+        return res.data[0] if res.data else None
+    return None
+
+def criar_solicitacao_conta(nome_usuario, email, senha):
+    nome_norm = (nome_usuario or "").strip().lower()
+    email_norm = (email or "").strip()
+
+    if not validar_formato_usuario_solicitante(nome_norm):
+        return {
+            "ok": False,
+            "erro": "Nome de usuário inválido. Use só letras minúsculas, sem espaço "
+                    "(nomes compostos separados por ponto, ex: felipe.rodrigues).",
+        }
+    if not validar_formato_senha_solicitante(senha):
+        return {"ok": False, "erro": "A senha precisa ter pelo menos 1 caractere especial."}
+    if not email_norm or "@" not in email_norm:
+        return {"ok": False, "erro": "Digite um e-mail corporativo válido."}
+    if buscar_solicitante(nome_norm) or buscar_usuario_admin(nome_norm):
+        return {"ok": False, "erro": "Já existe uma conta com esse nome de usuário."}
+
+    if supabase:
+        supabase.table("solicitantes").insert(
+            {
+                "nome_usuario": nome_norm,
+                "email": email_norm,
+                "senha": hash_senha(senha),
+                "status": "pendente",
+            }
+        ).execute()
+
+    return {"ok": True}
+
+def listar_solicitantes_pendentes():
+    if supabase:
+        res = (
+            supabase.table("solicitantes")
+            .select("nome_usuario, email, created_at")
+            .eq("status", "pendente")
+            .order("created_at", desc=False)
+            .execute()
+        )
+        return res.data if res.data else []
+    return []
+
+def aprovar_solicitante(nome_usuario):
+    registro = buscar_solicitante(nome_usuario)
+    if supabase:
+        supabase.table("solicitantes").update({"status": "aprovado"}).eq(
+            "nome_usuario", nome_usuario
+        ).execute()
+    if registro and registro.get("email"):
+        enviar_email_conta_solicitante_aprovada(registro["email"], nome_usuario)
+
+def rejeitar_solicitante(nome_usuario):
+    # Pedido recusado: some da lista, sem enviar nenhum e-mail (pedido do usuário).
+    if supabase:
+        supabase.table("solicitantes").delete().eq("nome_usuario", nome_usuario).execute()
+
+def verificar_login_solicitante(nome_usuario, senha):
+    """
+    Retorna "ok" (login válido e conta aprovada), "pendente" (conta existe
+    mas ainda aguarda aprovação) ou "invalido" (usuário/senha não bate ou
+    não existe).
+    """
+    registro = buscar_solicitante(nome_usuario)
+    if not registro or registro["senha"] != hash_senha(senha):
+        return "invalido"
+    if registro["status"] != "aprovado":
+        return "pendente"
+    return "ok"
+
+def atualizar_senha_solicitante(nome_usuario, nova_senha):
+    if supabase:
+        supabase.table("solicitantes").update(
+            {"senha": hash_senha(nova_senha)}
+        ).eq("nome_usuario", (nome_usuario or "").strip().lower()).execute()
+
 OPCOES_STATUS = [
     "Aguardando atendimento",
     "Em análise",
@@ -358,6 +463,52 @@ def enviar_email_novo_admin(email_destino, usuario, senha_temporaria):
         print(f"Erro ao enviar e-mail de novo administrador: {e}")
         return False
 
+def enviar_email_conta_solicitante_aprovada(email_destino, nome_usuario):
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["From"] = f"F4 Connect HelpDesk <{EMAIL_REMETENTE}>"
+        msg["To"] = email_destino
+        msg["Subject"] = "Sua conta foi criada - F4 Connect HelpDesk"
+
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
+                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">🤖 F4 Connect - Help Desk</h2>
+                <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Acesso liberado</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <p>Olá!</p>
+                <p>Sua conta foi criada no F4 Connect HelpDesk. Seu usuário de acesso:</p>
+
+                <div style="background-color: #f8fafc; border-left: 4px solid #007aff; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 6px 0;"><b>Usuário:</b> {nome_usuario}</p>
+                </div>
+
+                <p>Já pode entrar com o usuário e a senha que você cadastrou.</p>
+                <br>
+                <p style="margin-bottom: 0;">Atenciosamente,</p>
+                <p style="margin-top: 2px;"><b>Equipe de Suporte F4 Connect</b></p>
+
+                <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0 15px 0;">
+                <p style="font-size: 11px; color: #999; text-align: center;">Este é um e-mail automático enviado pelo sistema F4 Connect. Por favor, não responda a este e-mail.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        msg.attach(MIMEText(html_body, "html"))
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_REMETENTE, SENHA_REMETENTE)
+        server.sendmail(EMAIL_REMETENTE, email_destino, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Erro ao enviar e-mail de conta aprovada: {e}")
+        return False
+
 def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao, severidade):
     protocolo = gerar_protocolo()
     dados = {
@@ -476,6 +627,30 @@ if "codigo_senha_enviado" not in st.session_state:
     st.session_state["codigo_senha_enviado"] = False
 
 # ---------------------------------------------------------
+# LOGIN DO SOLICITANTE (tela inicial nova, com "Criar conta")
+# ---------------------------------------------------------
+# Guarda quem é o solicitante logado ({"nome_usuario": ..., "email": ...})
+# — None enquanto ninguém entrou ainda (mostra a tela de login).
+if "solicitante_logado" not in st.session_state:
+    st.session_state["solicitante_logado"] = None
+
+# Controla se o formulário "Criar conta" está visível na tela de login
+if "mostrar_criar_conta" not in st.session_state:
+    st.session_state["mostrar_criar_conta"] = False
+
+# Controla se o formulário "Esqueci minha senha" (solicitante) está visível
+if "mostrar_esqueci_senha_solicitante" not in st.session_state:
+    st.session_state["mostrar_esqueci_senha_solicitante"] = False
+
+# Controla se o código de recuperação de senha do solicitante já foi enviado
+if "codigo_senha_solicitante_enviado" not in st.session_state:
+    st.session_state["codigo_senha_solicitante_enviado"] = False
+
+# Controla se o painel de solicitações pendentes (balãozinho do admin) está aberto
+if "mostrar_pendentes" not in st.session_state:
+    st.session_state["mostrar_pendentes"] = False
+
+# ---------------------------------------------------------
 # CSS DA INTERFACE & CONTAINERS DA TABELA ADMIN
 # ---------------------------------------------------------
 # Fundo da tela pública (não logada / tela inicial do solicitante) é branco;
@@ -486,8 +661,13 @@ _cor_titulo_topo = "#3B3D35" if _tela_publica else "#FFFFFF"
 _cor_label_campo = "#3B3D35" if _tela_publica else "#FFFFFF"
 
 # Pedido do usuário: remover o sidebar só na tela inicial pública, só na
-# visualização de computador (celular continua igual).
-_ocultar_sidebar_home = _tela_publica and st.session_state["opcao_menu"] == "inicio"
+# visualização de computador (celular continua igual). Também some enquanto
+# ninguém fez login ainda (nem admin, nem solicitante) — a nova tela de
+# login/"Criar conta" fica limpa, sem sidebar.
+_ocultar_sidebar_home = _tela_publica and (
+    not st.session_state.get("solicitante_logado")
+    or st.session_state["opcao_menu"] == "inicio"
+)
 _css_ocultar_sidebar_home = (
     """
     @media (min-width: 769px) {
@@ -707,51 +887,6 @@ st.markdown(
             transform: none !important;
         }}
 
-        /* Botão "Entrar" (tela de login) continua com a aparência de botão de
-           antes — as regras acima "texto puro" são só para o painel pós-login */
-        .st-key-btn_entrar_login .stButton > button,
-        .st-key-btn_entrar_login button {{
-            background-color: #1D5902 !important;
-            border: none !important;
-            border-color: transparent !important;
-            border-radius: 8px !important;
-            padding: 0 14px !important;
-            height: 38px !important;
-            min-height: 38px !important;
-            max-height: 38px !important;
-            box-sizing: border-box !important;
-            overflow: hidden !important;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
-            text-align: center !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            /* Medido via DevTools: mesmo com altura idêntica ao campo de texto
-               (38px), o botão renderiza ~8px mais alto (top:2px vs top:10px do
-               campo) porque o align-items:center da coluna centraliza cada
-               wrapper com base numa caixa diferente. Corrige com um pequeno
-               deslocamento visual (position:relative), sem afetar o layout. */
-            position: relative !important;
-            top: 8px !important;
-        }}
-
-        /* O <p> que o Streamlit coloca dentro do botão vem com margem própria
-           (padrão do navegador) — isso "empurrava" a altura visível do botão
-           pra além dos 38px travados acima, mesmo com overflow:hidden cortando
-           o excesso (cortava o ícone/texto). Zerando a margem, o conteúdo
-           cabe certinho dentro dos 38px sem cortar nada. */
-        .st-key-btn_entrar_login .stButton > button p {{
-            font-size: 14px !important;
-            margin: 0 !important;
-            line-height: 1 !important;
-        }}
-
-        .st-key-btn_entrar_login .stButton > button:hover,
-        .st-key-btn_entrar_login button:hover {{
-            border: none !important;
-            border-color: transparent !important;
-        }}
-
         /* Campos de Usuário/Senha na sidebar: fundo branco (o resto dos campos
            da tela principal continua com o fundo azul-escuro original) */
         section[data-testid="stSidebar"] .stTextInput input,
@@ -807,143 +942,191 @@ st.markdown(
             caret-color: #0a192f !important;
         }}
 
-        /* Login (Usuário/Senha/Entrar) no canto superior direito da tela —
-           fixo, sempre visível mesmo rolando a página, numa linha só. Só no
-           computador (celular continua sem esse ajuste, conforme combinado). */
-        @media (min-width: 769px) {{
-            .st-key-login_topo_direita {{
-                position: fixed !important;
-                top: 10px !important;
-                right: 28px !important;
-                z-index: 1000000 !important;
-                width: auto !important;
-            }}
-
-            .st-key-login_topo_direita [data-testid="stHorizontalBlock"] {{
-                display: flex !important;
-                flex-wrap: nowrap !important;
-                align-items: center !important;
-                gap: 6px !important;
-            }}
-
-            .st-key-login_topo_direita [data-testid="stColumn"] {{
-                width: auto !important;
-                min-width: 0 !important;
-                flex: none !important;
-                display: flex !important;
-                align-items: center !important;
-            }}
-
-            /* Zera qualquer respiro padrão que o Streamlit deixa entre
-               elementos empilhados (pensado pra layout vertical) — aqui é
-               tudo numa linha só, então cada elemento (rótulo, campo, botão)
-               deve ocupar só a altura dele mesmo, sem sobra em cima/embaixo,
-               pra alinhar de verdade com os vizinhos */
-            .st-key-login_topo_direita [data-testid="stElementContainer"] {{
-                margin: 0 !important;
-                width: 100% !important;
-            }}
-
-            .st-key-login_topo_direita .stTextInput,
-            .st-key-login_topo_direita .stButton {{
-                margin: 0 !important;
-            }}
+        /* ========================================================= */
+        /* TELA DE LOGIN / CRIAR CONTA (SOLICITANTE) — nova tela       */
+        /* inicial. Fica dentro do fluxo público (fundo branco), então  */
+        /* reaproveita a mesma largura/centralização usada nos campos   */
+        /* de "Identificação Inicial" (max-width 380px) — o fundo       */
+        /* branco/sombra dos campos já vem de graça da regra geral      */
+        /* ".st-key-conteudo_publico .stTextInput..." mais abaixo, já   */
+        /* que essa tela também é renderizada dentro do fluxo público.  */
+        /* ========================================================= */
+        .st-key-tela_login_solicitante {{
+            width: 100% !important;
+            max-width: 380px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
         }}
 
-        .login-topo-label {{
-            color: #3B3D35 !important;
-            font-family: 'Inter', sans-serif !important;
-            font-weight: 700 !important;
+        .st-key-tela_login_solicitante .stTextInput,
+        .st-key-tela_login_solicitante .stCaption {{
+            width: 100% !important;
+        }}
+
+        /* Botões principais da tela de login (Entrar / Criar usuário /
+           Confirmar / Voltar / Reenviar): mesmo verde e mesmo tamanho
+           compacto já usado nos botões "Avançar"/"Voltar ao Menu" do resto
+           do fluxo público. */
+        .st-key-login_solicitante_botoes {{
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            width: 100% !important;
+        }}
+
+        .st-key-login_solicitante_botoes .stButton {{
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }}
+
+        .st-key-login_solicitante_botoes .stButton > button {{
+            background-color: #1D5902 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+            width: 220px !important;
+            max-width: 92% !important;
+            padding: 8px 14px !important;
+        }}
+
+        .st-key-login_solicitante_botoes .stButton > button p {{
             font-size: 14px !important;
             white-space: nowrap !important;
-            height: 38px !important;
+        }}
+
+        .st-key-login_solicitante_botoes .stButton > button:hover {{
+            background-color: #164602 !important;
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3) !important;
+        }}
+
+        /* "Criar conta" / "Esqueci minha senha": discretos, sem cara de
+           botão — só texto sublinhado, lado a lado */
+        .st-key-links_login_solicitante,
+        .st-key-link_sair_solicitante {{
             display: flex !important;
-            align-items: center !important;
-            justify-content: flex-end !important;
-            /* Pedido do usuário: deixar o texto "flutuando" um pouco mais pra
-               cima em relação ao centro do campo ao lado */
-            position: relative !important;
-            top: -4px !important;
+            justify-content: center !important;
+            width: 100% !important;
+            margin-top: 14px !important;
         }}
 
-        /* Campos de Usuário/Senha: fundo branco (diferente do fundo azul-escuro
-           padrão dos outros campos do app), mesmo tratamento que já valia
-           quando esses campos ficavam na sidebar */
-        .st-key-login_topo_direita .stTextInput div[data-baseweb],
-        .st-key-login_topo_direita div[data-testid="stTextInputRootElement"] {{
-            background-color: #FFFFFF !important;
-            border: 1px solid rgba(0, 0, 0, 0.15) !important;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
-            outline: none !important;
-            height: 38px !important;
-            min-height: 38px !important;
-            box-sizing: border-box !important;
-        }}
-
-        .st-key-login_topo_direita .stTextInput input {{
-            background-color: #FFFFFF !important;
-            border: none !important;
-            box-shadow: none !important;
-            outline: none !important;
-        }}
-
-        .st-key-login_topo_direita .stTextInput input {{
-            color: #0a192f !important;
-            caret-color: #0a192f !important;
-            width: 140px !important;
-            min-width: 100px !important;
-            height: 38px !important;
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
-            box-sizing: border-box !important;
-        }}
-
-        .st-key-login_topo_direita .stTextInput button {{
+        .st-key-links_login_solicitante .stButton > button,
+        .st-key-link_sair_solicitante .stButton > button {{
+            background: none !important;
             background-color: transparent !important;
             border: none !important;
-            color: #0a192f !important;
+            box-shadow: none !important;
+            width: auto !important;
+            max-width: none !important;
+            padding: 4px 8px !important;
+            min-height: auto !important;
         }}
 
-        .st-key-login_topo_direita .stTextInput button svg,
-        .st-key-login_topo_direita .stTextInput button svg path {{
-            fill: #0a192f !important;
-            color: #0a192f !important;
-        }}
-
-        .st-key-login_topo_direita .stTextInput input:focus,
-        .st-key-login_topo_direita .stTextInput div[data-baseweb]:focus-within,
-        .st-key-login_topo_direita div[data-testid="stTextInputRootElement"]:focus-within {{
-            border-color: rgba(29, 89, 2, 0.5) !important;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
-            outline: none !important;
-        }}
-
-        .st-key-login_topo_direita .stTextInput input:-webkit-autofill,
-        .st-key-login_topo_direita .stTextInput input:-webkit-autofill:hover,
-        .st-key-login_topo_direita .stTextInput input:-webkit-autofill:focus {{
-            -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
-            -webkit-text-fill-color: #0a192f !important;
-            caret-color: #0a192f !important;
-        }}
-
-        .st-key-login_topo_direita .stButton > button {{
+        .st-key-links_login_solicitante .stButton > button p,
+        .st-key-link_sair_solicitante .stButton > button p {{
+            color: #1D5902 !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            text-decoration: underline !important;
             white-space: nowrap !important;
-            padding: 0 14px !important;
-            height: 38px !important;
-            min-height: 38px !important;
-            box-sizing: border-box !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
         }}
 
-        /* A coluna do botão também precisa ficar alinhada com a mesma altura
-           dos campos (sem isso, o wrapper interno do Streamlit deixa uma
-           folga e o botão parece "flutuar" mais alto/baixo que os campos) */
-        .st-key-login_topo_direita .stButton {{
-            display: flex !important;
-            align-items: center !important;
-            height: 38px !important;
+        .st-key-links_login_solicitante .stButton > button:hover,
+        .st-key-link_sair_solicitante .stButton > button:hover {{
+            background: none !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }}
+
+        /* ========================================================= */
+        /* BALÃOZINHO DE NOTIFICAÇÃO (pedidos de "Criar conta"        */
+        /* pendentes) — visível só no painel do administrador,         */
+        /* flutuando no canto superior direito, igual ícone de         */
+        /* mensagem/notificação flutuante.                             */
+        /* ========================================================= */
+        .st-key-notificacao_pendentes {{
+            position: fixed !important;
+            top: 14px !important;
+            right: 24px !important;
+            z-index: 1000000 !important;
+            width: auto !important;
+        }}
+
+        .st-key-notificacao_pendentes .stButton > button {{
+            background-color: #1D5902 !important;
+            border: 2px solid #FFFFFF !important;
+            border-radius: 999px !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+            width: auto !important;
+            max-width: none !important;
+            padding: 6px 16px !important;
+            min-height: auto !important;
+        }}
+
+        .st-key-notificacao_pendentes .stButton > button p {{
+            color: #FFFFFF !important;
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            white-space: nowrap !important;
+        }}
+
+        .st-key-painel_pendentes {{
+            position: fixed !important;
+            top: 62px !important;
+            right: 24px !important;
+            z-index: 999999 !important;
+            width: 380px !important;
+            max-width: calc(100vw - 48px) !important;
+            max-height: 60vh !important;
+            overflow-y: auto !important;
+            background-color: #3B3D35 !important;
+            border-radius: 12px !important;
+            padding: 14px !important;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45) !important;
+        }}
+
+        .titulo-pendentes {{
+            color: #FFFFFF !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            margin-bottom: 10px !important;
+        }}
+
+        .st-key-painel_pendentes [data-testid="stCaptionContainer"] {{
+            color: #cfcfcf !important;
+        }}
+
+        .st-key-painel_pendentes .celula-texto {{
+            font-size: 12px !important;
+            padding-top: 6px !important;
+        }}
+
+        .st-key-painel_pendentes .stButton > button {{
+            width: auto !important;
+            max-width: none !important;
+            padding: 4px 8px !important;
+            min-height: auto !important;
+            background: none !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+
+        @media (max-width: 768px) {{
+            .st-key-notificacao_pendentes {{
+                top: 8px !important;
+                right: 12px !important;
+            }}
+            .st-key-painel_pendentes {{
+                top: 52px !important;
+                right: 12px !important;
+                left: 12px !important;
+                width: auto !important;
+            }}
         }}
 
         .main .block-container {{
@@ -2307,49 +2490,27 @@ with st.sidebar:
             st.rerun()
 
 # ---------------------------------------------------------
-# LOGIN ADMIN (CANTO SUPERIOR DIREITO)
-# ---------------------------------------------------------
-# Usuário / Senha / Entrar, antes na sidebar, agora numa linha só fixada no
-# canto superior direito da tela: [Usuário] [campo] [Senha] [campo] [Entrar].
-# Só aparece pra quem ainda não fez login (some assim que loga).
-if not st.session_state["usuario_logado"]:
-    with st.container(key="login_topo_direita"):
-        col_lbl_user, col_user, col_lbl_pass, col_pass, col_btn = st.columns(
-            [0.6, 1.1, 0.5, 1.1, 0.8]
-        )
-        with col_lbl_user:
-            st.markdown('<div class="login-topo-label">Usuário</div>', unsafe_allow_html=True)
-        with col_user:
-            usuario_topo = st.text_input(
-                "Usuário", key="user_admin", label_visibility="collapsed"
-            )
-        with col_lbl_pass:
-            st.markdown('<div class="login-topo-label">Senha</div>', unsafe_allow_html=True)
-        with col_pass:
-            senha_topo = st.text_input(
-                "Senha", type="password", key="pass_admin", label_visibility="collapsed"
-            )
-        with col_btn:
-            if st.button("🔑 Entrar", key="btn_entrar_login"):
-                if verificar_login(usuario_topo, senha_topo):
-                    st.session_state["usuario_logado"] = usuario_topo.strip().lower()
-                    st.success(f"Bem-vindo, {usuario_topo}!")
-                    st.rerun()
-                else:
-                    st.error("Usuário ou senha incorretos.")
-
-# ---------------------------------------------------------
 # INTERFACE PRINCIPAL
 # ---------------------------------------------------------
-# Na tela inicial pública (não logado), o título "HelpDesk" dá lugar à logo
-# grande + frase de boas-vindas. No fluxo público das outras etapas, o título
-# de sempre continua igual. Já logado (qualquer uma das 4 telas do admin —
-# Painel de Controle, Empresas, Ferramentas ou Administradores cadastrados),
-# o "HelpDesk" some e o próprio título de cada tela toma esse lugar no topo
-# (ver painel_admin() / painel_cadastros() / painel_usuarios_admin()), pra
-# não ficar duplicado.
+# O login do administrador (Usuário/Senha/Entrar), que ficava fixo no canto
+# superior direito da tela, foi removido dali (pedido do usuário) — agora
+# TODO login (administrador e solicitante) acontece na nova tela inicial de
+# login/"Criar conta" (ver bloco "TELA DE LOGIN (SOLICITANTE)" mais abaixo,
+# no "else" final da Visão Pública).
+#
+# Na tela inicial pública (já logado como solicitante), o título "HelpDesk"
+# dá lugar à logo grande + frase de boas-vindas. No fluxo público das outras
+# etapas, o título de sempre continua igual. Já logado como admin (qualquer
+# uma das 4 telas do admin — Painel de Controle, Empresas, Ferramentas ou
+# Administradores cadastrados), o "HelpDesk" some e o próprio título de cada
+# tela toma esse lugar no topo (ver painel_admin() / painel_cadastros() /
+# painel_usuarios_admin()), pra não ficar duplicado. E, enquanto ninguém fez
+# login ainda (nem admin, nem solicitante), essa logo/frase nem aparece aqui
+# — a tela de login tem seu próprio cabeçalho, mais simples.
+_solicitante_logado = bool(st.session_state.get("solicitante_logado"))
+
 _mostrar_boas_vindas_logo = (
-    not st.session_state["usuario_logado"]
+    _solicitante_logado
     and st.session_state["opcao_menu"] == "inicio"
 )
 
@@ -2361,7 +2522,7 @@ if _mostrar_boas_vindas_logo:
         f'</div>',
         unsafe_allow_html=True,
     )
-elif not st.session_state["usuario_logado"]:
+elif _solicitante_logado:
     # Demais etapas públicas (Abrir chamado, Acompanhar, Avaliar): só a logo,
     # sem o texto "HelpDesk" e sem a frase de boas-vindas (que é só da inicial).
     st.markdown(
@@ -2659,7 +2820,56 @@ def resultado_consulta_editavel(resultados):
                 st.rerun(scope="fragment")
 
 
+# ------------------ NOTIFICAÇÃO DE SOLICITAÇÕES PENDENTES (ADMIN) ------------------
+# Pedido do usuário: um balãozinho flutuante (estilo notificação do
+# Messenger), visível só pra quem está logado como admin, mostrando quantos
+# pedidos de "Criar conta" estão esperando aprovação. Clicando, abre a lista
+# com Aprovar/Rejeitar pra cada um.
+@st.fragment
+def notificacao_pendentes_admin():
+    pendentes = listar_solicitantes_pendentes()
+
+    with st.container(key="notificacao_pendentes"):
+        rotulo = f"🔔 {len(pendentes)}" if pendentes else "🔔"
+        if st.button(rotulo, key="btn_toggle_pendentes"):
+            st.session_state["mostrar_pendentes"] = not st.session_state["mostrar_pendentes"]
+            st.rerun(scope="fragment")
+
+    if st.session_state["mostrar_pendentes"]:
+        with st.container(key="painel_pendentes"):
+            st.markdown(
+                '<div class="titulo-pendentes">📥 Solicitações de acesso pendentes</div>',
+                unsafe_allow_html=True,
+            )
+
+            if not pendentes:
+                st.caption("Nenhuma solicitação pendente no momento.")
+
+            for p in pendentes:
+                col_nome, col_email, col_aprovar, col_rejeitar = st.columns([1.4, 1.8, 0.7, 0.7])
+                col_nome.markdown(
+                    f'<div class="celula-texto">{html.escape(p.get("nome_usuario", "-"))}</div>',
+                    unsafe_allow_html=True,
+                )
+                col_email.markdown(
+                    f'<div class="celula-texto">{html.escape(p.get("email", "-"))}</div>',
+                    unsafe_allow_html=True,
+                )
+                if col_aprovar.button("✅", key=f"aprovar_pendente_{p['nome_usuario']}"):
+                    aprovar_solicitante(p["nome_usuario"])
+                    st.toast(f"Conta de {p['nome_usuario']} aprovada!")
+                    st.rerun(scope="fragment")
+                if col_rejeitar.button("❌", key=f"rejeitar_pendente_{p['nome_usuario']}"):
+                    rejeitar_solicitante(p["nome_usuario"])
+                    st.toast(f"Pedido de {p['nome_usuario']} recusado.")
+                    st.rerun(scope="fragment")
+
+
 if st.session_state["usuario_logado"]:
+    # Balãozinho flutuante de notificação (pedidos de "Criar conta"
+    # pendentes) — visível em qualquer tela do admin, não só na de chamados.
+    notificacao_pendentes_admin()
+
     if st.session_state["aba_admin"] == "empresa":
         painel_cadastros("empresa")
     elif st.session_state["aba_admin"] == "ferramenta":
@@ -2669,8 +2879,8 @@ if st.session_state["usuario_logado"]:
     else:
         painel_admin()
 
-# ------------------ VISÃO PÚBLICA (SOLICITANTE) ------------------
-else:
+# ------------------ VISÃO PÚBLICA (SOLICITANTE LOGADO) ------------------
+elif st.session_state.get("solicitante_logado"):
     # O robô/gif foi removido definitivamente (pedido do usuário) — a coluna
     # única "conteudo_publico" ocupa a largura toda no lugar do antigo par
     # col_robo/col_balao. Mantive o container(key=...) (em vez de um bloco
@@ -2696,6 +2906,14 @@ else:
 
                 if st.button("⭐ Avaliar um atendimento", key="btn_avaliar_atendimento"):
                     st.session_state["opcao_menu"] = "avaliar"
+                    st.rerun()
+
+            # Link discreto de logout — agora que o solicitante faz login,
+            # precisa de um jeito de sair (útil em computador compartilhado).
+            with st.container(key="link_sair_solicitante"):
+                if st.button("Sair", key="btn_sair_solicitante"):
+                    st.session_state["solicitante_logado"] = None
+                    st.session_state["opcao_menu"] = "inicio"
                     st.rerun()
 
         elif st.session_state["opcao_menu"] == "abrir":
@@ -3030,3 +3248,185 @@ else:
         # O botão "Voltar ao Menu" dessa etapa foi movido pra cima, ao lado do
         # "Pesquisar" (ver col_pesquisar/col_voltar_acompanhar) — não fica
         # mais aqui embaixo, sozinho e longe do resto.
+
+# ------------------ TELA DE LOGIN (SOLICITANTE) — NOVA TELA INICIAL ------------------
+# Pedido do usuário: agora TODO MUNDO (administrador e solicitante comum)
+# passa por login antes de qualquer coisa. Enquanto ninguém fez login (nem
+# como admin, nem como solicitante), é essa tela que aparece — no lugar dos
+# 3 botões de sempre entram os campos de Usuário/Senha/Entrar, e um link
+# discreto pra "Criar conta" (e outro pra "Esqueci minha senha").
+else:
+    st.markdown(
+        f'<div class="logo-boas-vindas-box">'
+        f'<img src="{logo_boas_vindas_src}">'
+        f'<div class="boas-vindas-texto">Seja bem-vindo ao Helpdesk.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not st.session_state["mostrar_criar_conta"] and not st.session_state["mostrar_esqueci_senha_solicitante"]:
+        # ---- LOGIN (padrão) ----
+        with st.container(key="tela_login_solicitante"):
+            usuario_login = st.text_input(
+                "Usuário", placeholder="seu.usuario", key="input_usuario_login_solicitante"
+            )
+            senha_login = st.text_input(
+                "Senha", type="password", key="input_senha_login_solicitante"
+            )
+
+            with st.container(key="login_solicitante_botoes"):
+                if st.button("🔑 Entrar", key="btn_entrar_solicitante"):
+                    usuario_norm = (usuario_login or "").strip().lower()
+                    if not usuario_norm or not senha_login:
+                        st.warning("⚠️ Preencha usuário e senha.")
+                    elif verificar_login(usuario_norm, senha_login):
+                        # É um administrador — mesma verificação de sempre.
+                        st.session_state["usuario_logado"] = usuario_norm
+                        st.rerun()
+                    else:
+                        resultado_login = verificar_login_solicitante(usuario_norm, senha_login)
+                        if resultado_login == "ok":
+                            registro_sol = buscar_solicitante(usuario_norm)
+                            st.session_state["solicitante_logado"] = {
+                                "nome_usuario": usuario_norm,
+                                "email": registro_sol["email"] if registro_sol else "",
+                            }
+                            st.rerun()
+                        elif resultado_login == "pendente":
+                            st.warning(
+                                "⏳ Sua conta ainda está aguardando aprovação do administrador."
+                            )
+                        else:
+                            st.error("Usuário ou senha incorretos.")
+
+            with st.container(key="links_login_solicitante"):
+                col_link_criar, col_link_esqueci = st.columns(2)
+                with col_link_criar:
+                    if st.button("Criar conta", key="btn_toggle_criar_conta"):
+                        st.session_state["mostrar_criar_conta"] = True
+                        st.rerun()
+                with col_link_esqueci:
+                    if st.button("Esqueci minha senha", key="btn_toggle_esqueci_senha_solicitante"):
+                        st.session_state["mostrar_esqueci_senha_solicitante"] = True
+                        st.rerun()
+
+    elif st.session_state["mostrar_criar_conta"]:
+        # ---- CRIAR CONTA ----
+        with st.container(key="tela_login_solicitante"):
+            st.markdown(
+                '<div class="fala-titulo-sem-balao titulo-identificacao">📝 Criar conta:</div>',
+                unsafe_allow_html=True,
+            )
+
+            novo_usuario_sol = st.text_input(
+                "Nome de usuário",
+                placeholder="ex: felipe.rodrigues",
+                key="input_novo_usuario_solicitante",
+            )
+            st.caption("Só letras minúsculas, sem espaço. Nome composto: separe com ponto.")
+            novo_email_sol = st.text_input(
+                "E-mail corporativo",
+                placeholder="voce@suaempresa.com",
+                key="input_novo_email_solicitante",
+            )
+            nova_senha_sol_criar = st.text_input(
+                "Senha desejada", type="password", key="input_nova_senha_solicitante"
+            )
+            st.caption("Precisa ter pelo menos 1 caractere especial (número é opcional).")
+
+            with st.container(key="login_solicitante_botoes"):
+                if st.button("✅ Criar usuário", key="btn_criar_usuario_solicitante"):
+                    resultado_criacao = criar_solicitacao_conta(
+                        novo_usuario_sol, novo_email_sol, nova_senha_sol_criar
+                    )
+                    if resultado_criacao["ok"]:
+                        st.success(
+                            "Solicitação enviada! Assim que um administrador aprovar, "
+                            "você já pode entrar normalmente."
+                        )
+                    else:
+                        st.warning(f"⚠️ {resultado_criacao['erro']}")
+
+                if st.button("← Voltar", key="btn_voltar_criar_conta"):
+                    st.session_state["mostrar_criar_conta"] = False
+                    st.rerun()
+
+    elif st.session_state["mostrar_esqueci_senha_solicitante"]:
+        # ---- ESQUECI MINHA SENHA (via código enviado por e-mail) ----
+        with st.container(key="tela_login_solicitante"):
+            st.markdown(
+                '<div class="fala-titulo-sem-balao titulo-identificacao">🔑 Esqueci minha senha:</div>',
+                unsafe_allow_html=True,
+            )
+
+            if not st.session_state["codigo_senha_solicitante_enviado"]:
+                usuario_recuperar = st.text_input(
+                    "Seu nome de usuário", key="input_usuario_recuperar_senha"
+                )
+
+                with st.container(key="login_solicitante_botoes"):
+                    if st.button("📧 Enviar código por e-mail", key="btn_enviar_codigo_solicitante"):
+                        usuario_recuperar_norm = (usuario_recuperar or "").strip().lower()
+                        registro_recuperar = buscar_solicitante(usuario_recuperar_norm)
+                        if not registro_recuperar:
+                            st.error("Não encontramos essa conta.")
+                        else:
+                            codigo_sol = "".join(random.choices(string.digits, k=6))
+                            if enviar_email_codigo_senha(
+                                registro_recuperar["email"], usuario_recuperar_norm, codigo_sol
+                            ):
+                                st.session_state["codigo_senha_solicitante_valor"] = codigo_sol
+                                st.session_state["codigo_senha_solicitante_usuario"] = usuario_recuperar_norm
+                                st.session_state["codigo_senha_solicitante_gerado_em"] = datetime.now(timezone.utc)
+                                st.session_state["codigo_senha_solicitante_enviado"] = True
+                                st.success(f"Código enviado para {registro_recuperar['email']}!")
+                                st.rerun()
+                            else:
+                                st.error("Não foi possível enviar o e-mail. Tente novamente mais tarde.")
+
+                    if st.button("← Voltar", key="btn_voltar_esqueci_senha_1"):
+                        st.session_state["mostrar_esqueci_senha_solicitante"] = False
+                        st.rerun()
+            else:
+                codigo_digitado_sol = st.text_input(
+                    "Código recebido por e-mail", key="input_codigo_solicitante"
+                )
+                nova_senha_recuperar = st.text_input(
+                    "Nova senha", type="password", key="input_nova_senha_recuperar"
+                )
+                confirmar_nova_senha_recuperar = st.text_input(
+                    "Confirmar nova senha", type="password", key="input_confirmar_nova_senha_recuperar"
+                )
+
+                with st.container(key="login_solicitante_botoes"):
+                    if st.button("💾 Confirmar e trocar senha", key="btn_confirmar_nova_senha_solicitante"):
+                        codigo_valido_sol = st.session_state.get("codigo_senha_solicitante_valor")
+                        gerado_em_sol = st.session_state.get("codigo_senha_solicitante_gerado_em")
+                        expirado_sol = gerado_em_sol and (
+                            datetime.now(timezone.utc) - gerado_em_sol
+                        ).total_seconds() > 600
+
+                        if not validar_formato_senha_solicitante(nova_senha_recuperar):
+                            st.warning("A nova senha precisa ter pelo menos 1 caractere especial.")
+                        elif expirado_sol:
+                            st.error("Código expirado. Solicite um novo.")
+                            st.session_state["codigo_senha_solicitante_enviado"] = False
+                        elif codigo_digitado_sol.strip() != codigo_valido_sol:
+                            st.error("Código incorreto.")
+                        elif nova_senha_recuperar != confirmar_nova_senha_recuperar:
+                            st.warning("A confirmação não confere com a nova senha.")
+                        else:
+                            atualizar_senha_solicitante(
+                                st.session_state["codigo_senha_solicitante_usuario"], nova_senha_recuperar
+                            )
+                            st.session_state["mostrar_esqueci_senha_solicitante"] = False
+                            st.session_state["codigo_senha_solicitante_enviado"] = False
+                            st.session_state.pop("codigo_senha_solicitante_valor", None)
+                            st.session_state.pop("codigo_senha_solicitante_gerado_em", None)
+                            st.session_state.pop("codigo_senha_solicitante_usuario", None)
+                            st.success("Senha alterada! Já pode entrar com a nova senha.")
+                            st.rerun()
+
+                    if st.button("🔁 Reenviar código", key="btn_reenviar_codigo_solicitante"):
+                        st.session_state["codigo_senha_solicitante_enviado"] = False
+                        st.rerun()

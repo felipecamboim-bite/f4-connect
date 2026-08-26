@@ -2,3 +2,5 @@ supabase
 pandas
 requests
 openpyxl
+gspread
+google-auth

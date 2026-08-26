@@ -1640,6 +1640,37 @@ st.markdown(
             outline: none !important;
         }}
 
+        /* Menu que abre com as opções do campo (Empresa, Ferramenta, etc.):
+           esse menu "flutua" separado do campo no HTML (é renderizado à
+           parte pelo componente react-aria), então não dá pra alcançá-lo só
+           escopando por .st-key-conteudo_publico — por isso essa regra não
+           tem esse escopo, vale pro app inteiro. Usa os nomes de classe
+           padrão do react-aria-components (biblioteca usada por trás do
+           campo, confirmado pelo "react-aria-ComboBox" visto no
+           Inspecionar). Se não bater exatamente, é só ajustar depois. */
+        .react-aria-Popover {{
+            background-color: #F1F1EA !important;
+            border: none !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+        }}
+
+        .react-aria-ListBox,
+        .react-aria-ListBoxItem,
+        .react-aria-Option {{
+            background-color: #F1F1EA !important;
+            color: #24261F !important;
+        }}
+
+        .react-aria-ListBoxItem[data-focused="true"],
+        .react-aria-ListBoxItem[data-hovered="true"],
+        .react-aria-ListBoxItem[aria-selected="true"],
+        .react-aria-Option[data-focused="true"],
+        .react-aria-Option[data-hovered="true"],
+        .react-aria-Option[aria-selected="true"] {{
+            background-color: rgba(0, 0, 0, 0.08) !important;
+            color: #24261F !important;
+        }}
+
         /* Campos "Qual empresa você faz parte?" e "Digite seu Nome e Sobrenome":
            estavam esticando quase até a borda da tela — largura mais contida */
         .st-key-select_empresa_etapa1,

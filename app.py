@@ -2506,7 +2506,7 @@ st.markdown(
         /* somente leitura (pedido do usuário).                          */
         /* ========================================================= */
         .st-key-resultado_consulta_tabela {{
-            background-color: #7C845D !important;
+            background-color: #F4F4F1 !important;
             border-radius: 10px !important;
             padding: 10px !important;
         }}
@@ -2519,37 +2519,37 @@ st.markdown(
             padding: 2px !important;
         }}
 
+        /* Pedido do usuário: cabeçalhos sem bloco de cor de fundo (mesmo tom
+           de branco da tabela), com uma borda sutil (não preta) no lugar */
         .st-key-resultado_consulta_tabela .header-box {{
-            background-color: #3B3D35 !important;
-            color: #FFFFFF !important;
-            border: none !important;
+            background-color: #F4F4F1 !important;
+            color: #000000 !important;
+            border: 1px solid #D9D9D3 !important;
             border-radius: 8px !important;
             box-shadow: none !important;
             font-size: 11px !important;
             margin-bottom: 6px !important;
         }}
 
-        /* Badge de Status: mantém o mesmo visual (contorno branco, sem
-           preenchimento) que a tabela antiga (.tabela-consulta) já usava,
-           em vez do padrão cyan/azul usado no resto do app */
+        /* Badge de Status: contorno sutil (mesma cor das outras bordas),
+           sem preenchimento, texto preto */
         .st-key-resultado_consulta_tabela .badge-status {{
             background-color: transparent !important;
-            border: 1px solid #FFFFFF !important;
-            color: #FFFFFF !important;
+            border: 1px solid #D9D9D3 !important;
+            color: #000000 !important;
         }}
 
-        /* Campos editáveis (texto/textarea/seletor de severidade): fundo
-           escuro combinando com o resto da planilha, texto branco, compactos */
+        /* Campos editáveis (texto/textarea/seletor de severidade): mesmo
+           tom de branco da tabela, borda sutil, texto preto, compactos */
         .st-key-resultado_consulta_tabela .stTextInput input,
         .st-key-resultado_consulta_tabela .stTextInput div[data-baseweb],
         .st-key-resultado_consulta_tabela div[data-testid="stTextInputRootElement"],
         .st-key-resultado_consulta_tabela .stTextArea textarea,
         .st-key-resultado_consulta_tabela .stTextArea div[data-baseweb],
         .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb="select"] {{
-            background-color: #3B3D35 !important;
-            color: #FFFFFF !important;
-            border: none !important;
-            border-color: transparent !important;
+            background-color: #F4F4F1 !important;
+            color: #000000 !important;
+            border: 1px solid #D9D9D3 !important;
             box-shadow: none !important;
             outline: none !important;
             border-radius: 8px !important;
@@ -2565,8 +2565,8 @@ st.markdown(
         }}
 
         .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb] * {{
-            color: #FFFFFF !important;
-            fill: #FFFFFF !important;
+            color: #000000 !important;
+            fill: #000000 !important;
         }}
 
         .st-key-resultado_consulta_tabela .stTextArea textarea {{
@@ -2578,6 +2578,7 @@ st.markdown(
             font-size: 12px !important;
             padding: 8px 4px !important;
             text-align: center !important;
+            color: #000000 !important;
         }}
 
         /* Botão "Salvar": compacto, mesmo padrão dos botões "Excluir" das
@@ -2589,9 +2590,9 @@ st.markdown(
         }}
 
         .st-key-resultado_consulta_tabela .stButton > button {{
-            background-color: #3B3D35 !important;
-            color: #FFFFFF !important;
-            border: none !important;
+            background-color: #F4F4F1 !important;
+            color: #000000 !important;
+            border: 1px solid #D9D9D3 !important;
             box-shadow: none !important;
             border-radius: 20px !important;
             width: auto !important;
@@ -2605,11 +2606,11 @@ st.markdown(
             font-size: 12px !important;
             font-weight: 600 !important;
             white-space: nowrap !important;
-            color: #FFFFFF !important;
+            color: #000000 !important;
         }}
 
         .st-key-resultado_consulta_tabela .stButton > button:hover {{
-            background-color: #52543f !important;
+            background-color: #EAEAE4 !important;
         }}
 
         /* No celular/tablet: mesma técnica de "afastar" (zoom) já usada nas

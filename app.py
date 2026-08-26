@@ -2582,11 +2582,17 @@ st.markdown(
         }}
 
         /* Badge de Status: contorno sutil (mesma cor das outras bordas),
-           sem preenchimento, texto preto */
+           sem preenchimento, texto preto, mesmo "quadradinho de cantos
+           arredondados" (border-radius 8px) usado no resto da tabela — em
+           vez do formato de pílula que tinha antes */
         .st-key-resultado_consulta_tabela .badge-status {{
             background-color: transparent !important;
             border: 1px solid #D9D9D3 !important;
+            border-radius: 8px !important;
             color: #000000 !important;
+            display: inline-block !important;
+            min-width: 84px !important;
+            text-align: center !important;
         }}
 
         /* Campos editáveis (texto/textarea/seletor de severidade): mesmo
@@ -2596,7 +2602,9 @@ st.markdown(
         .st-key-resultado_consulta_tabela div[data-testid="stTextInputRootElement"],
         .st-key-resultado_consulta_tabela .stTextArea textarea,
         .st-key-resultado_consulta_tabela .stTextArea div[data-baseweb],
-        .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb="select"] {{
+        .st-key-resultado_consulta_tabela div[data-testid="stTextAreaRootElement"],
+        .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb="select"],
+        .st-key-resultado_consulta_tabela .stSelectbox [role="group"] {{
             background-color: #F4F4F1 !important;
             color: #000000 !important;
             border: 1px solid #D9D9D3 !important;
@@ -2607,20 +2615,62 @@ st.markdown(
             text-align: center !important;
         }}
 
+        /* Mantém a mesma borda sutil (sem virar preta) quando o campo de
+           texto/descrição/severidade está com foco */
+        .st-key-resultado_consulta_tabela .stTextInput input:focus,
+        .st-key-resultado_consulta_tabela .stTextInput div[data-baseweb]:focus-within,
+        .st-key-resultado_consulta_tabela div[data-testid="stTextInputRootElement"]:focus-within,
+        .st-key-resultado_consulta_tabela .stTextArea textarea:focus,
+        .st-key-resultado_consulta_tabela .stTextArea div[data-baseweb]:focus-within,
+        .st-key-resultado_consulta_tabela div[data-testid="stTextAreaRootElement"]:focus-within,
+        .st-key-resultado_consulta_tabela .stSelectbox [role="group"]:focus-within {{
+            border: 1px solid #D9D9D3 !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }}
+
+        /* Essa versão do Streamlit desenha o selectbox de Severidade com
+           react-aria (input[role="combobox"] + button[aria-label="Open"]
+           dentro de um [role="group"]), não o antigo data-baseweb=select —
+           por isso o texto/ícone precisam ser alcançados por esses
+           atributos pra ficarem pretos e centralizados de verdade */
+        .st-key-resultado_consulta_tabela .stSelectbox input[role="combobox"] {{
+            color: #000000 !important;
+            text-align: center !important;
+        }}
+
+        .st-key-resultado_consulta_tabela .stSelectbox button[aria-label="Open"],
+        .st-key-resultado_consulta_tabela .stSelectbox button[aria-label="Open"] svg {{
+            color: #000000 !important;
+            fill: #000000 !important;
+        }}
+
         /* Centraliza também o texto escolhido dentro do seletor de Severidade
            (o data-align acima só centraliza o <input>/textarea normais — o
            conteúdo do selectbox fica num flex interno próprio) */
-        .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb="select"] > div {{
+        .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb="select"] > div,
+        .st-key-resultado_consulta_tabela .stSelectbox [role="group"] {{
             justify-content: center !important;
         }}
 
-        .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb] * {{
+        .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb] *,
+        .st-key-resultado_consulta_tabela .stSelectbox [role="group"] * {{
             color: #000000 !important;
             fill: #000000 !important;
         }}
 
         .st-key-resultado_consulta_tabela .stTextArea textarea {{
             min-height: 68px !important;
+        }}
+
+        /* Cabeçalho vazio (coluna do botão "Salvar", sem título): sem texto
+           dentro, então a borda do header-box sobrava como um quadrado vazio
+           por cima do botão — remove a borda/fundo só desse cabeçalho em
+           branco, mantendo os outros cabeçalhos com título normalmente */
+        .st-key-resultado_consulta_tabela .header-box:empty {{
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
         }}
 
         .st-key-resultado_consulta_tabela .celula-protocolo,
@@ -2644,8 +2694,9 @@ st.markdown(
             color: #000000 !important;
             border: 1px solid #D9D9D3 !important;
             box-shadow: none !important;
-            border-radius: 20px !important;
+            border-radius: 8px !important;
             width: auto !important;
+            min-width: 84px !important;
             max-width: none !important;
             padding: 6px 12px !important;
             min-height: auto !important;

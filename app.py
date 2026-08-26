@@ -320,7 +320,7 @@ def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha):
     if status_inicial == "aprovado":
         enviar_email_conta_solicitante_aprovada(email_norm, nome_norm)
 
-    return {"ok": True}
+    return {"ok": True, "debug_situacao_rh": situacao_rh, "debug_qtd_colaboradores": len(listar_colaboradores_rh())}
 
 def listar_solicitantes_pendentes():
     if supabase:
@@ -3702,6 +3702,12 @@ else:
                         st.success(
                             "Solicitação enviada! Assim que um administrador aprovar, "
                             "você já pode entrar normalmente."
+                        )
+                        st.caption(
+                            f"[debug temporário] situação encontrada na planilha: "
+                            f"{resultado_criacao.get('debug_situacao_rh')!r} | "
+                            f"colaboradores lidos da planilha: "
+                            f"{resultado_criacao.get('debug_qtd_colaboradores')}"
                         )
                     else:
                         st.warning(f"{resultado_criacao['erro']}")

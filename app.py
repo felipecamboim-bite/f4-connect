@@ -375,6 +375,19 @@ OPCOES_STATUS = [
     "Encerrado pelo solicitante"
 ]
 
+# Paleta do painel de Insights (BI): usa os verdes da identidade do site
+# (mesmo tom dos botões/menu) em vez de azul/ciano, pra não destoar do
+# resto do sistema. "Cancelado" fica num cinza neutro de propósito — não
+# é um resultado "positivo" pra ganhar um tom de verde.
+CORES_STATUS_INSIGHTS = {
+    "Aguardando atendimento": "#C9DF8A",
+    "Em análise": "#8BC34A",
+    "Em atendimento": "#4C7A1E",
+    "Concluído": "#1D5902",
+    "Cancelado": "#8A8A8A",
+    "Encerrado pelo solicitante": "#72A703",
+}
+
 # Pedido do usuário: nenhum emoji nas telas do solicitante nem nos rótulos
 # que ele escolhe (por isso as opções de severidade abaixo não têm mais a
 # bolinha colorida embutida no valor). A bolinha continua existindo, mas só
@@ -1467,19 +1480,25 @@ st.markdown(
         }}
 
         /* ========================================================= */
-        /* PAINEL DE INSIGHTS (BI): mesmo cartão azul-marinho/ciano usado   */
-        /* nos cabeçalhos (.header-box) das outras telas do admin, só que  */
-        /* envolvendo cada bloco de gráfico/indicador.                    */
+        /* PAINEL DE INSIGHTS (BI): usa os mesmos verdes da identidade do  */
+        /* site (logo/menu/botões), em vez do azul/ciano das tabelas do   */
+        /* admin — pedido do usuário pra não virar um "carnaval de cores" */
+        /* misturado com o visual branco/verde do resto do sistema.       */
+        /* Pedido do usuário: sem "tela flutuante" própria por trás de     */
+        /* tudo — o fundo fica preto igual ao resto do painel do admin,   */
+        /* só os cartõezinhos de métrica (mais abaixo) continuam com      */
+        /* destaque, que foi o que ele disse que gostou.                  */
         /* ========================================================= */
         .st-key-painel_insights {{
-            background-color: rgba(10, 25, 47, 0.55) !important;
-            border: 1px solid rgba(0, 183, 255, 0.25) !important;
-            border-radius: 12px !important;
-            padding: 16px 20px !important;
+            background-color: transparent !important;
+            border: none !important;
+            padding: 16px 0 !important;
         }}
 
+        /* Letras (títulos de seção, tipo "Chamados por status") em branco;
+           só os NÚMEROS (valores das métricas, mais abaixo) ficam verdes */
         .subtitulo-insights {{
-            color: #00d4ff !important;
+            color: #FFFFFF !important;
             font-family: 'Inter', sans-serif !important;
             font-weight: 800 !important;
             font-size: 14px !important;
@@ -1489,8 +1508,8 @@ st.markdown(
         }}
 
         .st-key-painel_insights [data-testid="stMetric"] {{
-            background-color: rgba(10, 25, 47, 0.85) !important;
-            border: 1px solid rgba(0, 183, 255, 0.4) !important;
+            background-color: rgba(29, 89, 2, 0.35) !important;
+            border: 1px solid rgba(114, 167, 3, 0.5) !important;
             border-radius: 8px !important;
             padding: 10px 6px !important;
         }}
@@ -1501,12 +1520,15 @@ st.markdown(
         }}
 
         .st-key-painel_insights [data-testid="stMetricValue"] {{
-            color: #00d4ff !important;
+            color: #9BCB2E !important;
         }}
 
+        /* Filtro de período: mais discreto (não ocupa mais a largura toda),
+           pra sobrar espaço do lado quando outros filtros forem adicionados
+           — ver largura da coluna estreita lá no Python (painel_insights) */
         .st-key-painel_insights .stSelectbox div[data-baseweb="select"] {{
-            background-color: rgba(10, 25, 47, 0.85) !important;
-            border: 1px solid rgba(0, 183, 255, 0.4) !important;
+            background-color: rgba(29, 89, 2, 0.35) !important;
+            border: 1px solid rgba(114, 167, 3, 0.5) !important;
             border-radius: 8px !important;
         }}
 
@@ -3168,7 +3190,11 @@ def _grafico_barras_contagem(lista_chamados, campo, rotulo, valor_vazio="Não in
     ).sort_values("Quantidade", ascending=False).head(10)
 
     fig = px.bar(df, x=rotulo, y="Quantidade", text="Quantidade")
-    fig.update_traces(marker_color="#00d4ff", textposition="outside", cliponaxis=False)
+    # width=0.35 trava a largura da barra numa fração do espaço da categoria
+    # — sem isso, com pouca(s) categoria(s) (ex: só 1 ferramenta no período)
+    # o Plotly estica a barra pra ocupar o gráfico inteiro. Assim ela fica
+    # sempre fina e proporcional, tenha 1 ou 10 barras.
+    fig.update_traces(marker_color="#72A703", textposition="outside", cliponaxis=False, width=0.35)
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -3176,6 +3202,8 @@ def _grafico_barras_contagem(lista_chamados, campo, rotulo, valor_vazio="Não in
         xaxis_title=None,
         yaxis_title=None,
         margin=dict(t=10, b=10, l=10, r=10),
+        height=260,
+        bargap=0.5,
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -3198,12 +3226,17 @@ def painel_insights():
             "Últimos 90 dias": 90,
             "Tudo": None,
         }
-        periodo_escolhido = st.selectbox(
-            "Período",
-            list(opcoes_periodo.keys()),
-            index=1,
-            key="select_periodo_insights",
-        )
+        # Coluna estreita pro filtro de período (pedido do usuário: mais
+        # discreto, não ocupando a largura toda) — o resto da linha fica
+        # livre pra outros filtros que a gente for adicionando aqui do lado.
+        col_periodo, _col_espaco_filtros = st.columns([1, 3])
+        with col_periodo:
+            periodo_escolhido = st.selectbox(
+                "Período",
+                list(opcoes_periodo.keys()),
+                index=1,
+                key="select_periodo_insights",
+            )
         dias = opcoes_periodo[periodo_escolhido]
 
         if dias:
@@ -3238,7 +3271,10 @@ def painel_insights():
         })
         df_status = df_status[df_status["Quantidade"] > 0]
         if not df_status.empty:
-            fig_status = px.pie(df_status, names="Status", values="Quantidade", hole=0.5)
+            fig_status = px.pie(
+                df_status, names="Status", values="Quantidade", hole=0.5,
+                color="Status", color_discrete_map=CORES_STATUS_INSIGHTS,
+            )
             fig_status.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",

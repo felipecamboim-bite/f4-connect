@@ -1597,11 +1597,8 @@ st.markdown(
         .st-key-conteudo_publico div[data-testid="stTextInputRootElement"],
         .st-key-conteudo_publico .stTextArea textarea,
         .st-key-conteudo_publico .stTextArea div[data-baseweb],
-        .st-key-conteudo_publico .stSelectbox div[data-baseweb],
-        .st-key-conteudo_publico .stSelectbox div[data-baseweb="select"],
-        .st-key-conteudo_publico .stSelectbox div[data-baseweb="select"] > div,
-        .st-key-conteudo_publico [data-testid="stSelectbox"] div[data-baseweb="select"],
-        .st-key-conteudo_publico [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
+        .st-key-conteudo_publico .stSelectbox [role="group"],
+        .st-key-conteudo_publico .stSelectbox input[role="combobox"] {{
             background-color: #F1F1EA !important;
             color: #24261F !important;
             border: none !important;
@@ -1611,10 +1608,18 @@ st.markdown(
         }}
 
         /* Texto/ícone de dentro do selectbox (ex: "Selecione...", a setinha) —
-           herdavam branco da regra escura antiga e ficavam invisíveis no fundo
-           claro novo */
-        .st-key-conteudo_publico .stSelectbox div[data-baseweb] *,
-        .st-key-conteudo_publico [data-testid="stSelectbox"] svg {{
+           herdavam branco do tema escuro padrão do Streamlit e ficavam
+           invisíveis no fundo claro novo. Essa versão do Streamlit usa um
+           componente "react-aria" (input[role="combobox"] de verdade, mais
+           um <button aria-label="Open"> pro ícone), não o antigo
+           data-baseweb — por isso o seletor é por esses atributos. */
+        .st-key-conteudo_publico .stSelectbox input[role="combobox"]::placeholder {{
+            color: #24261F !important;
+            opacity: 1 !important;
+        }}
+
+        .st-key-conteudo_publico .stSelectbox button[aria-label="Open"],
+        .st-key-conteudo_publico .stSelectbox button[aria-label="Open"] svg {{
             color: #24261F !important;
             fill: #24261F !important;
         }}
@@ -1627,8 +1632,8 @@ st.markdown(
         .st-key-conteudo_publico div[data-testid="stTextInputRootElement"]:focus-within,
         .st-key-conteudo_publico .stTextArea textarea:focus,
         .st-key-conteudo_publico .stTextArea div[data-baseweb]:focus-within,
-        .st-key-conteudo_publico .stSelectbox div[data-baseweb]:focus-within,
-        .st-key-conteudo_publico .stSelectbox div[data-baseweb="select"]:focus-within {{
+        .st-key-conteudo_publico .stSelectbox [role="group"]:focus-within,
+        .st-key-conteudo_publico .stSelectbox input[role="combobox"]:focus {{
             border: none !important;
             border-color: transparent !important;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;

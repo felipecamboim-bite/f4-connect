@@ -1521,17 +1521,34 @@ st.markdown(
             justify-content: center !important;
         }}
 
+        /* Centraliza de verdade tanto o texto quanto o número, mesmo
+           quando o rótulo é curto (ex: "Total", "Cancelado") — sem forçar
+           display:flex + text-align nos dois níveis (o de fora e o <p>/
+           <div> de dentro), rótulos curtos ficavam grudados na esquerda
+           enquanto o número (que já era flex) ficava centralizado */
+        .st-key-painel_insights [data-testid="stMetricLabel"],
+        .st-key-painel_insights [data-testid="stMetricValue"] {{
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: 100% !important;
+            text-align: center !important;
+        }}
+
+        .st-key-painel_insights [data-testid="stMetricLabel"] p,
+        .st-key-painel_insights [data-testid="stMetricLabel"] div,
+        .st-key-painel_insights [data-testid="stMetricLabel"] span {{
+            text-align: center !important;
+            width: 100% !important;
+        }}
+
         .st-key-painel_insights [data-testid="stMetricLabel"] {{
             color: #FFFFFF !important;
             font-size: 12px !important;
-            justify-content: center !important;
-            width: 100% !important;
         }}
 
         .st-key-painel_insights [data-testid="stMetricValue"] {{
             color: #9BCB2E !important;
-            justify-content: center !important;
-            width: 100% !important;
         }}
 
         /* Filtro de período: mais discreto (não ocupa mais a largura toda),

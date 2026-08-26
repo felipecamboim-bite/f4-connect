@@ -1222,15 +1222,35 @@ st.markdown(
             padding-top: 6px !important;
         }}
 
+        /* Aprovar/Rejeitar: só o emoji (✓ verde / X vermelho), mas com uma
+           "cara" de botão pequeno e discreto — quadradinho arredondado, em
+           vez de ficar largo com a palavra escrita (que ficava desproporcional
+           nessa coluna estreita). */
         .st-key-painel_pendentes .stButton > button {{
-            width: auto !important;
-            max-width: none !important;
-            padding: 4px 8px !important;
-            min-height: auto !important;
-            background: none !important;
-            background-color: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
+            width: 32px !important;
+            height: 32px !important;
+            max-width: 32px !important;
+            min-height: 32px !important;
+            padding: 0 !important;
+            margin: 2px auto !important;
+            background-color: #2b2d31 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }}
+
+        .st-key-painel_pendentes .stButton > button p {{
+            font-size: 14px !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+        }}
+
+        .st-key-painel_pendentes .stButton > button:hover {{
+            background-color: #3a3d42 !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
         }}
 
         @media (max-width: 768px) {{
@@ -2994,11 +3014,11 @@ def notificacao_pendentes_admin():
                     f'<div class="celula-texto">{html.escape(p.get("email", "-"))}</div>',
                     unsafe_allow_html=True,
                 )
-                if col_aprovar.button("Aprovar", key=f"aprovar_pendente_{p['nome_usuario']}"):
+                if col_aprovar.button("✅", key=f"aprovar_pendente_{p['nome_usuario']}"):
                     aprovar_solicitante(p["nome_usuario"])
                     st.toast(f"Conta de {p['nome_usuario']} aprovada!")
                     st.rerun(scope="fragment")
-                if col_rejeitar.button("Rejeitar", key=f"rejeitar_pendente_{p['nome_usuario']}"):
+                if col_rejeitar.button("❌", key=f"rejeitar_pendente_{p['nome_usuario']}"):
                     rejeitar_solicitante(p["nome_usuario"])
                     st.toast(f"Pedido de {p['nome_usuario']} recusado.")
                     st.rerun(scope="fragment")

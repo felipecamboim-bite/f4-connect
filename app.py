@@ -729,10 +729,21 @@ st.markdown(
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
+        html {{
+            /* Impede que o celular/navegador aplique o modo escuro do
+             sistema por conta própria (o que deixava o fundo branco das
+             telas de login/menu virando preto e escondendo a logo, que
+             tem o texto em preto pensado pra fundo claro). O app já
+             controla sozinho quando é claro (público) ou escuro (admin),
+             então o navegador não precisa "ajudar" com isso. */
+            color-scheme: light !important;
+        }}
+
         html, body {{
             margin: 0 !important;
             overflow-x: hidden !important;
             scroll-behavior: auto !important;
+            background-color: {_cor_fundo_app} !important;
         }}
 
         .stApp {{

@@ -1222,6 +1222,13 @@ st.markdown(
             font-size: 14px !important;
         }}
 
+        .st-key-tela_login_solicitante [data-testid="stAlertContentInfo"],
+        .st-key-tela_login_solicitante [data-testid="stAlertContentInfo"] p,
+        .st-key-tela_login_solicitante [data-testid="stAlertContentInfo"] div {{
+            color: #055160 !important;
+            font-size: 14px !important;
+        }}
+
         /* Botões principais da tela de login (Entrar / Criar usuário /
            Confirmar / Voltar / Reenviar): mesmo verde e mesmo tamanho
            compacto já usado nos botões "Avançar"/"Voltar ao Menu" do resto
@@ -3703,8 +3710,8 @@ else:
                             "Solicitação enviada! Assim que um administrador aprovar, "
                             "você já pode entrar normalmente."
                         )
-                        st.caption(
-                            f"[debug temporário] situação encontrada na planilha: "
+                        st.info(
+                            f"DEBUG TEMPORARIO -> situacao encontrada: "
                             f"{resultado_criacao.get('debug_situacao_rh')!r} | "
                             f"colaboradores lidos da planilha: "
                             f"{resultado_criacao.get('debug_qtd_colaboradores')}"

@@ -157,6 +157,7 @@ def adicionar_usuario_admin(usuario, email, criado_por):
                 "email": email.strip(),
                 "senha": hash_senha(senha_temp),
                 "criado_por": criado_por,
+                "created_at": datetime.now(timezone.utc).isoformat(),
             }
         ).execute()
 
@@ -349,7 +350,11 @@ def listar_empresas_detalhado():
 def adicionar_empresa(nome, criado_por):
     if supabase:
         supabase.table("empresas_chamados").insert(
-            {"nome": nome, "criado_por": criado_por}
+            {
+                "nome": nome,
+                "criado_por": criado_por,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
         ).execute()
 
 def remover_empresa(nome):
@@ -378,7 +383,11 @@ def listar_ferramentas_detalhado():
 def adicionar_ferramenta(nome, criado_por):
     if supabase:
         supabase.table("ferramentas_chamados").insert(
-            {"nome": nome, "criado_por": criado_por}
+            {
+                "nome": nome,
+                "criado_por": criado_por,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
         ).execute()
 
 def remover_ferramenta(nome):

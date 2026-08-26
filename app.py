@@ -4,6 +4,7 @@ import hashlib
 import html
 import re
 import streamlit as st
+import streamlit.components.v1 as components
 from datetime import datetime, timedelta, timezone
 from supabase import create_client, Client
 import smtplib
@@ -16,6 +17,36 @@ st.set_page_config(
     page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
+)
+
+# Pedido do usuário: no celular com o modo escuro do sistema ativado, o
+# navegador (esse recurso existe em vários navegadores de celular, tipo o
+# "modo escuro forçado" do Chrome no Android) tentava "ajudar" escurecendo
+# sozinho as telas com fundo branco (login, menu inicial) — só que a logo
+# tem o texto em preto, pensado pra fundo claro, e sumia em cima do fundo
+# escurecido à força. O CSS (color-scheme / background-color no html,body)
+# sozinho não é suficiente pra desligar esse recurso em todos os
+# navegadores; a forma confiável é essa <meta name="color-scheme"> dentro
+# do <head> de verdade da página — e como st.markdown não roda <script>,
+# isso só é possível via um componente (que roda dentro de um iframe, mas
+# com acesso à página principal por estar na mesma origem).
+components.html(
+    """
+    <script>
+    (function() {
+        try {
+            var doc = window.parent.document;
+            if (!doc.querySelector('meta[name="color-scheme"]')) {
+                var meta = doc.createElement('meta');
+                meta.name = 'color-scheme';
+                meta.content = 'light only';
+                doc.head.appendChild(meta);
+            }
+        } catch (e) {}
+    })();
+    </script>
+    """,
+    height=0,
 )
 
 # Lista de Atendentes disponíveis para atribuição

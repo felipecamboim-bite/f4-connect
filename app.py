@@ -205,10 +205,13 @@ def buscar_solicitante(nome_usuario):
         return res.data[0] if res.data else None
     return None
 
-def criar_solicitacao_conta(nome_usuario, email, senha):
+def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha):
+    nome_completo_norm = (nome_completo or "").strip()
     nome_norm = (nome_usuario or "").strip().lower()
     email_norm = (email or "").strip()
 
+    if not nome_completo_norm:
+        return {"ok": False, "erro": "Digite seu nome completo."}
     if not validar_formato_usuario_solicitante(nome_norm):
         return {
             "ok": False,
@@ -225,6 +228,7 @@ def criar_solicitacao_conta(nome_usuario, email, senha):
     if supabase:
         supabase.table("solicitantes").insert(
             {
+                "nome_completo": nome_completo_norm,
                 "nome_usuario": nome_norm,
                 "email": email_norm,
                 "senha": hash_senha(senha),
@@ -3584,6 +3588,11 @@ else:
                 unsafe_allow_html=True,
             )
 
+            novo_nome_completo_sol = st.text_input(
+                "Nome completo",
+                placeholder="ex: Felipe Camboim",
+                key="input_novo_nome_completo_solicitante",
+            )
             novo_usuario_sol = st.text_input(
                 "Nome de usuário",
                 placeholder="ex: felipe.rodrigues",
@@ -3603,7 +3612,7 @@ else:
             with st.container(key="login_solicitante_botoes"):
                 if st.button("Criar usuário", key="btn_criar_usuario_solicitante"):
                     resultado_criacao = criar_solicitacao_conta(
-                        novo_usuario_sol, novo_email_sol, nova_senha_sol_criar
+                        novo_nome_completo_sol, novo_usuario_sol, novo_email_sol, nova_senha_sol_criar
                     )
                     if resultado_criacao["ok"]:
                         st.success(

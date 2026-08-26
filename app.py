@@ -225,6 +225,30 @@ def _normalizar_texto_busca(texto):
 _SHEET_ID_VALIDACAO_CADASTRO = "1h02pt8nufDXK69_WTyBMHvjWEkzikG-69DU8OxM4oAI"
 
 
+def _diagnosticar_conexao_sheets():
+    """Debug temporário: tenta autenticar e ler a planilha, devolvendo o erro exato."""
+    resultado = {"etapa": None, "erro": None, "linhas": None}
+    try:
+        escopos = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        credenciais = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"], scopes=escopos
+        )
+        cliente = gspread.authorize(credenciais)
+    except Exception as e:
+        resultado["etapa"] = "autenticacao"
+        resultado["erro"] = repr(e)
+        return resultado
+    try:
+        aba = cliente.open_by_key(_SHEET_ID_VALIDACAO_CADASTRO).sheet1
+        registros = aba.get_all_records()
+        resultado["etapa"] = "leitura"
+        resultado["linhas"] = len(registros)
+    except Exception as e:
+        resultado["etapa"] = "leitura"
+        resultado["erro"] = repr(e)
+    return resultado
+
+
 def _obter_cliente_sheets():
     """Autentica com a conta de serviço (somente leitura) configurada nos secrets."""
     try:
@@ -3710,11 +3734,13 @@ else:
                             "Solicitação enviada! Assim que um administrador aprovar, "
                             "você já pode entrar normalmente."
                         )
+                        _diag = _diagnosticar_conexao_sheets()
                         st.info(
                             f"DEBUG TEMPORARIO -> situacao encontrada: "
                             f"{resultado_criacao.get('debug_situacao_rh')!r} | "
-                            f"colaboradores lidos da planilha: "
-                            f"{resultado_criacao.get('debug_qtd_colaboradores')}"
+                            f"colaboradores lidos: "
+                            f"{resultado_criacao.get('debug_qtd_colaboradores')} | "
+                            f"etapa: {_diag['etapa']} | erro: {_diag['erro']}"
                         )
                     else:
                         st.warning(f"{resultado_criacao['erro']}")

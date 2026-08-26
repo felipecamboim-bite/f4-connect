@@ -13,7 +13,7 @@ from email.mime.multipart import MIMEMultipart
 # 1. Configuração da página
 st.set_page_config(
     page_title="HelpDesk",
-    page_icon="🤖",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -256,6 +256,43 @@ OPCOES_STATUS = [
     "Encerrado pelo solicitante"
 ]
 
+# Pedido do usuário: nenhum emoji nas telas do solicitante nem nos rótulos
+# que ele escolhe (por isso as opções de severidade abaixo não têm mais a
+# bolinha colorida embutida no valor). A bolinha continua existindo, mas só
+# no PAINEL DO ADMINISTRADOR, aplicada aqui em cima do texto puro — funciona
+# tanto pra chamados novos (severidade salva sem emoji) quanto pra chamados
+# antigos (que já foram salvos com o emoji embutido no valor, ex: "🟢 Baixa").
+_SEVERIDADE_INFO = [
+    ("crítica", "🔴", "Crítica"),
+    ("critica", "🔴", "Crítica"),
+    ("alta", "🟠", "Alta"),
+    ("média", "🟡", "Média"),
+    ("media", "🟡", "Média"),
+    ("baixa", "🟢", "Baixa"),
+]
+
+def normalizar_severidade(severidade):
+    """Extrai só o nome da severidade (sem emoji), pra bater com as opções
+    do selectbox mesmo em chamados antigos salvos com o emoji embutido."""
+    if not severidade:
+        return None
+    texto_lower = severidade.lower()
+    for chave, _emoji, rotulo in _SEVERIDADE_INFO:
+        if chave in texto_lower:
+            return rotulo
+    return severidade
+
+def formatar_severidade_admin(severidade):
+    """Severidade com a bolinha colorida — só usado na tabela do painel do
+    administrador, nunca nas telas do solicitante."""
+    if not severidade:
+        return "-"
+    texto_lower = severidade.lower()
+    for chave, emoji, rotulo in _SEVERIDADE_INFO:
+        if chave in texto_lower:
+            return f"{emoji} {rotulo}"
+    return severidade
+
 # ---------------------------------------------------------
 # EMPRESAS E FERRAMENTAS CADASTRADAS PELO ADMIN
 # ---------------------------------------------------------
@@ -333,7 +370,7 @@ def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_cham
         <html>
         <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
             <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
-                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">🤖 F4 Connect - Help Desk</h2>
+                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">F4 Connect - Help Desk</h2>
                 <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Central de Atendimento e Suporte</p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
 
@@ -381,7 +418,7 @@ def enviar_email_codigo_senha(email_destino, usuario, codigo):
         <html>
         <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
             <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
-                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">🤖 F4 Connect - Help Desk</h2>
+                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">F4 Connect - Help Desk</h2>
                 <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Redefinição de senha do painel administrativo</p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
 
@@ -427,7 +464,7 @@ def enviar_email_novo_admin(email_destino, usuario, senha_temporaria):
         <html>
         <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
             <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
-                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">🤖 F4 Connect - Help Desk</h2>
+                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">F4 Connect - Help Desk</h2>
                 <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Acesso ao painel administrativo</p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
 
@@ -439,7 +476,7 @@ def enviar_email_novo_admin(email_destino, usuario, senha_temporaria):
                     <p style="margin: 6px 0;"><b>Senha temporária:</b> <span style="color: #007aff; font-weight: bold;">{senha_temporaria}</span></p>
                 </div>
 
-                <p>Recomendamos trocar essa senha assim que fizer login, usando a opção "🔑 Alterar senha" no painel administrativo.</p>
+                <p>Recomendamos trocar essa senha assim que fizer login, usando a opção "Alterar senha" no painel administrativo.</p>
                 <br>
                 <p style="margin-bottom: 0;">Atenciosamente,</p>
                 <p style="margin-top: 2px;"><b>Equipe de Suporte F4 Connect</b></p>
@@ -474,7 +511,7 @@ def enviar_email_conta_solicitante_aprovada(email_destino, nome_usuario):
         <html>
         <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
             <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
-                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">🤖 F4 Connect - Help Desk</h2>
+                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">F4 Connect - Help Desk</h2>
                 <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Acesso liberado</p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
 
@@ -2030,6 +2067,24 @@ st.markdown(
             margin-bottom: 14px !important;
         }}
 
+        /* Pontas da barra de títulos arredondadas (como o resto da tabela),
+           só na primeira e na última coluna — as células continuam coladas
+           uma na outra (gap: 0), então arredondar todo mundo deixaria "vãos"
+           entre as colunas do meio. */
+        .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:first-child .header-box,
+        .st-key-painel_cadastros_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:first-child .header-box,
+        .st-key-painel_usuarios_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:first-child .header-box {{
+            border-top-left-radius: 10px !important;
+            border-bottom-left-radius: 10px !important;
+        }}
+
+        .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:last-child .header-box,
+        .st-key-painel_cadastros_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:last-child .header-box,
+        .st-key-painel_usuarios_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:last-child .header-box {{
+            border-top-right-radius: 10px !important;
+            border-bottom-right-radius: 10px !important;
+        }}
+
         .st-key-painel_admin_tabela .celula-texto,
         .st-key-painel_admin_tabela .celula-protocolo,
         .st-key-painel_cadastros_tabela .celula-centro,
@@ -2336,7 +2391,7 @@ with st.sidebar:
     # usuário, layout em PC). Ver bloco "LOGIN ADMIN (CANTO SUPERIOR
     # DIREITO)", logo depois do fechamento dessa sidebar.
     if st.session_state["usuario_logado"]:
-        st.success(f"👋 Logado como: **{st.session_state['usuario_logado']}**")
+        st.success(f"Logado como: **{st.session_state['usuario_logado']}**")
 
         # Destaca (fundo verde-escuro) a opção da sidebar correspondente à
         # tela que está aberta agora, do mesmo jeito que o efeito de hover
@@ -2362,14 +2417,14 @@ with st.sidebar:
                 unsafe_allow_html=True,
             )
 
-        if st.button("📋 Chamados", key="nav_chamados"):
+        if st.button("Chamados", key="nav_chamados"):
             st.session_state["aba_admin"] = "chamados"
             st.rerun()
 
         st.markdown("---")
 
         # ---- CADASTRAR EMPRESA ----
-        if st.button("🏢 Cadastrar empresa", key="nav_empresa"):
+        if st.button("Cadastrar empresa", key="nav_empresa"):
             # clicar de novo no mesmo texto fecha o campo
             if st.session_state["aba_admin"] == "empresa":
                 st.session_state["aba_admin"] = "chamados"
@@ -2379,7 +2434,7 @@ with st.sidebar:
 
         if st.session_state["aba_admin"] == "empresa":
             nova_empresa = st.text_input("Nome da empresa", key="input_nova_empresa")
-            if st.button("💾 Salvar empresa", key="salvar_empresa"):
+            if st.button("Salvar empresa", key="salvar_empresa"):
                 if nova_empresa.strip():
                     adicionar_empresa(nova_empresa.strip(), st.session_state["usuario_logado"])
                     st.success("Empresa cadastrada!")
@@ -2388,7 +2443,7 @@ with st.sidebar:
                     st.warning("Digite o nome da empresa.")
 
         # ---- CADASTRAR FERRAMENTA ----
-        if st.button("🛠️ Cadastrar Ferramenta", key="nav_ferramenta"):
+        if st.button("Cadastrar Ferramenta", key="nav_ferramenta"):
             if st.session_state["aba_admin"] == "ferramenta":
                 st.session_state["aba_admin"] = "chamados"
             else:
@@ -2397,7 +2452,7 @@ with st.sidebar:
 
         if st.session_state["aba_admin"] == "ferramenta":
             nova_ferramenta = st.text_input("Nome da ferramenta", key="input_nova_ferramenta")
-            if st.button("💾 Salvar ferramenta", key="salvar_ferramenta"):
+            if st.button("Salvar ferramenta", key="salvar_ferramenta"):
                 if nova_ferramenta.strip():
                     adicionar_ferramenta(nova_ferramenta.strip(), st.session_state["usuario_logado"])
                     st.success("Ferramenta cadastrada!")
@@ -2406,7 +2461,7 @@ with st.sidebar:
                     st.warning("Digite o nome da ferramenta.")
 
         # ---- CADASTRAR ADMINISTRADOR ----
-        if st.button("👤 Cadastrar Administrador", key="nav_admin"):
+        if st.button("Cadastrar Administrador", key="nav_admin"):
             if st.session_state["aba_admin"] == "usuarios":
                 st.session_state["aba_admin"] = "chamados"
             else:
@@ -2417,7 +2472,7 @@ with st.sidebar:
             novo_admin_usuario = st.text_input("Nome de usuário", key="input_novo_admin_usuario")
             novo_admin_email = st.text_input("E-mail", key="input_novo_admin_email")
 
-            if st.button("💾 Cadastrar administrador", key="salvar_novo_admin"):
+            if st.button("Cadastrar administrador", key="salvar_novo_admin"):
                 if not novo_admin_usuario.strip():
                     st.warning("Digite o nome de usuário.")
                 elif not novo_admin_email.strip() or "@" not in novo_admin_email:
@@ -2446,7 +2501,7 @@ with st.sidebar:
         st.markdown("---")
 
         # ---- ALTERAR SENHA (via código enviado por e-mail, sem precisar da senha atual) ----
-        if st.button("🔑 Alterar senha", key="nav_senha"):
+        if st.button("Alterar senha", key="nav_senha"):
             abrir = not st.session_state["mostrar_alterar_senha"]
             st.session_state["mostrar_alterar_senha"] = abrir
             if abrir:
@@ -2457,7 +2512,7 @@ with st.sidebar:
         if st.session_state["mostrar_alterar_senha"]:
             if not st.session_state.get("codigo_senha_enviado"):
                 st.caption("Vamos enviar um código para o seu e-mail cadastrado.")
-                if st.button("📧 Enviar código por e-mail", key="enviar_codigo_senha"):
+                if st.button("Enviar código por e-mail", key="enviar_codigo_senha"):
                     email_admin = buscar_email_admin(st.session_state["usuario_logado"])
                     if not email_admin:
                         st.error(
@@ -2479,7 +2534,7 @@ with st.sidebar:
                 nova_senha = st.text_input("Nova senha", type="password", key="nova_senha_input")
                 confirmar_senha = st.text_input("Confirmar nova senha", type="password", key="confirmar_senha_input")
 
-                if st.button("💾 Confirmar e trocar senha", key="salvar_nova_senha"):
+                if st.button("Confirmar e trocar senha", key="salvar_nova_senha"):
                     codigo_valido = st.session_state.get("codigo_senha_valor")
                     gerado_em = st.session_state.get("codigo_senha_gerado_em")
                     expirado = gerado_em and (datetime.now(timezone.utc) - gerado_em).total_seconds() > 600
@@ -2502,12 +2557,12 @@ with st.sidebar:
                         st.success("Senha alterada com sucesso!")
                         st.rerun()
 
-                if st.button("🔁 Reenviar código", key="reenviar_codigo_senha"):
+                if st.button("Reenviar código", key="reenviar_codigo_senha"):
                     st.session_state["codigo_senha_enviado"] = False
                     st.rerun()
 
         st.markdown("---")
-        if st.button("🚪 Sair (Logout)", key="nav_logout"):
+        if st.button("Sair (Logout)", key="nav_logout"):
             st.session_state["usuario_logado"] = None
             st.session_state["aba_admin"] = "chamados"
             st.session_state["mostrar_alterar_senha"] = False
@@ -2564,7 +2619,7 @@ def painel_admin():
     # (que fica escondido só nessa tela — ver _eh_painel_chamados) pra não
     # duplicar título.
     st.markdown(
-        '<div class="titulo-painel-chamados">📊 Painel de Controle - Central de Chamados</div>',
+        '<div class="titulo-painel-chamados">Painel de Controle - Central de Chamados</div>',
         unsafe_allow_html=True,
     )
 
@@ -2608,7 +2663,7 @@ def painel_admin():
             c_mail.markdown(f'<div class="celula-texto"><span class="mobile-label">E-mail:</span>{c.get("email_solicitante", "-")}</div>', unsafe_allow_html=True)
             c_emp.markdown(f'<div class="celula-texto"><span class="mobile-label">Empresa:</span>{c.get("empresa", "-")}</div>', unsafe_allow_html=True)
             c_ferr.markdown(f'<div class="celula-texto"><span class="mobile-label">Ferramenta:</span>{c.get("ferramenta", "-")}</div>', unsafe_allow_html=True)
-            c_sev.markdown(f'<div class="celula-texto"><span class="mobile-label">Severidade:</span>{c.get("severidade") or "-"}</div>', unsafe_allow_html=True)
+            c_sev.markdown(f'<div class="celula-texto"><span class="mobile-label">Severidade:</span>{formatar_severidade_admin(c.get("severidade"))}</div>', unsafe_allow_html=True)
             c_ass.markdown(f'<div class="celula-texto"><span class="mobile-label">Assunto:</span>{c.get("assunto", "-")}</div>', unsafe_allow_html=True)
             c_desc.markdown(f'<div class="celula-texto"><span class="mobile-label">Descrição:</span>{c.get("descricao", "-")}</div>', unsafe_allow_html=True)
 
@@ -2640,7 +2695,6 @@ def painel_admin():
                 else:
                     st.toast(
                         f"Status do {c['protocolo']} atualizado, mas o e-mail para o solicitante falhou.",
-                        icon="⚠️",
                     )
                 # rerun com escopo "fragment": atualiza só este painel,
                 # sem re-executar o app inteiro (login, CSS, imagens etc.)
@@ -2656,14 +2710,14 @@ def painel_cadastros(tipo):
     """
     if tipo == "empresa":
         st.markdown(
-            '<div class="titulo-painel-chamados">🏢 Empresas Cadastradas</div>',
+            '<div class="titulo-painel-chamados">Empresas Cadastradas</div>',
             unsafe_allow_html=True,
         )
         itens = listar_empresas_detalhado()
         func_remover = remover_empresa
     else:
         st.markdown(
-            '<div class="titulo-painel-chamados">🛠️ Ferramentas Cadastradas</div>',
+            '<div class="titulo-painel-chamados">Ferramentas Cadastradas</div>',
             unsafe_allow_html=True,
         )
         itens = listar_ferramentas_detalhado()
@@ -2707,7 +2761,7 @@ def painel_cadastros(tipo):
 @st.fragment
 def painel_usuarios_admin():
     st.markdown(
-        '<div class="titulo-painel-chamados">👤 Administradores Cadastrados</div>',
+        '<div class="titulo-painel-chamados">Administradores Cadastrados</div>',
         unsafe_allow_html=True,
     )
 
@@ -2764,13 +2818,13 @@ def painel_usuarios_admin():
 @st.fragment
 def resultado_consulta_editavel(resultados):
     st.markdown(
-        '<div class="titulo-resultado-consulta">📋 Resultado da Consulta:</div>',
+        '<div class="titulo-resultado-consulta">Resultado da Consulta:</div>',
         unsafe_allow_html=True,
     )
 
     col_widths = [1.1, 1.2, 1.6, 1.1, 1.2, 1.3, 1.3, 1.8, 1.3, 0.9]
     headers = ["Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status", ""]
-    opcoes_severidade = ["🟢 Baixa", "🟡 Média", "🟠 Alta", "🔴 Crítica"]
+    opcoes_severidade = ["Baixa", "Média", "Alta", "Crítica"]
 
     with st.container(key="resultado_consulta_tabela"):
         cols_head = st.columns(col_widths)
@@ -2806,7 +2860,7 @@ def resultado_consulta_editavel(resultados):
                 label_visibility="collapsed",
             )
 
-            sev_atual = c.get("severidade") or opcoes_severidade[0]
+            sev_atual = normalizar_severidade(c.get("severidade")) or opcoes_severidade[0]
             idx_sev = opcoes_severidade.index(sev_atual) if sev_atual in opcoes_severidade else 0
             nova_sev = c_sev.selectbox(
                 "Severidade", opcoes_severidade, index=idx_sev, key=f"edit_severidade_{protocolo}",
@@ -2828,7 +2882,7 @@ def resultado_consulta_editavel(resultados):
                 unsafe_allow_html=True,
             )
 
-            if c_salvar.button("💾 Salvar", key=f"salvar_edicao_{protocolo}"):
+            if c_salvar.button("Salvar", key=f"salvar_edicao_{protocolo}"):
                 atualizar_chamado_solicitante(
                     protocolo, novo_email.strip(), novo_emp.strip(), novo_ferr.strip(),
                     nova_sev, novo_ass.strip(), nova_desc.strip(),
@@ -2863,7 +2917,7 @@ def notificacao_pendentes_admin():
     if st.session_state["mostrar_pendentes"]:
         with st.container(key="painel_pendentes"):
             st.markdown(
-                '<div class="titulo-pendentes">📥 Solicitações de acesso pendentes</div>',
+                '<div class="titulo-pendentes">Solicitações de acesso pendentes</div>',
                 unsafe_allow_html=True,
             )
 
@@ -2880,11 +2934,11 @@ def notificacao_pendentes_admin():
                     f'<div class="celula-texto">{html.escape(p.get("email", "-"))}</div>',
                     unsafe_allow_html=True,
                 )
-                if col_aprovar.button("✅", key=f"aprovar_pendente_{p['nome_usuario']}"):
+                if col_aprovar.button("Aprovar", key=f"aprovar_pendente_{p['nome_usuario']}"):
                     aprovar_solicitante(p["nome_usuario"])
                     st.toast(f"Conta de {p['nome_usuario']} aprovada!")
                     st.rerun(scope="fragment")
-                if col_rejeitar.button("❌", key=f"rejeitar_pendente_{p['nome_usuario']}"):
+                if col_rejeitar.button("Rejeitar", key=f"rejeitar_pendente_{p['nome_usuario']}"):
                     rejeitar_solicitante(p["nome_usuario"])
                     st.toast(f"Pedido de {p['nome_usuario']} recusado.")
                     st.rerun(scope="fragment")
@@ -2921,15 +2975,15 @@ elif st.session_state.get("solicitante_logado"):
             # da logo, acima (ver .logo-boas-vindas-box / _mostrar_boas_vindas_logo).
 
             with st.container(key="menu_home_botoes"):
-                if st.button("📝 Abrir um novo chamado", key="btn_abrir_chamado"):
+                if st.button("Abrir um novo chamado", key="btn_abrir_chamado"):
                     st.session_state["opcao_menu"] = "abrir"
                     st.rerun()
 
-                if st.button("🔍 Acompanhar meu chamado", key="btn_acompanhar_chamado"):
+                if st.button("Acompanhar meu chamado", key="btn_acompanhar_chamado"):
                     st.session_state["opcao_menu"] = "acompanhar"
                     st.rerun()
 
-                if st.button("⭐ Avaliar um atendimento", key="btn_avaliar_atendimento"):
+                if st.button("Avaliar um atendimento", key="btn_avaliar_atendimento"):
                     st.session_state["opcao_menu"] = "avaliar"
                     st.rerun()
 
@@ -2944,7 +2998,7 @@ elif st.session_state.get("solicitante_logado"):
         elif st.session_state["opcao_menu"] == "abrir":
             if st.session_state["etapa_abertura"] == 1:
                 st.markdown(
-                    '<div class="fala-titulo-sem-balao titulo-identificacao">👤 Identificação Inicial:</div>',
+                    '<div class="fala-titulo-sem-balao titulo-identificacao">Identificação Inicial:</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -2952,7 +3006,7 @@ elif st.session_state.get("solicitante_logado"):
                     st.markdown(
                         f"""
                         <div class="card-sucesso">
-                            ✅ <b>Chamado registrado com sucesso!</b><br>
+                            <b>Chamado registrado com sucesso!</b><br>
                             Seu Protocolo: <b style="font-size: 20px; color: #000000;">{st.session_state['ultimo_protocolo']}</b>
                         </div>
                         """,
@@ -2960,7 +3014,7 @@ elif st.session_state.get("solicitante_logado"):
                     )
                     if st.session_state["ultimo_email_falhou"]:
                         st.warning(
-                            "⚠️ Não conseguimos enviar o e-mail de confirmação. "
+                            "Não conseguimos enviar o e-mail de confirmação. "
                             "Guarde o protocolo acima para acompanhar seu chamado."
                         )
                     st.session_state["ultimo_protocolo"] = None
@@ -2987,9 +3041,9 @@ elif st.session_state.get("solicitante_logado"):
                         partes_nome = nome_limpo.split()
 
                         if empresa == "Selecione...":
-                            st.warning("⚠️ Selecione a empresa da qual você faz parte.")
+                            st.warning("Selecione a empresa da qual você faz parte.")
                         elif len(partes_nome) < 2:
-                            st.warning("⚠️ Digite seu nome completo (no mínimo Nome e Sobrenome).")
+                            st.warning("Digite seu nome completo (no mínimo Nome e Sobrenome).")
                         else:
                             st.session_state["temp_empresa"] = empresa
                             st.session_state["temp_nome"] = nome_limpo
@@ -3002,7 +3056,7 @@ elif st.session_state.get("solicitante_logado"):
 
             elif st.session_state["etapa_abertura"] == 2:
                 st.markdown(
-                    '<div class="fala-titulo-sem-balao titulo-identificacao">📝 Detalhes do Chamado:</div>',
+                    '<div class="fala-titulo-sem-balao titulo-identificacao">Detalhes do Chamado:</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -3019,10 +3073,10 @@ elif st.session_state.get("solicitante_logado"):
                         "Nível de Severidade / Urgência do Chamado",
                         [
                             "Selecione...",
-                            "🟢 Baixa",
-                            "🟡 Média",
-                            "🟠 Alta",
-                            "🔴 Crítica"
+                            "Baixa",
+                            "Média",
+                            "Alta",
+                            "Crítica"
                         ]
                     )
 
@@ -3030,17 +3084,17 @@ elif st.session_state.get("solicitante_logado"):
                     descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
 
                 with st.container(key="etapa2_botoes"):
-                    if st.button("🚀 Enviar Chamado", key="btn_enviar_chamado"):
+                    if st.button("Enviar Chamado", key="btn_enviar_chamado"):
                         if not email or "@" not in email:
-                            st.warning("⚠️ Digite um e-mail válido.")
+                            st.warning("Digite um e-mail válido.")
                         elif ferramenta == "Selecione...":
-                            st.warning("⚠️ Selecione a ferramenta.")
+                            st.warning("Selecione a ferramenta.")
                         elif severidade == "Selecione...":
-                            st.warning("⚠️ Selecione a severidade do chamado.")
+                            st.warning("Selecione a severidade do chamado.")
                         elif not assunto.strip():
-                            st.warning("⚠️ Informe o assunto.")
+                            st.warning("Informe o assunto.")
                         elif not descricao.strip():
-                            st.warning("⚠️ Descreva detalhadamente o problema.")
+                            st.warning("Descreva detalhadamente o problema.")
                         else:
                             # 1. Salva no banco
                             protocolo = salvar_chamado_supabase(
@@ -3073,7 +3127,7 @@ elif st.session_state.get("solicitante_logado"):
 
         elif st.session_state["opcao_menu"] == "acompanhar":
             st.markdown(
-                '<div class="fala-titulo-sem-balao titulo-identificacao">🔍 Consulte seu chamado:</div>',
+                '<div class="fala-titulo-sem-balao titulo-identificacao">Consulte seu chamado:</div>',
                 unsafe_allow_html=True,
             )
             termo_busca = st.text_input(
@@ -3091,7 +3145,7 @@ elif st.session_state.get("solicitante_logado"):
             # ABAIXO, fora dessa coluna estreita — veja o bloco "RESULTADO DA
             # CONSULTA (LARGURA TOTAL)" após o fechamento do container
             # conteudo_publico.
-            if st.button("🔍 Pesquisar", key="btn_pesquisar_chamado"):
+            if st.button("Pesquisar", key="btn_pesquisar_chamado"):
                 termo_limpo = termo_busca.strip()
                 # Guardado pra, se a busca não encontrar nada, decidir qual aviso
                 # mostrar mais abaixo (formato incompleto x protocolo/e-mail
@@ -3101,7 +3155,7 @@ elif st.session_state.get("solicitante_logado"):
                 st.session_state["ultimo_termo_busca"] = termo_limpo
 
                 if not termo_limpo:
-                    st.warning("⚠️ Digite um número de protocolo ou e-mail para pesquisar.")
+                    st.warning("Digite um número de protocolo ou e-mail para pesquisar.")
                 else:
                     if supabase:
                         # 1. Busca por E-MAIL (Histórico dos últimos 15 dias)
@@ -3150,7 +3204,7 @@ elif st.session_state.get("solicitante_logado"):
 
         elif st.session_state["opcao_menu"] == "avaliar":
             st.markdown(
-                '<div class="fala-titulo-sem-balao titulo-identificacao">⭐ Deixe sua avaliação:</div>',
+                '<div class="fala-titulo-sem-balao titulo-identificacao">Deixe sua avaliação:</div>',
                 unsafe_allow_html=True,
             )
             proto_input = st.text_input(
@@ -3159,10 +3213,10 @@ elif st.session_state.get("solicitante_logado"):
                 key="input_protocolo_avaliar"
             )
 
-            if st.button("🔍 Buscar Chamado", key="btn_buscar_chamado_avaliar"):
+            if st.button("Buscar Chamado", key="btn_buscar_chamado_avaliar"):
                 termo_limpo = proto_input.strip()
                 if not termo_limpo:
-                    st.warning("⚠️ Por favor, informe o número do protocolo.")
+                    st.warning("Por favor, informe o número do protocolo.")
                 else:
                     proto_exato = termo_limpo if termo_limpo.startswith("#") else f"#{termo_limpo}"
                     if supabase:
@@ -3176,7 +3230,7 @@ elif st.session_state.get("solicitante_logado"):
                             st.session_state["chamado_para_avaliar"] = res.data[0]
                         else:
                             st.session_state["chamado_para_avaliar"] = None
-                            st.error("❌ Nenhum chamado foi encontrado com esse número de protocolo.")
+                            st.error("Nenhum chamado foi encontrado com esse número de protocolo.")
 
             # Se encontrou o chamado, exibe os detalhes e a interface de avaliação
             if "chamado_para_avaliar" in st.session_state and st.session_state["chamado_para_avaliar"]:
@@ -3188,7 +3242,7 @@ elif st.session_state.get("solicitante_logado"):
 
                 if status_atual not in status_permitidos:
                     st.warning(
-                        f"⚠️ Este chamado está com o status **'{chamado.get('status')}'**. "
+                        f"Este chamado está com o status **'{chamado.get('status')}'**. "
                         "Apenas chamados **Concluídos** ou **Encerrados** podem ser avaliados."
                     )
                 else:
@@ -3213,7 +3267,7 @@ elif st.session_state.get("solicitante_logado"):
                         # st.feedback retorna de 0 a 4, ajustamos para 1 a 5 estrelas
                         nota_final = (nota_estrelas + 1) if nota_estrelas is not None else 5
                     except AttributeError:
-                        nota_final = st.slider("Selecione de 1 a 5 Estrelas ⭐", min_value=1, max_value=5, value=5)
+                        nota_final = st.slider("Selecione de 1 a 5 Estrelas", min_value=1, max_value=5, value=5)
 
                     comentario = st.text_area(
                         "Opções de melhoria / Comentários (Opcional)",
@@ -3221,14 +3275,14 @@ elif st.session_state.get("solicitante_logado"):
                         key="textarea_comentario_avaliacao"
                     )
 
-                    if st.button("🚀 Enviar Avaliação", key="btn_enviar_avaliacao"):
+                    if st.button("Enviar Avaliação", key="btn_enviar_avaliacao"):
                         if supabase:
                             supabase.table("chamados").update({
                                 "nota_avaliacao": nota_final,
                                 "comentario_avaliacao": comentario.strip()
                             }).eq("protocolo", chamado.get("protocolo")).execute()
 
-                            st.success("🎉 Muito obrigado! Sua avaliação foi enviada com sucesso.")
+                            st.success("Muito obrigado! Sua avaliação foi enviada com sucesso.")
                             del st.session_state["chamado_para_avaliar"]
 
             st.markdown("<br>", unsafe_allow_html=True)
@@ -3260,12 +3314,12 @@ elif st.session_state.get("solicitante_logado"):
                 with st.container(key="aviso_busca_chamado"):
                     if termo_pesquisado and not eh_email and not eh_protocolo_completo:
                         st.warning(
-                            "⚠️ Digite o número do protocolo completo, incluindo o símbolo "
+                            "Digite o número do protocolo completo, incluindo o símbolo "
                             "**#**, a sigla **F4** e o traço. Exemplo: **#F4-AXWR25**"
                         )
                     else:
                         st.error(
-                            "❌ Seu chamado não foi encontrado. Confirme se o protocolo "
+                            "Seu chamado não foi encontrado. Confirme se o protocolo "
                             "ou e-mail digitado está correto."
                         )
             else:
@@ -3303,7 +3357,7 @@ else:
                 if st.button("Entrar", key="btn_entrar_solicitante"):
                     usuario_norm = (usuario_login or "").strip().lower()
                     if not usuario_norm or not senha_login:
-                        st.warning("⚠️ Preencha usuário e senha.")
+                        st.warning("Preencha usuário e senha.")
                     elif verificar_login(usuario_norm, senha_login):
                         # É um administrador — mesma verificação de sempre.
                         st.session_state["usuario_logado"] = usuario_norm
@@ -3339,7 +3393,7 @@ else:
         # ---- CRIAR CONTA ----
         with st.container(key="tela_login_solicitante"):
             st.markdown(
-                '<div class="fala-titulo-sem-balao titulo-identificacao">📝 Criar conta:</div>',
+                '<div class="fala-titulo-sem-balao titulo-identificacao">Criar conta:</div>',
                 unsafe_allow_html=True,
             )
 
@@ -3360,7 +3414,7 @@ else:
             st.caption("Precisa ter pelo menos 1 caractere especial (número é opcional).")
 
             with st.container(key="login_solicitante_botoes"):
-                if st.button("✅ Criar usuário", key="btn_criar_usuario_solicitante"):
+                if st.button("Criar usuário", key="btn_criar_usuario_solicitante"):
                     resultado_criacao = criar_solicitacao_conta(
                         novo_usuario_sol, novo_email_sol, nova_senha_sol_criar
                     )
@@ -3370,7 +3424,7 @@ else:
                             "você já pode entrar normalmente."
                         )
                     else:
-                        st.warning(f"⚠️ {resultado_criacao['erro']}")
+                        st.warning(f"{resultado_criacao['erro']}")
 
                 if st.button("← Voltar", key="btn_voltar_criar_conta"):
                     st.session_state["mostrar_criar_conta"] = False
@@ -3380,7 +3434,7 @@ else:
         # ---- ESQUECI MINHA SENHA (via código enviado por e-mail) ----
         with st.container(key="tela_login_solicitante"):
             st.markdown(
-                '<div class="fala-titulo-sem-balao titulo-identificacao">🔑 Esqueci minha senha:</div>',
+                '<div class="fala-titulo-sem-balao titulo-identificacao">Esqueci minha senha:</div>',
                 unsafe_allow_html=True,
             )
 
@@ -3390,7 +3444,7 @@ else:
                 )
 
                 with st.container(key="login_solicitante_botoes"):
-                    if st.button("📧 Enviar código por e-mail", key="btn_enviar_codigo_solicitante"):
+                    if st.button("Enviar código por e-mail", key="btn_enviar_codigo_solicitante"):
                         usuario_recuperar_norm = (usuario_recuperar or "").strip().lower()
                         registro_recuperar = buscar_solicitante(usuario_recuperar_norm)
                         if not registro_recuperar:
@@ -3424,7 +3478,7 @@ else:
                 )
 
                 with st.container(key="login_solicitante_botoes"):
-                    if st.button("💾 Confirmar e trocar senha", key="btn_confirmar_nova_senha_solicitante"):
+                    if st.button("Confirmar e trocar senha", key="btn_confirmar_nova_senha_solicitante"):
                         codigo_valido_sol = st.session_state.get("codigo_senha_solicitante_valor")
                         gerado_em_sol = st.session_state.get("codigo_senha_solicitante_gerado_em")
                         expirado_sol = gerado_em_sol and (
@@ -3452,6 +3506,6 @@ else:
                             st.success("Senha alterada! Já pode entrar com a nova senha.")
                             st.rerun()
 
-                    if st.button("🔁 Reenviar código", key="btn_reenviar_codigo_solicitante"):
+                    if st.button("Reenviar código", key="btn_reenviar_codigo_solicitante"):
                         st.session_state["codigo_senha_solicitante_enviado"] = False
                         st.rerun()

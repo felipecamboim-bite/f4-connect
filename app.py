@@ -654,9 +654,9 @@ if "mostrar_pendentes" not in st.session_state:
 # CSS DA INTERFACE & CONTAINERS DA TABELA ADMIN
 # ---------------------------------------------------------
 # Fundo da tela pública (não logada / tela inicial do solicitante) é branco;
-# o painel do administrador (logado) continua na cor #3B3D35.
+# o painel do administrador (logado) continua na cor #1A1A1A.
 _tela_publica = not st.session_state["usuario_logado"]
-_cor_fundo_app = "#FFFFFF" if _tela_publica else "#3B3D35"
+_cor_fundo_app = "#FFFFFF" if _tela_publica else "#1A1A1A"
 _cor_titulo_topo = "#3B3D35" if _tela_publica else "#FFFFFF"
 _cor_label_campo = "#3B3D35" if _tela_publica else "#FFFFFF"
 
@@ -1107,7 +1107,7 @@ st.markdown(
             max-width: calc(100vw - 48px) !important;
             max-height: 60vh !important;
             overflow-y: auto !important;
-            background-color: #3B3D35 !important;
+            background-color: #1A1A1A !important;
             border-radius: 12px !important;
             padding: 14px !important;
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45) !important;
@@ -2001,7 +2001,7 @@ st.markdown(
         .st-key-painel_admin_tabela,
         .st-key-painel_cadastros_tabela,
         .st-key-painel_usuarios_admin_tabela {{
-            background-color: #7C845D !important;
+            background-color: #1A1A1A !important;
             border-radius: 10px !important;
             padding: 10px !important;
         }}
@@ -2021,7 +2021,7 @@ st.markdown(
         .st-key-painel_admin_tabela .header-box,
         .st-key-painel_cadastros_tabela .header-box,
         .st-key-painel_usuarios_admin_tabela .header-box {{
-            background-color: #3B3D35 !important;
+            background-color: #1A1A1A !important;
             color: #FFFFFF !important;
             border: none !important;
             border-radius: 0 !important;
@@ -2057,7 +2057,7 @@ st.markdown(
            combinando com o resto da planilha */
         .st-key-painel_cadastros_tabela .stButton > button,
         .st-key-painel_usuarios_admin_tabela .stButton > button {{
-            background-color: #3B3D35 !important;
+            background-color: #1A1A1A !important;
             color: #FFFFFF !important;
             border: none !important;
             box-shadow: none !important;

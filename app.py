@@ -884,6 +884,20 @@ st.markdown(
             overflow-x: hidden !important;
         }}
 
+        /* Logo do F4 Connect HelpDesk no topo da sidebar — só aparece
+           logado como administrador (Felipe/Rafael), ver Python logo
+           abaixo do "Logado como". */
+        .logo-sidebar-admin {{
+            text-align: center !important;
+            margin-bottom: 18px !important;
+        }}
+
+        .logo-sidebar-admin img {{
+            max-width: 150px !important;
+            width: 75% !important;
+            height: auto !important;
+        }}
+
         /* Aviso "Logado como: ..." em branco */
         section[data-testid="stSidebar"] .stAlert,
         section[data-testid="stSidebar"] .stAlert p,
@@ -2384,13 +2398,18 @@ st.markdown(
 # SIDEBAR (LOGIN ADMIN)
 # ---------------------------------------------------------
 with st.sidebar:
-    # A logo do sidebar foi removida (pedido do usuário).
     # O texto "Área Administrativa" foi removido (pedido do usuário) — os
     # campos de Usuário/Senha/Entrar não ficam mais aqui na sidebar — foram
     # movidos pro canto superior direito da tela principal (pedido do
     # usuário, layout em PC). Ver bloco "LOGIN ADMIN (CANTO SUPERIOR
     # DIREITO)", logo depois do fechamento dessa sidebar.
     if st.session_state["usuario_logado"]:
+        # Logo do F4 Connect HelpDesk no topo da sidebar — só aparece pro
+        # administrador logado (Felipe/Rafael), pedido do usuário.
+        st.markdown(
+            f'<div class="logo-sidebar-admin"><img src="{logo_boas_vindas_src}"></div>',
+            unsafe_allow_html=True,
+        )
         st.success(f"Logado como: **{st.session_state['usuario_logado']}**")
 
         # Destaca (fundo verde-escuro) a opção da sidebar correspondente à

@@ -3,10 +3,13 @@ import string
 import hashlib
 import html
 import re
+import unicodedata
 import streamlit as st
 import streamlit.components.v1 as components
 from datetime import datetime, timedelta, timezone
 from supabase import create_client, Client
+import gspread
+from google.oauth2.service_account import Credentials
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -205,6 +208,73 @@ def buscar_solicitante(nome_usuario):
         return res.data[0] if res.data else None
     return None
 
+def _normalizar_texto_busca(texto):
+    """
+    Remove acentos, espaços duplicados e deixa em minúsculo, pra comparar
+    nomes/situação de forma tolerante a diferenças de digitação.
+    """
+    if not texto:
+        return ""
+    texto = unicodedata.normalize("NFKD", str(texto)).encode("ascii", "ignore").decode("ascii")
+    return " ".join(texto.strip().lower().split())
+
+
+# ID da planilha "validacao_cadastro_chamados" (cópia com nome_completo +
+# situacao, alimentada via IMPORTRANGE a partir da planilha real do RH).
+# Essa planilha-cópia é a única que o app enxerga; a do RH nunca é tocada.
+_SHEET_ID_VALIDACAO_CADASTRO = "1h02pt8nufDXK69_WTyBMHvjWEkzikG-69DU8OxM4oAI"
+
+
+def _obter_cliente_sheets():
+    """Autentica com a conta de serviço (somente leitura) configurada nos secrets."""
+    try:
+        escopos = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        credenciais = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"], scopes=escopos
+        )
+        return gspread.authorize(credenciais)
+    except Exception as e:
+        print(f"[colaboradores_rh] Falha ao autenticar com o Google Sheets: {e!r}")
+        return None
+
+
+def listar_colaboradores_rh():
+    """
+    Lê a planilha-cópia (nome_completo + situacao), usada só pra validar o
+    nome completo na criação de conta. Nunca lê nem escreve na planilha
+    original do RH — só nessa cópia, e só em modo leitura.
+    """
+    cliente = _obter_cliente_sheets()
+    if not cliente:
+        return []
+    try:
+        aba = cliente.open_by_key(_SHEET_ID_VALIDACAO_CADASTRO).sheet1
+        registros = aba.get_all_records()
+        print(f"[colaboradores_rh] {len(registros)} registro(s) lido(s) da planilha.")
+        return [
+            {"nome_completo": r.get("nome_completo"), "situacao": r.get("situacao")}
+            for r in registros
+        ]
+    except Exception as e:
+        print(f"[colaboradores_rh] Falha ao ler a planilha: {e!r}")
+        return []
+
+
+def verificar_situacao_colaborador(nome_completo):
+    """
+    Confere o nome completo informado contra a lista de colaboradores do RH.
+    Retorna "ativo", "desligado" ou None (nome não encontrado na lista).
+    """
+    alvo = _normalizar_texto_busca(nome_completo)
+    if not alvo:
+        return None
+    for colaborador in listar_colaboradores_rh():
+        if _normalizar_texto_busca(colaborador.get("nome_completo")) == alvo:
+            situacao = _normalizar_texto_busca(colaborador.get("situacao"))
+            return "ativo" if situacao == "ativo" else "desligado"
+    return None
+
+
 def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha):
     nome_completo_norm = (nome_completo or "").strip()
     nome_norm = (nome_usuario or "").strip().lower()
@@ -225,6 +295,17 @@ def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha):
     if buscar_solicitante(nome_norm) or buscar_usuario_admin(nome_norm):
         return {"ok": False, "erro": "Já existe uma conta com esse nome de usuário."}
 
+    situacao_rh = verificar_situacao_colaborador(nome_completo_norm)
+
+    if situacao_rh == "desligado":
+        return {
+            "ok": False,
+            "erro": "Não foi possível concluir o cadastro. Entre em contato com o RH ou "
+                    "com o administrador do sistema.",
+        }
+
+    status_inicial = "aprovado" if situacao_rh == "ativo" else "pendente"
+
     if supabase:
         supabase.table("solicitantes").insert(
             {
@@ -232,9 +313,12 @@ def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha):
                 "nome_usuario": nome_norm,
                 "email": email_norm,
                 "senha": hash_senha(senha),
-                "status": "pendente",
+                "status": status_inicial,
             }
         ).execute()
+
+    if status_inicial == "aprovado":
+        enviar_email_conta_solicitante_aprovada(email_norm, nome_norm)
 
     return {"ok": True}
 

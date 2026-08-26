@@ -6,6 +6,8 @@ import re
 import unicodedata
 import streamlit as st
 import streamlit.components.v1 as components
+import pandas as pd
+import plotly.express as px
 from datetime import datetime, timedelta, timezone
 from supabase import create_client, Client
 import gspread
@@ -1464,6 +1466,54 @@ st.markdown(
             }}
         }}
 
+        /* ========================================================= */
+        /* PAINEL DE INSIGHTS (BI): mesmo cartão azul-marinho/ciano usado   */
+        /* nos cabeçalhos (.header-box) das outras telas do admin, só que  */
+        /* envolvendo cada bloco de gráfico/indicador.                    */
+        /* ========================================================= */
+        .st-key-painel_insights {{
+            background-color: rgba(10, 25, 47, 0.55) !important;
+            border: 1px solid rgba(0, 183, 255, 0.25) !important;
+            border-radius: 12px !important;
+            padding: 16px 20px !important;
+        }}
+
+        .subtitulo-insights {{
+            color: #00d4ff !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 18px 0 10px 0 !important;
+        }}
+
+        .st-key-painel_insights [data-testid="stMetric"] {{
+            background-color: rgba(10, 25, 47, 0.85) !important;
+            border: 1px solid rgba(0, 183, 255, 0.4) !important;
+            border-radius: 8px !important;
+            padding: 10px 6px !important;
+        }}
+
+        .st-key-painel_insights [data-testid="stMetricLabel"] {{
+            color: #FFFFFF !important;
+            font-size: 12px !important;
+        }}
+
+        .st-key-painel_insights [data-testid="stMetricValue"] {{
+            color: #00d4ff !important;
+        }}
+
+        .st-key-painel_insights .stSelectbox div[data-baseweb="select"] {{
+            background-color: rgba(10, 25, 47, 0.85) !important;
+            border: 1px solid rgba(0, 183, 255, 0.4) !important;
+            border-radius: 8px !important;
+        }}
+
+        .st-key-painel_insights .stSelectbox div[data-baseweb] * {{
+            color: #FFFFFF !important;
+        }}
+
         /* Cabeçalho da tela inicial pública: logo grande + frase de boas-vindas,
            no lugar do título "HelpDesk" — só aparece na tela inicial de quem
            não está logado (ver uso condicional mais abaixo no Python) */
@@ -2677,6 +2727,7 @@ with st.sidebar:
         # tela que está aberta agora, do mesmo jeito que o efeito de hover
         _mapa_aba_para_key = {
             "chamados": "nav_chamados",
+            "insights": "nav_insights",
             "empresa": "nav_empresa",
             "ferramenta": "nav_ferramenta",
             "usuarios": "nav_admin",
@@ -2699,6 +2750,14 @@ with st.sidebar:
 
         if st.button("Chamados", key="nav_chamados"):
             st.session_state["aba_admin"] = "chamados"
+            st.rerun()
+
+        # ---- INSIGHTS (painel de gráficos/indicadores dos chamados) ----
+        if st.button("Insights", key="nav_insights"):
+            if st.session_state["aba_admin"] == "insights":
+                st.session_state["aba_admin"] = "chamados"
+            else:
+                st.session_state["aba_admin"] = "insights"
             st.rerun()
 
         st.markdown("---")
@@ -2981,6 +3040,159 @@ def painel_admin():
                 st.rerun(scope="fragment")
 
 
+# ------------------ VISÃO ADMIN: INSIGHTS (PAINEL TIPO BI) ------------------
+# Pedido do usuário: um painel de indicadores/gráficos sobre os chamados
+# (quantos aguardando/em atendimento/concluídos/cancelados/encerrados,
+# ferramenta e empresa com mais chamados — total e só entre os encerrados —
+# e quem mais atendeu), pra acompanhar o atendimento no dia a dia. Os
+# gráficos sempre leem os chamados direto do Supabase (mesma listar_chamados()
+# usada no painel de Chamados), então não existe nada pra "atualizar
+# manualmente" — reflete sozinho o que estiver lá assim que a página recarrega.
+def _parse_data_chamado(valor):
+    """Converte o created_at (string ISO vinda do Supabase) em datetime
+    com timezone, pra dar pra comparar com o filtro de período. Retorna
+    None se vier vazio ou em formato inesperado (o chamado só é ignorado
+    pelo filtro de período nesse caso, sem quebrar a página)."""
+    if not valor:
+        return None
+    try:
+        texto = str(valor).replace("Z", "+00:00")
+        data = datetime.fromisoformat(texto)
+        if data.tzinfo is None:
+            data = data.replace(tzinfo=timezone.utc)
+        return data
+    except Exception:
+        return None
+
+
+def _grafico_barras_contagem(lista_chamados, campo, rotulo, valor_vazio="Não informado"):
+    """Monta um gráfico de barras (top 10) contando quantos chamados cada
+    valor de `campo` (ex: ferramenta, empresa, atendente) tem na lista."""
+    contagem = {}
+    for c in lista_chamados:
+        valor = c.get(campo)
+        valor = valor.strip() if isinstance(valor, str) else valor
+        if not valor:
+            valor = valor_vazio
+        contagem[valor] = contagem.get(valor, 0) + 1
+
+    df = pd.DataFrame(
+        {rotulo: list(contagem.keys()), "Quantidade": list(contagem.values())}
+    ).sort_values("Quantidade", ascending=False).head(10)
+
+    fig = px.bar(df, x=rotulo, y="Quantidade", text="Quantidade")
+    fig.update_traces(marker_color="#00d4ff", textposition="outside", cliponaxis=False)
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="#FFFFFF",
+        xaxis_title=None,
+        yaxis_title=None,
+        margin=dict(t=10, b=10, l=10, r=10),
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
+def painel_insights():
+    st.markdown(
+        '<div class="titulo-painel-chamados">Insights - Central de Chamados</div>',
+        unsafe_allow_html=True,
+    )
+
+    chamados = listar_chamados()
+    if not chamados:
+        st.info("Nenhum chamado cadastrado até o momento.")
+        return
+
+    with st.container(key="painel_insights"):
+        opcoes_periodo = {
+            "Últimos 7 dias": 7,
+            "Últimos 30 dias": 30,
+            "Últimos 90 dias": 90,
+            "Tudo": None,
+        }
+        periodo_escolhido = st.selectbox(
+            "Período",
+            list(opcoes_periodo.keys()),
+            index=1,
+            key="select_periodo_insights",
+        )
+        dias = opcoes_periodo[periodo_escolhido]
+
+        if dias:
+            limite = datetime.now(timezone.utc) - timedelta(days=dias)
+            chamados_periodo = [
+                c for c in chamados
+                if (data_c := _parse_data_chamado(c.get("created_at"))) and data_c >= limite
+            ]
+        else:
+            chamados_periodo = chamados
+
+        if not chamados_periodo:
+            st.info("Nenhum chamado no período selecionado.")
+            return
+
+        # --- CONTAGEM POR STATUS ---
+        st.markdown('<div class="subtitulo-insights">Chamados por status</div>', unsafe_allow_html=True)
+
+        contagem_status = {s: 0 for s in OPCOES_STATUS}
+        for c in chamados_periodo:
+            if c.get("status") in contagem_status:
+                contagem_status[c["status"]] += 1
+
+        cols_metricas = st.columns(len(OPCOES_STATUS) + 1)
+        cols_metricas[0].metric("Total", len(chamados_periodo))
+        for col, status_nome in zip(cols_metricas[1:], OPCOES_STATUS):
+            col.metric(status_nome, contagem_status[status_nome])
+
+        df_status = pd.DataFrame({
+            "Status": list(contagem_status.keys()),
+            "Quantidade": list(contagem_status.values()),
+        })
+        df_status = df_status[df_status["Quantidade"] > 0]
+        if not df_status.empty:
+            fig_status = px.pie(df_status, names="Status", values="Quantidade", hole=0.5)
+            fig_status.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#FFFFFF",
+                legend_title_text="",
+                margin=dict(t=10, b=10, l=10, r=10),
+            )
+            st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False})
+
+        # --- FERRAMENTA E EMPRESA COM MAIS CHAMADOS (VOLUME TOTAL NO PERÍODO) ---
+        col_ferr, col_emp = st.columns(2)
+        with col_ferr:
+            st.markdown('<div class="subtitulo-insights">Ferramenta com mais chamados</div>', unsafe_allow_html=True)
+            _grafico_barras_contagem(chamados_periodo, "ferramenta", "Ferramenta")
+        with col_emp:
+            st.markdown('<div class="subtitulo-insights">Empresa com mais chamados</div>', unsafe_allow_html=True)
+            _grafico_barras_contagem(chamados_periodo, "empresa", "Empresa")
+
+        # --- A MESMA COISA, SÓ ENTRE OS CHAMADOS JÁ ENCERRADOS ---
+        status_encerrados = ["Concluído", "Encerrado pelo solicitante"]
+        chamados_encerrados = [c for c in chamados_periodo if c.get("status") in status_encerrados]
+
+        col_ferr_enc, col_emp_enc = st.columns(2)
+        with col_ferr_enc:
+            st.markdown('<div class="subtitulo-insights">Ferramenta com mais chamados encerrados</div>', unsafe_allow_html=True)
+            if chamados_encerrados:
+                _grafico_barras_contagem(chamados_encerrados, "ferramenta", "Ferramenta")
+            else:
+                st.caption("Nenhum chamado encerrado no período.")
+        with col_emp_enc:
+            st.markdown('<div class="subtitulo-insights">Empresa com mais chamados encerrados</div>', unsafe_allow_html=True)
+            if chamados_encerrados:
+                _grafico_barras_contagem(chamados_encerrados, "empresa", "Empresa")
+            else:
+                st.caption("Nenhum chamado encerrado no período.")
+
+        # --- QUEM MAIS ATENDEU ---
+        st.markdown('<div class="subtitulo-insights">Chamados por atendente</div>', unsafe_allow_html=True)
+        _grafico_barras_contagem(chamados_periodo, "atendente", "Atendente", valor_vazio="Não atribuído")
+
+
 # ------------------ VISÃO ADMIN: LISTA DE EMPRESAS / FERRAMENTAS CADASTRADAS ------------------
 @st.fragment
 def painel_cadastros(tipo):
@@ -3235,6 +3447,8 @@ if st.session_state["usuario_logado"]:
         painel_cadastros("ferramenta")
     elif st.session_state["aba_admin"] == "usuarios":
         painel_usuarios_admin()
+    elif st.session_state["aba_admin"] == "insights":
+        painel_insights()
     else:
         painel_admin()
 

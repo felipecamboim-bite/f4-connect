@@ -511,12 +511,12 @@ def enviar_email_conta_solicitante_aprovada(email_destino, nome_usuario):
         <html>
         <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
             <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
-                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">F4 Connect - Help Desk</h2>
+                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">F4 Helpdesk</h2>
                 <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Acesso liberado</p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
 
                 <p>Olá!</p>
-                <p>Sua conta foi criada no F4 Connect HelpDesk. Seu usuário de acesso:</p>
+                <p>Sua conta foi criada no F4 HelpDesk. Seu usuário de acesso:</p>
 
                 <div style="background-color: #f8fafc; border-left: 4px solid #007aff; padding: 15px; margin: 20px 0; border-radius: 4px;">
                     <p style="margin: 6px 0;"><b>Usuário:</b> {nome_usuario}</p>
@@ -525,7 +525,7 @@ def enviar_email_conta_solicitante_aprovada(email_destino, nome_usuario):
                 <p>Já pode entrar com o usuário e a senha que você cadastrou.</p>
                 <br>
                 <p style="margin-bottom: 0;">Atenciosamente,</p>
-                <p style="margin-top: 2px;"><b>Equipe de Suporte F4 Connect</b></p>
+                <p style="margin-top: 2px;"><b>Equipe de Suporte F4 Helpdesk</b></p>
 
                 <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0 15px 0;">
                 <p style="font-size: 11px; color: #999; text-align: center;">Este é um e-mail automático enviado pelo sistema F4 Connect. Por favor, não responda a este e-mail.</p>

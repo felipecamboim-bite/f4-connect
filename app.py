@@ -2001,7 +2001,7 @@ st.markdown(
         .st-key-painel_admin_tabela,
         .st-key-painel_cadastros_tabela,
         .st-key-painel_usuarios_admin_tabela {{
-            background-color: #1A1A1A !important;
+            background-color: #2b2d31 !important;
             border-radius: 10px !important;
             padding: 10px !important;
         }}

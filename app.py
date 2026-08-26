@@ -966,6 +966,31 @@ st.markdown(
             width: 100% !important;
         }}
 
+        /* Campos Usuário/Senha da tela de login: saem do azul-escuro padrão
+           (herdado do tema do admin) e passam pro mesmo branco levemente
+           diferente do fundo já usado nos campos públicos (.st-key-conteudo_publico),
+           sem borda colorida — só o campo em si, com uma sombra leve pra dar
+           o contraste que identifica que é preenchível. */
+        .st-key-tela_login_solicitante .stTextInput input,
+        .st-key-tela_login_solicitante .stTextInput div[data-baseweb],
+        .st-key-tela_login_solicitante div[data-testid="stTextInputRootElement"] {{
+            background-color: #F1F1EA !important;
+            color: #24261F !important;
+            border: none !important;
+            border-color: transparent !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            outline: none !important;
+        }}
+
+        .st-key-tela_login_solicitante .stTextInput input:focus,
+        .st-key-tela_login_solicitante .stTextInput div[data-baseweb]:focus-within,
+        .st-key-tela_login_solicitante div[data-testid="stTextInputRootElement"]:focus-within {{
+            border: none !important;
+            border-color: transparent !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            outline: none !important;
+        }}
+
         /* Botões principais da tela de login (Entrar / Criar usuário /
            Confirmar / Voltar / Reenviar): mesmo verde e mesmo tamanho
            compacto já usado nos botões "Avançar"/"Voltar ao Menu" do resto
@@ -3275,7 +3300,7 @@ else:
             )
 
             with st.container(key="login_solicitante_botoes"):
-                if st.button("🔑 Entrar", key="btn_entrar_solicitante"):
+                if st.button("Entrar", key="btn_entrar_solicitante"):
                     usuario_norm = (usuario_login or "").strip().lower()
                     if not usuario_norm or not senha_login:
                         st.warning("⚠️ Preencha usuário e senha.")

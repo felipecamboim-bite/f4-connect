@@ -1049,6 +1049,40 @@ st.markdown(
             outline: none !important;
         }}
 
+        /* Avisos (st.warning/st.error/st.success) na tela de login/criar
+           conta/esqueci senha: mesmo problema já corrigido em
+           .st-key-conteudo_publico — o texto vem branco (herdado do tema
+           escuro padrão do app), invisível em cima do fundo claro de cada
+           aviso. Caixa mais estreita/centralizada e uma cor escura por tipo
+           (aviso, erro, sucesso), legível em cada fundo. */
+        .st-key-tela_login_solicitante .stAlert {{
+            max-width: 380px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding: 10px 14px !important;
+        }}
+
+        .st-key-tela_login_solicitante [data-testid="stAlertContentWarning"],
+        .st-key-tela_login_solicitante [data-testid="stAlertContentWarning"] p,
+        .st-key-tela_login_solicitante [data-testid="stAlertContentWarning"] div {{
+            color: #664d03 !important;
+            font-size: 14px !important;
+        }}
+
+        .st-key-tela_login_solicitante [data-testid="stAlertContentError"],
+        .st-key-tela_login_solicitante [data-testid="stAlertContentError"] p,
+        .st-key-tela_login_solicitante [data-testid="stAlertContentError"] div {{
+            color: #842029 !important;
+            font-size: 14px !important;
+        }}
+
+        .st-key-tela_login_solicitante [data-testid="stAlertContentSuccess"],
+        .st-key-tela_login_solicitante [data-testid="stAlertContentSuccess"] p,
+        .st-key-tela_login_solicitante [data-testid="stAlertContentSuccess"] div {{
+            color: #0f5132 !important;
+            font-size: 14px !important;
+        }}
+
         /* Botões principais da tela de login (Entrar / Criar usuário /
            Confirmar / Voltar / Reenviar): mesmo verde e mesmo tamanho
            compacto já usado nos botões "Avançar"/"Voltar ao Menu" do resto

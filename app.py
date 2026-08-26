@@ -227,16 +227,19 @@ _SHEET_ID_VALIDACAO_CADASTRO = "1h02pt8nufDXK69_WTyBMHvjWEkzikG-69DU8OxM4oAI"
 
 def _diagnosticar_conexao_sheets():
     """Debug temporário: tenta autenticar e ler a planilha, devolvendo o erro exato."""
-    resultado = {"etapa": None, "erro": None, "linhas": None}
+    import traceback
+
+    resultado = {"etapa": None, "erro": None, "linhas": None, "traceback": None}
     try:
-        escopos = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        escopos = ["https://www.googleapis.com/auth/spreadsheets.readonly", "https://www.googleapis.com/auth/drive.readonly"]
         credenciais = Credentials.from_service_account_info(
             st.secrets["gcp_service_account"], scopes=escopos
         )
         cliente = gspread.authorize(credenciais)
     except Exception as e:
         resultado["etapa"] = "autenticacao"
-        resultado["erro"] = repr(e)
+        resultado["erro"] = f"{type(e).__module__}.{type(e).__name__}: {e}"
+        resultado["traceback"] = traceback.format_exc()
         return resultado
     try:
         aba = cliente.open_by_key(_SHEET_ID_VALIDACAO_CADASTRO).sheet1
@@ -245,14 +248,15 @@ def _diagnosticar_conexao_sheets():
         resultado["linhas"] = len(registros)
     except Exception as e:
         resultado["etapa"] = "leitura"
-        resultado["erro"] = repr(e)
+        resultado["erro"] = f"{type(e).__module__}.{type(e).__name__}: {e}"
+        resultado["traceback"] = traceback.format_exc()
     return resultado
 
 
 def _obter_cliente_sheets():
     """Autentica com a conta de serviço (somente leitura) configurada nos secrets."""
     try:
-        escopos = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        escopos = ["https://www.googleapis.com/auth/spreadsheets.readonly", "https://www.googleapis.com/auth/drive.readonly"]
         credenciais = Credentials.from_service_account_info(
             st.secrets["gcp_service_account"], scopes=escopos
         )
@@ -3742,6 +3746,8 @@ else:
                             f"{resultado_criacao.get('debug_qtd_colaboradores')} | "
                             f"etapa: {_diag['etapa']} | erro: {_diag['erro']}"
                         )
+                        if _diag.get("traceback"):
+                            st.code(_diag["traceback"], language="text")
                     else:
                         st.warning(f"{resultado_criacao['erro']}")
 

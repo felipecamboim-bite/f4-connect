@@ -889,7 +889,7 @@ st.markdown(
            abaixo do "Logado como". */
         .logo-sidebar-admin {{
             text-align: center !important;
-            margin-bottom: 18px !important;
+            margin-bottom: 34px !important;
         }}
 
         .logo-sidebar-admin img {{

@@ -2375,6 +2375,14 @@ st.markdown(
             outline: none !important;
             border-radius: 8px !important;
             font-size: 12px !important;
+            text-align: center !important;
+        }}
+
+        /* Centraliza também o texto escolhido dentro do seletor de Severidade
+           (o data-align acima só centraliza o <input>/textarea normais — o
+           conteúdo do selectbox fica num flex interno próprio) */
+        .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb="select"] > div {{
+            justify-content: center !important;
         }}
 
         .st-key-resultado_consulta_tabela .stSelectbox div[data-baseweb] * {{
@@ -2390,11 +2398,17 @@ st.markdown(
         .st-key-resultado_consulta_tabela .celula-texto {{
             font-size: 12px !important;
             padding: 8px 4px !important;
+            text-align: center !important;
         }}
 
         /* Botão "Salvar": compacto, mesmo padrão dos botões "Excluir" das
            outras planilhas administrativas — sobrescreve o estilo padrão
            (largo, azul translúcido) usado nos outros botões da tela pública */
+        .st-key-resultado_consulta_tabela .stButton {{
+            display: flex !important;
+            justify-content: center !important;
+        }}
+
         .st-key-resultado_consulta_tabela .stButton > button {{
             background-color: #3B3D35 !important;
             color: #FFFFFF !important;
@@ -2405,7 +2419,7 @@ st.markdown(
             max-width: none !important;
             padding: 6px 12px !important;
             min-height: auto !important;
-            margin: 4px 0 !important;
+            margin: 4px auto !important;
         }}
 
         .st-key-resultado_consulta_tabela .stButton > button p {{

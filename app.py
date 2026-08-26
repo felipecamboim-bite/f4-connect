@@ -1507,20 +1507,31 @@ st.markdown(
             margin: 18px 0 10px 0 !important;
         }}
 
+        /* Pedido do usuário: sem fundo nem borda nos cartõezinhos de
+           métrica (nem verde, nem cinza) — só o texto/número, centralizado */
         .st-key-painel_insights [data-testid="stMetric"] {{
-            background-color: rgba(29, 89, 2, 0.35) !important;
-            border: 1px solid rgba(114, 167, 3, 0.5) !important;
-            border-radius: 8px !important;
+            background-color: transparent !important;
+            border: none !important;
             padding: 10px 6px !important;
+            text-align: center !important;
+        }}
+
+        .st-key-painel_insights [data-testid="stMetric"] > div {{
+            align-items: center !important;
+            justify-content: center !important;
         }}
 
         .st-key-painel_insights [data-testid="stMetricLabel"] {{
             color: #FFFFFF !important;
             font-size: 12px !important;
+            justify-content: center !important;
+            width: 100% !important;
         }}
 
         .st-key-painel_insights [data-testid="stMetricValue"] {{
             color: #9BCB2E !important;
+            justify-content: center !important;
+            width: 100% !important;
         }}
 
         /* Filtro de período: mais discreto (não ocupa mais a largura toda),
@@ -3275,6 +3286,15 @@ def painel_insights():
                 df_status, names="Status", values="Quantidade", hole=0.5,
                 color="Status", color_discrete_map=CORES_STATUS_INSIGHTS,
             )
+            # Pedido do usuário: o percentual dentro da rosca sempre em
+            # branco e negrito (por padrão o Plotly escolhe preto/branco
+            # sozinho dependendo da cor da fatia — "<b>" força negrito de
+            # verdade, já que a fonte do Plotly não tem uma opção separada
+            # pra isso) e um pouco maior.
+            fig_status.update_traces(
+                texttemplate="<b>%{percent}</b>",
+                textfont=dict(color="#FFFFFF", size=16),
+            )
             fig_status.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
@@ -3312,7 +3332,7 @@ def painel_insights():
                 st.caption("Nenhum chamado encerrado no período.")
 
         # --- QUEM MAIS ATENDEU ---
-        st.markdown('<div class="subtitulo-insights">Chamados por atendente</div>', unsafe_allow_html=True)
+        st.markdown('<div class="subtitulo-insights" style="text-align: center;">Chamados por atendente</div>', unsafe_allow_html=True)
         _grafico_barras_contagem(chamados_periodo, "atendente", "Atendente", valor_vazio="Não atribuído")
 
 

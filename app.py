@@ -225,34 +225,6 @@ def _normalizar_texto_busca(texto):
 _SHEET_ID_VALIDACAO_CADASTRO = "1h02pt8nufDXK69_WTyBMHvjWEkzikG-69DU8OxM4oAI"
 
 
-def _diagnosticar_conexao_sheets():
-    """Debug temporário: tenta autenticar e ler a planilha, devolvendo o erro exato."""
-    import traceback
-
-    resultado = {"etapa": None, "erro": None, "linhas": None, "traceback": None}
-    try:
-        escopos = ["https://www.googleapis.com/auth/spreadsheets.readonly", "https://www.googleapis.com/auth/drive.readonly"]
-        credenciais = Credentials.from_service_account_info(
-            st.secrets["gcp_service_account"], scopes=escopos
-        )
-        cliente = gspread.authorize(credenciais)
-    except Exception as e:
-        resultado["etapa"] = "autenticacao"
-        resultado["erro"] = f"{type(e).__module__}.{type(e).__name__}: {e}"
-        resultado["traceback"] = traceback.format_exc()
-        return resultado
-    try:
-        aba = cliente.open_by_key(_SHEET_ID_VALIDACAO_CADASTRO).sheet1
-        registros = aba.get_all_records()
-        resultado["etapa"] = "leitura"
-        resultado["linhas"] = len(registros)
-    except Exception as e:
-        resultado["etapa"] = "leitura"
-        resultado["erro"] = f"{type(e).__module__}.{type(e).__name__}: {e}"
-        resultado["traceback"] = traceback.format_exc()
-    return resultado
-
-
 def _obter_cliente_sheets():
     """Autentica com a conta de serviço (somente leitura) configurada nos secrets."""
     try:
@@ -261,8 +233,7 @@ def _obter_cliente_sheets():
             st.secrets["gcp_service_account"], scopes=escopos
         )
         return gspread.authorize(credenciais)
-    except Exception as e:
-        print(f"[colaboradores_rh] Falha ao autenticar com o Google Sheets: {e!r}")
+    except Exception:
         return None
 
 
@@ -278,13 +249,11 @@ def listar_colaboradores_rh():
     try:
         aba = cliente.open_by_key(_SHEET_ID_VALIDACAO_CADASTRO).sheet1
         registros = aba.get_all_records()
-        print(f"[colaboradores_rh] {len(registros)} registro(s) lido(s) da planilha.")
         return [
             {"nome_completo": r.get("nome_completo"), "situacao": r.get("situacao")}
             for r in registros
         ]
-    except Exception as e:
-        print(f"[colaboradores_rh] Falha ao ler a planilha: {e!r}")
+    except Exception:
         return []
 
 
@@ -348,7 +317,7 @@ def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha):
     if status_inicial == "aprovado":
         enviar_email_conta_solicitante_aprovada(email_norm, nome_norm)
 
-    return {"ok": True, "debug_situacao_rh": situacao_rh, "debug_qtd_colaboradores": len(listar_colaboradores_rh())}
+    return {"ok": True, "aprovado_automaticamente": status_inicial == "aprovado"}
 
 def listar_solicitantes_pendentes():
     if supabase:
@@ -3730,24 +3699,20 @@ else:
 
             with st.container(key="login_solicitante_botoes"):
                 if st.button("Criar usuário", key="btn_criar_usuario_solicitante"):
-                    resultado_criacao = criar_solicitacao_conta(
-                        novo_nome_completo_sol, novo_usuario_sol, novo_email_sol, nova_senha_sol_criar
-                    )
+                    with st.spinner("Iniciando análise, aguarde..."):
+                        resultado_criacao = criar_solicitacao_conta(
+                            novo_nome_completo_sol, novo_usuario_sol, novo_email_sol, nova_senha_sol_criar
+                        )
                     if resultado_criacao["ok"]:
-                        st.success(
-                            "Solicitação enviada! Assim que um administrador aprovar, "
-                            "você já pode entrar normalmente."
-                        )
-                        _diag = _diagnosticar_conexao_sheets()
-                        st.info(
-                            f"DEBUG TEMPORARIO -> situacao encontrada: "
-                            f"{resultado_criacao.get('debug_situacao_rh')!r} | "
-                            f"colaboradores lidos: "
-                            f"{resultado_criacao.get('debug_qtd_colaboradores')} | "
-                            f"etapa: {_diag['etapa']} | erro: {_diag['erro']}"
-                        )
-                        if _diag.get("traceback"):
-                            st.code(_diag["traceback"], language="text")
+                        if resultado_criacao.get("aprovado_automaticamente"):
+                            st.success(
+                                "Seu cadastro foi criado! Você já pode entrar normalmente."
+                            )
+                        else:
+                            st.success(
+                                "Solicitação enviada para um administrador. Assim que ele "
+                                "aprovar, você receberá um aviso no seu e-mail."
+                            )
                     else:
                         st.warning(f"{resultado_criacao['erro']}")
 

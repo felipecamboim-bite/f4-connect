@@ -2590,8 +2590,9 @@ st.markdown(
             border: 1px solid #D9D9D3 !important;
             border-radius: 8px !important;
             color: #000000 !important;
-            display: inline-block !important;
-            min-width: 84px !important;
+            display: block !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
             text-align: center !important;
         }}
 
@@ -2639,10 +2640,40 @@ st.markdown(
             text-align: center !important;
         }}
 
-        .st-key-resultado_consulta_tabela .stSelectbox button[aria-label="Open"],
+        /* O botão da setinha (abrir a lista) tava aparecendo como um
+           quadrado preto sólido — força um tamanho pequeno, sem fundo/borda
+           próprios, só o ícone fino por cima do mesmo fundo branco do campo */
+        .st-key-resultado_consulta_tabela .stSelectbox button[aria-label="Open"] {{
+            background-color: transparent !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: 16px !important;
+            height: 16px !important;
+            min-width: 16px !important;
+            padding: 0 !important;
+            flex-shrink: 0 !important;
+        }}
+
         .st-key-resultado_consulta_tabela .stSelectbox button[aria-label="Open"] svg {{
-            color: #000000 !important;
-            fill: #000000 !important;
+            width: 12px !important;
+            height: 12px !important;
+            color: #666666 !important;
+            fill: #666666 !important;
+        }}
+
+        /* Alinha o campo de Severidade (que usa um componente diferente por
+           baixo) com a mesma altura/centralização vertical dos outros
+           campos da linha (Ferramenta, Empresa, etc.) */
+        .st-key-resultado_consulta_tabela .stSelectbox [role="group"] {{
+            display: flex !important;
+            align-items: center !important;
+            min-height: 38px !important;
+            padding: 0 8px !important;
+        }}
+
+        .st-key-resultado_consulta_tabela .stSelectbox input[role="combobox"] {{
+            padding: 0 !important;
         }}
 
         /* Centraliza também o texto escolhido dentro do seletor de Severidade
@@ -2659,8 +2690,13 @@ st.markdown(
             fill: #000000 !important;
         }}
 
+        /* Pedido do usuário: a Descrição por padrão menor (não do tamanho
+           da linha inteira) — mas continua "esticável" arrastando o
+           cantinho, pra quem precisar ver um texto mais longo */
         .st-key-resultado_consulta_tabela .stTextArea textarea {{
-            min-height: 68px !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            resize: vertical !important;
         }}
 
         /* Cabeçalho vazio (coluna do botão "Salvar", sem título): sem texto

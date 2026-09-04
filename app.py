@@ -73,6 +73,15 @@ SUPABASE_KEY = "sb_publishable_sfUWEI0jRY36Hh1iRGeDEA_6MaBTPIy"
 # ---------------------------------------------------------
 URL_PORTAL = "https://f4-connect-nzapv6zscxcpcnzyn45sas.streamlit.app/"
 
+# E-mails que recebem o aviso de "novo chamado aberto" (só isso — não
+# recebem as atualizações de status que o solicitante recebe). Pedido do
+# usuário: só Felipe e Rafael, mesmo havendo outros administradores
+# cadastrados (ex: Rodrigo Fagundes).
+EMAILS_NOTIFICACAO_NOVO_CHAMADO = [
+    "analista@clicklogtransportes.com.br",   # Felipe
+    "controladoria@clicklogtransportes.com.br",  # Rafael
+]
+
 # ---------------------------------------------------------
 # CONFIGURAÇÕES DE E-MAIL (SECRETS)
 # ---------------------------------------------------------
@@ -617,6 +626,60 @@ def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_cham
     except Exception as e:
         print(f"Erro ao enviar e-mail: {e}")
         return False
+
+def enviar_email_novo_chamado_admin(protocolo, nome_solicitante, empresa, ferramenta, assunto, severidade):
+    """Avisa a equipe (EMAILS_NOTIFICACAO_NOVO_CHAMADO) que um chamado novo
+    foi aberto, com o protocolo já destacado — só esse aviso, sem as
+    atualizações de status que o solicitante recebe. Manda um e-mail por
+    vez (em vez de todos no campo "Para") pra cada destinatário ver só o
+    próprio endereço."""
+    sucesso_geral = True
+    for email_destino in EMAILS_NOTIFICACAO_NOVO_CHAMADO:
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["From"] = f"F4 Connect HelpDesk <{EMAIL_REMETENTE}>"
+            msg["To"] = email_destino
+            msg["Subject"] = f"Novo chamado aberto - {protocolo}"
+
+            html_body = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
+                    <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">F4 Connect - Help Desk</h2>
+                    <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Novo chamado aguardando atendimento</p>
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+                    <div style="background-color: #f8fafc; border-left: 4px solid #007aff; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                        <p style="margin: 6px 0;"><b>Protocolo:</b> <span style="color: #007aff; font-weight: bold; font-size: 16px;">{protocolo}</span></p>
+                        <p style="margin: 6px 0;"><b>Solicitante:</b> {nome_solicitante}</p>
+                        <p style="margin: 6px 0;"><b>Empresa:</b> {empresa}</p>
+                        <p style="margin: 6px 0;"><b>Ferramenta:</b> {ferramenta}</p>
+                        <p style="margin: 6px 0;"><b>Severidade:</b> {severidade}</p>
+                        <p style="margin: 6px 0;"><b>Assunto:</b> {assunto}</p>
+                    </div>
+
+                    <div style="text-align: center; margin: 24px 0;">
+                        <a href="{URL_PORTAL}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; font-weight: bold; padding: 10px 22px; border-radius: 6px; font-size: 14px;">Abrir Painel de Controle</a>
+                    </div>
+
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0 15px 0;">
+                    <p style="font-size: 11px; color: #999; text-align: center;">Este é um e-mail automático enviado pelo sistema F4 Connect. Por favor, não responda a este e-mail.</p>
+                </div>
+            </body>
+            </html>
+            """
+
+            msg.attach(MIMEText(html_body, "html"))
+
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.starttls()
+            server.login(EMAIL_REMETENTE, SENHA_REMETENTE)
+            server.sendmail(EMAIL_REMETENTE, email_destino, msg.as_string())
+            server.quit()
+        except Exception as e:
+            print(f"Erro ao enviar aviso de novo chamado para {email_destino}: {e}")
+            sucesso_geral = False
+    return sucesso_geral
 
 def enviar_email_codigo_senha(email_destino, usuario, codigo):
     try:
@@ -4364,7 +4427,7 @@ elif st.session_state.get("solicitante_logado"):
                                 anexo_url = enviar_anexo_chamado(protocolo, anexo)
                                 atualizar_anexo_chamado(protocolo, anexo_url)
 
-                            # 3. --- DISPARA O E-MAIL INICIAL ---
+                            # 3. --- DISPARA O E-MAIL INICIAL (pro solicitante) ---
                             email_enviado = enviar_email_status(
                                 email_destino=email,
                                 nome_solicitante=st.session_state["temp_nome"],
@@ -4372,6 +4435,19 @@ elif st.session_state.get("solicitante_logado"):
                                 assunto_chamado=assunto,
                                 status_atual="Aguardando atendimento"
                             )
+
+                            # 4. --- AVISA A EQUIPE (Felipe/Rafael) QUE ABRIU UM CHAMADO NOVO ---
+                            # Só esse aviso — eles não recebem as atualizações de
+                            # status que o solicitante recebe.
+                            enviar_email_novo_chamado_admin(
+                                protocolo=protocolo,
+                                nome_solicitante=st.session_state["temp_nome"],
+                                empresa=st.session_state["temp_empresa"],
+                                ferramenta=ferramenta,
+                                assunto=assunto,
+                                severidade=severidade,
+                            )
+
                             st.session_state["ultimo_protocolo"] = protocolo
                             st.session_state["ultimo_email_falhou"] = not email_enviado
                             st.session_state["etapa_abertura"] = 1

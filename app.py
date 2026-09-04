@@ -3862,22 +3862,23 @@ def painel_insights():
                 df_status, names="Status", values="Quantidade", hole=0.5,
                 color="Status", color_discrete_map=CORES_STATUS_INSIGHTS,
             )
-            # Pedido do usuário: o percentual dentro da rosca sempre em
-            # branco e negrito (por padrão o Plotly escolhe preto/branco
-            # sozinho dependendo da cor da fatia — "<b>" força negrito de
-            # verdade, já que a fonte do Plotly não tem uma opção separada
-            # pra isso) e um pouco maior.
+            # Pedido do usuário: em vez da legenda separada no canto (quadradinho
+            # colorido + nome do status), cada fatia mostra seu nome + percentual
+            # do lado de fora do rótulo, ligado a ela por uma linha — dispensando
+            # a legenda lateral.
             fig_status.update_traces(
-                texttemplate="<b>%{percent}</b>",
-                textfont=dict(color="#FFFFFF", size=16),
+                texttemplate="<b>%{label}</b><br>%{percent}",
+                textposition="outside",
+                textfont=dict(color="#FFFFFF", size=13),
+                automargin=True,
             )
             fig_status.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
                 font_color="#FFFFFF",
-                legend_title_text="",
-                margin=dict(t=10, b=10, l=10, r=10),
-                height=280,
+                showlegend=False,
+                margin=dict(t=50, b=50, l=70, r=70),
+                height=300,
             )
             st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False}, key="grafico_status_insights")
 

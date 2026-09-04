@@ -3591,7 +3591,7 @@ def _parse_data_chamado(valor):
         return None
 
 
-def _grafico_barras_contagem(lista_chamados, campo, rotulo, valor_vazio="Não informado"):
+def _grafico_barras_contagem(lista_chamados, campo, rotulo, valor_vazio="Não informado", key=None):
     """Monta um gráfico de barras (top 10) contando quantos chamados cada
     valor de `campo` (ex: ferramenta, empresa, atendente) tem na lista."""
     contagem = {}
@@ -3622,7 +3622,7 @@ def _grafico_barras_contagem(lista_chamados, campo, rotulo, valor_vazio="Não in
         height=260,
         bargap=0.5,
     )
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=key)
 
 
 def painel_insights():
@@ -3708,16 +3708,16 @@ def painel_insights():
                 legend_title_text="",
                 margin=dict(t=10, b=10, l=10, r=10),
             )
-            st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False}, key="grafico_status_insights")
 
         # --- FERRAMENTA E EMPRESA COM MAIS CHAMADOS (VOLUME TOTAL NO PERÍODO) ---
         col_ferr, col_emp = st.columns(2)
         with col_ferr:
             st.markdown('<div class="subtitulo-insights">Ferramenta com mais chamados</div>', unsafe_allow_html=True)
-            _grafico_barras_contagem(chamados_periodo, "ferramenta", "Ferramenta")
+            _grafico_barras_contagem(chamados_periodo, "ferramenta", "Ferramenta", key="grafico_ferramenta_total")
         with col_emp:
             st.markdown('<div class="subtitulo-insights">Empresa com mais chamados</div>', unsafe_allow_html=True)
-            _grafico_barras_contagem(chamados_periodo, "empresa", "Empresa")
+            _grafico_barras_contagem(chamados_periodo, "empresa", "Empresa", key="grafico_empresa_total")
 
         # --- A MESMA COISA, SÓ ENTRE OS CHAMADOS JÁ ENCERRADOS ---
         status_encerrados = ["Concluído", "Encerrado pelo solicitante"]
@@ -3727,19 +3727,19 @@ def painel_insights():
         with col_ferr_enc:
             st.markdown('<div class="subtitulo-insights">Ferramenta com mais chamados encerrados</div>', unsafe_allow_html=True)
             if chamados_encerrados:
-                _grafico_barras_contagem(chamados_encerrados, "ferramenta", "Ferramenta")
+                _grafico_barras_contagem(chamados_encerrados, "ferramenta", "Ferramenta", key="grafico_ferramenta_encerrados")
             else:
                 st.caption("Nenhum chamado encerrado no período.")
         with col_emp_enc:
             st.markdown('<div class="subtitulo-insights">Empresa com mais chamados encerrados</div>', unsafe_allow_html=True)
             if chamados_encerrados:
-                _grafico_barras_contagem(chamados_encerrados, "empresa", "Empresa")
+                _grafico_barras_contagem(chamados_encerrados, "empresa", "Empresa", key="grafico_empresa_encerrados")
             else:
                 st.caption("Nenhum chamado encerrado no período.")
 
         # --- QUEM MAIS ATENDEU ---
         st.markdown('<div class="subtitulo-insights" style="text-align: center;">Chamados por atendente</div>', unsafe_allow_html=True)
-        _grafico_barras_contagem(chamados_periodo, "atendente", "Atendente", valor_vazio="Não atribuído")
+        _grafico_barras_contagem(chamados_periodo, "atendente", "Atendente", valor_vazio="Não atribuído", key="grafico_atendente")
 
 
 # ------------------ VISÃO ADMIN: LISTA DE EMPRESAS / FERRAMENTAS CADASTRADAS ------------------

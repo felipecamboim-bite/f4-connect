@@ -2000,8 +2000,28 @@ st.markdown(
             margin-right: auto !important;
         }}
 
+        /* No celular, o Streamlit por padrão empilha as colunas (DDD em cima,
+           Número embaixo) em telas estreitas. Aqui força ficarem lado a lado
+           sempre — DDD mais estreito, Número mais largo — igual no computador. */
         .st-key-linha_telefone_unidade [data-testid="stHorizontalBlock"] {{
             width: 100% !important;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+        }}
+
+        .st-key-linha_telefone_unidade [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
+            width: auto !important;
+            min-width: 0 !important;
+        }}
+
+        .st-key-linha_telefone_unidade [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {{
+            flex: 1 1 0px !important;
+        }}
+
+        .st-key-linha_telefone_unidade [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {{
+            flex: 3 1 0px !important;
         }}
 
         /* Campo "Digite o Protocolo ou E-mail" (etapa Acompanhar): mais estreito

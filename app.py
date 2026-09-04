@@ -3877,6 +3877,7 @@ def painel_insights():
                 font_color="#FFFFFF",
                 legend_title_text="",
                 margin=dict(t=10, b=10, l=10, r=10),
+                height=280,
             )
             st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False}, key="grafico_status_insights")
 

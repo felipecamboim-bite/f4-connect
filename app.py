@@ -9,7 +9,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
 import plotly.express as px
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, time as time_do_dia, date as data_pura
 from supabase import create_client, Client
 import gspread
 from google.oauth2.service_account import Credentials
@@ -824,7 +824,14 @@ def listar_chamados():
 
 def atualizar_status_chamado(protocolo, novo_status):
     if supabase:
-        supabase.table("chamados").update({"status": novo_status}).eq("protocolo", protocolo).execute()
+        dados = {"status": novo_status}
+        # Grava o horário do encerramento só quando o chamado entra num
+        # status "fechado" — é essa data (junto com o created_at, que já
+        # existia) que dá pra calcular o SLA (tempo de abertura até o
+        # encerramento) no painel de Insights.
+        if novo_status in ("Concluído", "Encerrado pelo solicitante"):
+            dados["encerrado_em"] = datetime.now(timezone.utc).isoformat()
+        supabase.table("chamados").update(dados).eq("protocolo", protocolo).execute()
 
 def gerar_e_salvar_token_avaliacao(protocolo):
     """Cria um token único e imprevisível pro link de avaliação enviado por
@@ -3637,36 +3644,136 @@ def painel_insights():
         return
 
     with st.container(key="painel_insights"):
-        opcoes_periodo = {
+        opcoes_periodo_dias = {
             "Últimos 7 dias": 7,
             "Últimos 30 dias": 30,
             "Últimos 90 dias": 90,
             "Tudo": None,
         }
-        # Coluna estreita pro filtro de período (pedido do usuário: mais
-        # discreto, não ocupando a largura toda) — o resto da linha fica
-        # livre pra outros filtros que a gente for adicionando aqui do lado.
-        col_periodo, _col_espaco_filtros = st.columns([1, 3])
+        # Linha de filtros: Período, Empresa, Ferramenta e Atendente lado a
+        # lado — pedido do usuário pra poder cruzar os Insights por qualquer
+        # um desses campos, além do período.
+        col_periodo, col_empresa, col_ferramenta, col_atendente = st.columns(4)
         with col_periodo:
             periodo_escolhido = st.selectbox(
                 "Período",
-                list(opcoes_periodo.keys()),
+                list(opcoes_periodo_dias.keys()) + ["Personalizado"],
                 index=1,
                 key="select_periodo_insights",
             )
-        dias = opcoes_periodo[periodo_escolhido]
+        with col_empresa:
+            empresa_filtro = st.selectbox(
+                "Empresa",
+                ["Todas"] + listar_empresas(),
+                key="select_empresa_insights",
+            )
+        with col_ferramenta:
+            ferramenta_filtro = st.selectbox(
+                "Ferramenta",
+                ["Todas"] + listar_ferramentas(),
+                key="select_ferramenta_insights",
+            )
+        with col_atendente:
+            atendente_filtro = st.selectbox(
+                "Atendente",
+                ["Todos"] + OPCOES_ATENDENTES,
+                key="select_atendente_insights",
+            )
 
-        if dias:
-            limite = datetime.now(timezone.utc) - timedelta(days=dias)
-            chamados_periodo = [
-                c for c in chamados
-                if (data_c := _parse_data_chamado(c.get("created_at"))) and data_c >= limite
-            ]
+        # --- PERÍODO "PERSONALIZADO" ---
+        # Além dos atalhos rápidos (7/30/90 dias, Tudo), dá pra escolher um
+        # dia específico, um intervalo entre duas datas, um mês inteiro ou um
+        # ano inteiro — combinação que hoje tem pouco histórico pra mostrar,
+        # mas fica pronta pra quando o volume de chamados crescer.
+        data_inicio_personalizado = None
+        data_fim_personalizado = None
+        if periodo_escolhido == "Personalizado":
+            modo_data = st.radio(
+                "Filtrar por",
+                ["Dia específico", "Intervalo de datas", "Mês", "Ano"],
+                horizontal=True,
+                key="modo_data_insights",
+            )
+
+            hoje = datetime.now(timezone.utc).date()
+
+            if modo_data == "Dia específico":
+                dia_escolhido = st.date_input("Escolha o dia", value=hoje, key="data_dia_insights")
+                data_inicio_personalizado = datetime.combine(dia_escolhido, time_do_dia.min, tzinfo=timezone.utc)
+                data_fim_personalizado = datetime.combine(dia_escolhido, time_do_dia.max, tzinfo=timezone.utc)
+
+            elif modo_data == "Intervalo de datas":
+                intervalo = st.date_input(
+                    "Escolha a data inicial e a final",
+                    value=(hoje - timedelta(days=7), hoje),
+                    key="data_intervalo_insights",
+                )
+                if isinstance(intervalo, tuple) and len(intervalo) == 2:
+                    data_inicio_personalizado = datetime.combine(intervalo[0], time_do_dia.min, tzinfo=timezone.utc)
+                    data_fim_personalizado = datetime.combine(intervalo[1], time_do_dia.max, tzinfo=timezone.utc)
+                else:
+                    st.caption("Escolha as duas datas (inicial e final) pra aplicar o filtro.")
+
+            elif modo_data == "Mês":
+                nomes_meses = [
+                    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+                ]
+                col_mes, col_ano_mes = st.columns(2)
+                with col_mes:
+                    mes_escolhido = st.selectbox("Mês", nomes_meses, index=hoje.month - 1, key="mes_insights")
+                with col_ano_mes:
+                    ano_escolhido = st.selectbox(
+                        "Ano", list(range(hoje.year, hoje.year - 6, -1)), key="ano_mes_insights",
+                    )
+                numero_mes = nomes_meses.index(mes_escolhido) + 1
+                data_inicio_personalizado = datetime(ano_escolhido, numero_mes, 1, tzinfo=timezone.utc)
+                if numero_mes == 12:
+                    data_fim_personalizado = datetime(ano_escolhido, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+                else:
+                    data_fim_personalizado = datetime(ano_escolhido, numero_mes + 1, 1, tzinfo=timezone.utc) - timedelta(seconds=1)
+
+            elif modo_data == "Ano":
+                ano_escolhido = st.selectbox(
+                    "Ano", list(range(hoje.year, hoje.year - 6, -1)), key="ano_insights",
+                )
+                data_inicio_personalizado = datetime(ano_escolhido, 1, 1, tzinfo=timezone.utc)
+                data_fim_personalizado = datetime(ano_escolhido, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+
+        # --- APLICA O FILTRO DE PERÍODO ---
+        if periodo_escolhido == "Personalizado":
+            if data_inicio_personalizado and data_fim_personalizado:
+                chamados_periodo = [
+                    c for c in chamados
+                    if (data_c := _parse_data_chamado(c.get("created_at")))
+                    and data_inicio_personalizado <= data_c <= data_fim_personalizado
+                ]
+            else:
+                chamados_periodo = []
         else:
-            chamados_periodo = chamados
+            dias = opcoes_periodo_dias[periodo_escolhido]
+            if dias:
+                limite = datetime.now(timezone.utc) - timedelta(days=dias)
+                chamados_periodo = [
+                    c for c in chamados
+                    if (data_c := _parse_data_chamado(c.get("created_at"))) and data_c >= limite
+                ]
+            else:
+                chamados_periodo = chamados
+
+        # --- APLICA OS FILTROS DE EMPRESA / FERRAMENTA / ATENDENTE ---
+        if empresa_filtro != "Todas":
+            chamados_periodo = [c for c in chamados_periodo if c.get("empresa") == empresa_filtro]
+        if ferramenta_filtro != "Todas":
+            chamados_periodo = [c for c in chamados_periodo if c.get("ferramenta") == ferramenta_filtro]
+        if atendente_filtro != "Todos":
+            chamados_periodo = [
+                c for c in chamados_periodo
+                if (c.get("atendente") or "Não atribuído") == atendente_filtro
+            ]
 
         if not chamados_periodo:
-            st.info("Nenhum chamado no período selecionado.")
+            st.info("Nenhum chamado encontrado com os filtros selecionados.")
             return
 
         # --- CONTAGEM POR STATUS ---
@@ -3722,6 +3829,35 @@ def painel_insights():
         # --- A MESMA COISA, SÓ ENTRE OS CHAMADOS JÁ ENCERRADOS ---
         status_encerrados = ["Concluído", "Encerrado pelo solicitante"]
         chamados_encerrados = [c for c in chamados_periodo if c.get("status") in status_encerrados]
+
+        # --- SLA MÉDIO DE ATENDIMENTO ---
+        # Tempo entre abertura (created_at) e encerramento (encerrado_em) dos
+        # chamados encerrados no período. Só entram na conta os chamados que
+        # têm encerrado_em preenchido — como essa data só passou a ser
+        # gravada a partir desse ajuste, chamados encerrados ANTES dele não
+        # têm como entrar nessa média (a informação nunca foi registrada).
+        duracoes_em_segundos = []
+        for _c_sla in chamados_encerrados:
+            _abertura_sla = _parse_data_chamado(_c_sla.get("created_at"))
+            _fechamento_sla = _parse_data_chamado(_c_sla.get("encerrado_em"))
+            if _abertura_sla and _fechamento_sla and _fechamento_sla >= _abertura_sla:
+                duracoes_em_segundos.append((_fechamento_sla - _abertura_sla).total_seconds())
+
+        st.markdown('<div class="subtitulo-insights">SLA médio de atendimento</div>', unsafe_allow_html=True)
+        if duracoes_em_segundos:
+            media_segundos_sla = sum(duracoes_em_segundos) / len(duracoes_em_segundos)
+            col_sla_dias, col_sla_horas = st.columns(2)
+            col_sla_dias.metric("SLA médio (dias)", f"{media_segundos_sla / 86400:.1f}")
+            col_sla_horas.metric("SLA médio (horas)", f"{media_segundos_sla / 3600:.1f}")
+            st.caption(
+                f"Calculado com {len(duracoes_em_segundos)} chamado(s) encerrado(s) no período "
+                "com data de encerramento registrada."
+            )
+        else:
+            st.caption(
+                "Ainda não há, no período selecionado, chamados encerrados com data de "
+                "encerramento registrada pra calcular o SLA."
+            )
 
         col_ferr_enc, col_emp_enc = st.columns(2)
         with col_ferr_enc:

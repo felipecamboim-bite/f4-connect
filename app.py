@@ -380,6 +380,16 @@ OPCOES_STATUS = [
 # com esse nome exato (ver instruções de configuração).
 NOME_BUCKET_ANEXOS = "anexos-chamados"
 
+# Ícone de clipe (anexo) em SVG — traço fino, sem fundo/caixa, e com a cor
+# controlada via CSS (stroke="currentColor") em vez de um emoji (que vem
+# colorido "de fábrica" e não dá pra deixar branco/apagado por CSS).
+ICONE_CLIPS_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" '
+    'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" '
+    'stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 '
+    '5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>'
+)
+
 # Paleta do painel de Insights (BI): usa os verdes da identidade do site
 # (mesmo tom dos botões/menu) em vez de azul/ciano, pra não destoar do
 # resto do sistema. "Cancelado" fica num cinza neutro de propósito — não
@@ -758,7 +768,11 @@ def enviar_anexo_chamado(protocolo, arquivo):
         return None
     try:
         extensao = arquivo.name.split(".")[-1].lower() if "." in arquivo.name else "bin"
-        caminho = f"{protocolo}.{extensao}"
+        # O protocolo vem com "#" na frente (ex: "#F4-AB12CD") — esse
+        # caractere não é seguro num nome de arquivo/URL, então tira ele
+        # (e qualquer "/") antes de usar como nome do arquivo no Storage.
+        protocolo_seguro = protocolo.lstrip("#").replace("/", "-")
+        caminho = f"{protocolo_seguro}.{extensao}"
         supabase.storage.from_(NOME_BUCKET_ANEXOS).upload(
             path=caminho,
             file=arquivo.getvalue(),
@@ -770,7 +784,10 @@ def enviar_anexo_chamado(protocolo, arquivo):
         if isinstance(resultado, dict):
             return resultado.get("publicURL") or resultado.get("public_url") or resultado.get("data", {}).get("publicUrl")
         return resultado
-    except Exception:
+    except Exception as erro:
+        # Não quebra a abertura do chamado (que já foi salva) — só deixa
+        # registrado no log do Streamlit Cloud pra dar pra investigar.
+        print(f"[anexo] Falha ao enviar anexo do chamado {protocolo}: {erro}")
         return None
 
 def atualizar_anexo_chamado(protocolo, anexo_url):
@@ -2423,12 +2440,26 @@ st.markdown(
             font-weight: 800;
         }}
 
-        /* Ícone de anexo (📎) ao lado do protocolo, no Painel de Controle —
-           só aparece quando o chamado tem um arquivo anexado. */
+        /* Ícone de clipe (anexo), coluna própria no Painel de Controle: sem
+           fundo/caixa, só o traço. Branco e clicável quando tem anexo;
+           esmaecido (e sem clique) quando não tem. */
+        .celula-anexo {{
+            text-align: center;
+        }}
+
         .link-anexo-chamado {{
+            color: #FFFFFF !important;
             text-decoration: none !important;
-            margin-left: 4px;
             cursor: pointer;
+            display: inline-flex;
+            vertical-align: middle;
+        }}
+
+        .icone-anexo-bloqueado {{
+            color: rgba(255, 255, 255, 0.25) !important;
+            display: inline-flex;
+            vertical-align: middle;
+            cursor: not-allowed;
         }}
 
         .badge-status {{
@@ -2703,10 +2734,11 @@ st.markdown(
             }}
             /* Reproduz as mesmas proporções de coluna do computador
                (Atendente 1.3, Protocolo 1.1, Solicitante 1.2, E-mail 1.6,
-               Empresa 1.1, Ferramenta 1.2, Severidade 1.1, Assunto 1.3,
-               Descrição 1.8, Status 1.5 — mesmos valores do col_widths do
-               Python), já que a regra geral de "vira card empilhado" força
-               100%/coluna única e precisa ser desfeita aqui. */
+               Telefone 1.0, Empresa 1.1, Ferramenta 1.2, Severidade 1.1,
+               Assunto 1.3, Descrição 1.8, Anexo 0.6, Status 1.5 — mesmos
+               valores do col_widths do Python), já que a regra geral de
+               "vira card empilhado" força 100%/coluna única e precisa ser
+               desfeita aqui. */
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
                 width: auto !important;
                 min-width: 0 !important;
@@ -2715,12 +2747,14 @@ st.markdown(
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2)  {{ flex: 1.1 1 0px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3)  {{ flex: 1.2 1 0px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4)  {{ flex: 1.6 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ flex: 1.1 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ flex: 1.2 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ flex: 1.1 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ flex: 1.3 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ flex: 1.8 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ flex: 1.5 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ flex: 1.0 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ flex: 1.1 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ flex: 1.2 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ flex: 1.1 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ flex: 1.8 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ flex: 0.6 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ flex: 1.5 1 0px !important; }}
 
             .st-key-painel_admin_tabela .mobile-label {{
                 display: none !important;
@@ -3269,9 +3303,11 @@ def painel_admin():
         st.info("Nenhum chamado cadastrado até o momento.")
         return
 
-    # 1. 10 BLOCOS DE TITULOS/CABEÇALHO
-    col_widths = [1.3, 1.1, 1.2, 1.6, 1.1, 1.2, 1.1, 1.3, 1.8, 1.5]
-    headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status"]
+    # 1. 12 BLOCOS DE TITULOS/CABEÇALHO (Telefone e Anexo adicionados a
+    # pedido do usuário — telefone de contato da unidade/filial/parceiro, e
+    # um ícone pra abrir o arquivo anexado na abertura do chamado).
+    col_widths = [1.3, 1.1, 1.2, 1.6, 1.0, 1.1, 1.2, 1.1, 1.3, 1.8, 0.6, 1.5]
+    headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Telefone", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Anexo", "Status"]
 
     with st.container(key="painel_admin_tabela"):
         cols_head = st.columns(col_widths)
@@ -3280,7 +3316,10 @@ def painel_admin():
 
         # 2. Exibição das linhas com o Seletor de Atendente
         for c in chamados:
-            c_atend, c_proto, c_nome, c_mail, c_emp, c_ferr, c_sev, c_ass, c_desc, c_stat = st.columns(col_widths)
+            (
+                c_atend, c_proto, c_nome, c_mail, c_tel, c_emp,
+                c_ferr, c_sev, c_ass, c_desc, c_anexo, c_stat,
+            ) = st.columns(col_widths)
 
             # --- 1ª COLUNA: SELETOR DE ATENDENTE ---
             atendente_atual = c.get("atendente") or "Não atribuído"
@@ -3299,22 +3338,29 @@ def painel_admin():
                 st.toast(f"Chamado {c['protocolo']} atribuído para: {novo_atendente}")
                 st.rerun(scope="fragment")
 
-            # Ícone de anexo (📎) ao lado do protocolo — só aparece se o
-            # chamado tiver um arquivo anexado; clicar abre a imagem/PDF
-            # numa aba nova (URL pública do Supabase Storage).
-            anexo_url = c.get("anexo_url")
-            html_anexo = (
-                f' <a href="{html.escape(anexo_url)}" target="_blank" rel="noopener" title="Ver anexo" class="link-anexo-chamado">📎</a>'
-                if anexo_url else ""
-            )
-            c_proto.markdown(f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}{html_anexo}</div>', unsafe_allow_html=True)
+            c_proto.markdown(f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}</div>', unsafe_allow_html=True)
             c_nome.markdown(f'<div class="celula-texto"><span class="mobile-label">Solicitante:</span>{c.get("nome_solicitante", "-")}</div>', unsafe_allow_html=True)
             c_mail.markdown(f'<div class="celula-texto"><span class="mobile-label">E-mail:</span>{c.get("email_solicitante", "-")}</div>', unsafe_allow_html=True)
+            c_tel.markdown(f'<div class="celula-texto"><span class="mobile-label">Telefone:</span>{c.get("telefone_contato") or "-"}</div>', unsafe_allow_html=True)
             c_emp.markdown(f'<div class="celula-texto"><span class="mobile-label">Empresa:</span>{c.get("empresa", "-")}</div>', unsafe_allow_html=True)
             c_ferr.markdown(f'<div class="celula-texto"><span class="mobile-label">Ferramenta:</span>{c.get("ferramenta", "-")}</div>', unsafe_allow_html=True)
             c_sev.markdown(f'<div class="celula-texto"><span class="mobile-label">Severidade:</span>{formatar_severidade_admin(c.get("severidade"))}</div>', unsafe_allow_html=True)
             c_ass.markdown(f'<div class="celula-texto"><span class="mobile-label">Assunto:</span>{c.get("assunto", "-")}</div>', unsafe_allow_html=True)
             c_desc.markdown(f'<div class="celula-texto"><span class="mobile-label">Descrição:</span>{c.get("descricao", "-")}</div>', unsafe_allow_html=True)
+
+            # Ícone de clipe (anexo), numa coluna própria — se o chamado tem
+            # um arquivo, o clipe aparece branco e clicável (abre a imagem/PDF
+            # numa aba nova); se não tem, o mesmo clipe aparece "apagado"
+            # (esmaecido), sem link, indicando que não tem nada pra abrir.
+            anexo_url = c.get("anexo_url")
+            if anexo_url:
+                html_anexo = (
+                    f'<a href="{html.escape(anexo_url)}" target="_blank" rel="noopener" '
+                    f'title="Ver anexo" class="link-anexo-chamado">{ICONE_CLIPS_SVG}</a>'
+                )
+            else:
+                html_anexo = f'<span class="icone-anexo-bloqueado" title="Nenhum anexo">{ICONE_CLIPS_SVG}</span>'
+            c_anexo.markdown(f'<div class="celula-texto celula-anexo"><span class="mobile-label">Anexo:</span>{html_anexo}</div>', unsafe_allow_html=True)
 
             # SELETOR DE STATUS
             idx_atual = OPCOES_STATUS.index(c['status']) if c['status'] in OPCOES_STATUS else 0

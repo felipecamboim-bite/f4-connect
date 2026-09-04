@@ -67,6 +67,12 @@ OPCOES_ATENDENTES = [
 SUPABASE_URL = "https://dmucssgskmhpqdkyovwc.supabase.co"
 SUPABASE_KEY = "sb_publishable_sfUWEI0jRY36Hh1iRGeDEA_6MaBTPIy"
 # ---------------------------------------------------------
+# URL PÚBLICA DO PORTAL — usada nos links enviados por e-mail
+# (ex: convite pra avaliar o atendimento quando o chamado é concluído).
+# ---------------------------------------------------------
+URL_PORTAL = "https://f4-connect-nzapv6zscxcpcnzyn45sas.streamlit.app/"
+
+# ---------------------------------------------------------
 # CONFIGURAÇÕES DE E-MAIL (SECRETS)
 # ---------------------------------------------------------
 try:
@@ -555,6 +561,20 @@ def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_cham
         msg["To"] = email_destino
         msg["Subject"] = f"Atualização do Chamado {protocolo} - Status: {status_atual}"
 
+        # Quando o chamado é marcado como Concluído, acrescenta um convite
+        # com link direto pro portal, pra ficar mais fácil do solicitante
+        # avaliar o atendimento (precisa logar e abrir "Avaliar um
+        # atendimento", já que essa tela também exige login).
+        bloco_avaliacao = ""
+        if status_atual == "Concluído":
+            bloco_avaliacao = f"""
+                <div style="text-align: center; margin: 24px 0;">
+                    <p style="margin: 0 0 12px 0;">Se puder, avalie o nosso atendimento — é rapidinho e nos ajuda a melhorar!</p>
+                    <a href="{URL_PORTAL}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; font-weight: bold; padding: 10px 22px; border-radius: 6px; font-size: 14px;">Avaliar atendimento</a>
+                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #999;">No portal, entre na sua conta e acesse "Avaliar um atendimento" usando o protocolo {protocolo}.</p>
+                </div>
+            """
+
         html_body = f"""
         <html>
         <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
@@ -571,7 +591,7 @@ def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_cham
                     <p style="margin: 6px 0;"><b>Assunto:</b> {assunto_chamado}</p>
                     <p style="margin: 6px 0;"><b>Status Atual:</b> <span style="background-color: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 13px;">{status_atual}</span></p>
                 </div>
-
+                {bloco_avaliacao}
                 <p>Você pode acompanhar o andamento a qualquer momento acessando o nosso portal.</p>
                 <br>
                 <p style="margin-bottom: 0;">Atenciosamente,</p>

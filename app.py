@@ -375,6 +375,11 @@ OPCOES_STATUS = [
     "Encerrado pelo solicitante"
 ]
 
+# Bucket do Supabase Storage onde ficam os anexos (imagem/PDF) que o
+# solicitante manda junto do chamado. Precisa existir no projeto Supabase
+# com esse nome exato (ver instruções de configuração).
+NOME_BUCKET_ANEXOS = "anexos-chamados"
+
 # Paleta do painel de Insights (BI): usa os verdes da identidade do site
 # (mesmo tom dos botões/menu) em vez de azul/ciano, pra não destoar do
 # resto do sistema. "Cancelado" fica num cinza neutro de propósito — não
@@ -742,6 +747,35 @@ def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao
 def atualizar_atendente_chamado(protocolo, novo_atendente):
     if supabase:
         supabase.table("chamados").update({"atendente": novo_atendente}).eq("protocolo", protocolo).execute()
+
+def enviar_anexo_chamado(protocolo, arquivo):
+    """Sobe o arquivo (imagem ou PDF) anexado na abertura do chamado pro
+    Supabase Storage e devolve a URL pública dele. Retorna None se não
+    tiver Supabase configurado, não tiver arquivo, ou o upload falhar (o
+    chamado já foi salvo antes disso, então um anexo com problema não
+    impede a abertura do chamado — só fica sem o anexo)."""
+    if not supabase or not arquivo:
+        return None
+    try:
+        extensao = arquivo.name.split(".")[-1].lower() if "." in arquivo.name else "bin"
+        caminho = f"{protocolo}.{extensao}"
+        supabase.storage.from_(NOME_BUCKET_ANEXOS).upload(
+            path=caminho,
+            file=arquivo.getvalue(),
+            file_options={"content-type": arquivo.type or "application/octet-stream"},
+        )
+        resultado = supabase.storage.from_(NOME_BUCKET_ANEXOS).get_public_url(caminho)
+        # Versões diferentes do cliente supabase-py devolvem a URL de jeitos
+        # diferentes (string direta, ou um dicionário) — cobre os dois casos.
+        if isinstance(resultado, dict):
+            return resultado.get("publicURL") or resultado.get("public_url") or resultado.get("data", {}).get("publicUrl")
+        return resultado
+    except Exception:
+        return None
+
+def atualizar_anexo_chamado(protocolo, anexo_url):
+    if supabase and anexo_url:
+        supabase.table("chamados").update({"anexo_url": anexo_url}).eq("protocolo", protocolo).execute()
 
 def listar_chamados():
     if supabase:
@@ -2389,6 +2423,14 @@ st.markdown(
             font-weight: 800;
         }}
 
+        /* Ícone de anexo (📎) ao lado do protocolo, no Painel de Controle —
+           só aparece quando o chamado tem um arquivo anexado. */
+        .link-anexo-chamado {{
+            text-decoration: none !important;
+            margin-left: 4px;
+            cursor: pointer;
+        }}
+
         .badge-status {{
             background-color: rgba(0, 183, 255, 0.2);
             border: 1px solid #00d4ff;
@@ -3257,7 +3299,15 @@ def painel_admin():
                 st.toast(f"Chamado {c['protocolo']} atribuído para: {novo_atendente}")
                 st.rerun(scope="fragment")
 
-            c_proto.markdown(f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}</div>', unsafe_allow_html=True)
+            # Ícone de anexo (📎) ao lado do protocolo — só aparece se o
+            # chamado tiver um arquivo anexado; clicar abre a imagem/PDF
+            # numa aba nova (URL pública do Supabase Storage).
+            anexo_url = c.get("anexo_url")
+            html_anexo = (
+                f' <a href="{html.escape(anexo_url)}" target="_blank" rel="noopener" title="Ver anexo" class="link-anexo-chamado">📎</a>'
+                if anexo_url else ""
+            )
+            c_proto.markdown(f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}{html_anexo}</div>', unsafe_allow_html=True)
             c_nome.markdown(f'<div class="celula-texto"><span class="mobile-label">Solicitante:</span>{c.get("nome_solicitante", "-")}</div>', unsafe_allow_html=True)
             c_mail.markdown(f'<div class="celula-texto"><span class="mobile-label">E-mail:</span>{c.get("email_solicitante", "-")}</div>', unsafe_allow_html=True)
             c_emp.markdown(f'<div class="celula-texto"><span class="mobile-label">Empresa:</span>{c.get("empresa", "-")}</div>', unsafe_allow_html=True)
@@ -3923,6 +3973,12 @@ elif st.session_state.get("solicitante_logado"):
                     assunto = st.text_input("Assunto do chamado")
                     descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
 
+                    anexo = st.file_uploader(
+                        "Anexar um arquivo (opcional)",
+                        type=["png", "jpg", "jpeg", "pdf"],
+                        key="uploader_anexo_chamado",
+                    )
+
                 with st.container(key="etapa2_botoes"):
                     if st.button("Enviar Chamado", key="btn_enviar_chamado"):
                         if not email or "@" not in email:
@@ -3948,7 +4004,15 @@ elif st.session_state.get("solicitante_logado"):
                                 st.session_state.get("temp_unidade"),
                                 st.session_state.get("temp_telefone"),
                             )
-                            # 2. --- DISPARA O E-MAIL INICIAL ---
+                            # 2. Sobe o anexo (se tiver um) e grava a URL no chamado —
+                            # feito depois do insert porque o protocolo só existe
+                            # a partir daqui, e ele é usado como nome do arquivo.
+                            # Se o upload falhar, o chamado já foi salvo mesmo assim.
+                            if anexo is not None:
+                                anexo_url = enviar_anexo_chamado(protocolo, anexo)
+                                atualizar_anexo_chamado(protocolo, anexo_url)
+
+                            # 3. --- DISPARA O E-MAIL INICIAL ---
                             email_enviado = enviar_email_status(
                                 email_destino=email,
                                 nome_solicitante=st.session_state["temp_nome"],

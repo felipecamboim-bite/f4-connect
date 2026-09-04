@@ -494,6 +494,40 @@ def remover_ferramenta(nome):
     if supabase:
         supabase.table("ferramentas_chamados").delete().eq("nome", nome).execute()
 
+def listar_unidades():
+    """Retorna apenas os nomes, usado para popular o select de unidade
+    (só aparece pro solicitante quando a empresa é a ClickLog Transportes)."""
+    if supabase:
+        res = supabase.table("unidades_chamados").select("nome").order("nome").execute()
+        return [item["nome"] for item in res.data] if res.data else []
+    return []
+
+def listar_unidades_detalhado():
+    """Retorna nome, quem cadastrou e a data, usado no painel administrativo."""
+    if supabase:
+        res = (
+            supabase.table("unidades_chamados")
+            .select("nome, criado_por, created_at")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return res.data if res.data else []
+    return []
+
+def adicionar_unidade(nome, criado_por):
+    if supabase:
+        supabase.table("unidades_chamados").insert(
+            {
+                "nome": nome,
+                "criado_por": criado_por,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+        ).execute()
+
+def remover_unidade(nome):
+    if supabase:
+        supabase.table("unidades_chamados").delete().eq("nome", nome).execute()
+
 def gerar_protocolo():
     letras_numeros = string.ascii_uppercase + string.digits
     codigo = "".join(random.choices(letras_numeros, k=6))
@@ -686,7 +720,7 @@ def enviar_email_conta_solicitante_aprovada(email_destino, nome_usuario):
         print(f"Erro ao enviar e-mail de conta aprovada: {e}")
         return False
 
-def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao, severidade):
+def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao, severidade, unidade=None, telefone_contato=None):
     protocolo = gerar_protocolo()
     dados = {
         "protocolo": protocolo,
@@ -697,6 +731,8 @@ def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao
         "assunto": assunto,
         "descricao": descricao,
         "severidade": severidade, # <--- NOVO CAMPO
+        "unidade": unidade, # <--- só preenchido quando empresa = ClickLog Transportes
+        "telefone_contato": telefone_contato, # <--- só preenchido quando a unidade é filial
         "status": "Aguardando atendimento"
     }
     if supabase:
@@ -795,6 +831,14 @@ if "temp_nome" not in st.session_state:
 
 if "temp_empresa" not in st.session_state:
     st.session_state["temp_empresa"] = "Selecione..."
+
+# Unidade (só usada quando a empresa selecionada é a ClickLog Transportes) e
+# telefone de contato (só quando a unidade escolhida é uma filial, não a matriz)
+if "temp_unidade" not in st.session_state:
+    st.session_state["temp_unidade"] = None
+
+if "temp_telefone" not in st.session_state:
+    st.session_state["temp_telefone"] = None
 
 # Controla qual conteúdo aparece na área principal do admin:
 # "chamados" (padrão), "empresa" (cadastro/lista de empresas) ou
@@ -1812,6 +1856,17 @@ st.markdown(
             font-weight: 600 !important;
             color: {_cor_label_campo} !important;
             font-family: 'Inter', sans-serif !important;
+        }}
+
+        /* Rótulo "Telefone para contato" acima do par DDD/Número (etapa 1
+           da abertura de chamado, só aparece pra unidade = filial) — mesmo
+           estilo dos rótulos padrão dos campos, pra ficar consistente. */
+        .rotulo-telefone-unidade {{
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            color: {_cor_label_campo} !important;
+            font-family: 'Inter', sans-serif !important;
+            margin: 4px 0 2px 0 !important;
         }}
 
         .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {{
@@ -2867,6 +2922,7 @@ with st.sidebar:
             "insights": "nav_insights",
             "empresa": "nav_empresa",
             "ferramenta": "nav_ferramenta",
+            "unidade": "nav_unidade",
             "usuarios": "nav_admin",
         }
         _keys_ativas = []
@@ -2935,6 +2991,27 @@ with st.sidebar:
                     st.rerun()
                 else:
                     st.warning("Digite o nome da ferramenta.")
+
+        # ---- CADASTRAR UNIDADE (ClickLog Transportes: matriz/filiais) ----
+        if st.button("Cadastrar Unidade", key="nav_unidade"):
+            if st.session_state["aba_admin"] == "unidade":
+                st.session_state["aba_admin"] = "chamados"
+            else:
+                st.session_state["aba_admin"] = "unidade"
+            st.rerun()
+
+        if st.session_state["aba_admin"] == "unidade":
+            nova_unidade = st.text_input(
+                "Nome da unidade (ex: Matriz - Cachoeirinha/RS ou Filial - Caxias)",
+                key="input_nova_unidade",
+            )
+            if st.button("Salvar unidade", key="salvar_unidade"):
+                if nova_unidade.strip():
+                    adicionar_unidade(nova_unidade.strip(), st.session_state["usuario_logado"])
+                    st.success("Unidade cadastrada!")
+                    st.rerun()
+                else:
+                    st.warning("Digite o nome da unidade.")
 
         # ---- CADASTRAR ADMINISTRADOR ----
         if st.button("Cadastrar Administrador", key="nav_admin"):
@@ -3367,6 +3444,13 @@ def painel_cadastros(tipo):
         )
         itens = listar_empresas_detalhado()
         func_remover = remover_empresa
+    elif tipo == "unidade":
+        st.markdown(
+            '<div class="titulo-painel-chamados">Unidades Cadastradas</div>',
+            unsafe_allow_html=True,
+        )
+        itens = listar_unidades_detalhado()
+        func_remover = remover_unidade
     else:
         st.markdown(
             '<div class="titulo-painel-chamados">Ferramentas Cadastradas</div>',
@@ -3605,6 +3689,8 @@ if st.session_state["usuario_logado"]:
         painel_cadastros("empresa")
     elif st.session_state["aba_admin"] == "ferramenta":
         painel_cadastros("ferramenta")
+    elif st.session_state["aba_admin"] == "unidade":
+        painel_cadastros("unidade")
     elif st.session_state["aba_admin"] == "usuarios":
         painel_usuarios_admin()
     elif st.session_state["aba_admin"] == "insights":
@@ -3682,6 +3768,47 @@ elif st.session_state.get("solicitante_logado"):
                     key="select_empresa_etapa1"
                 )
 
+                # Campo "Selecionar Unidade" só aparece pra quem é da ClickLog
+                # Transportes (empresa com matriz + filiais); pras demais
+                # empresas (ou "Outra") esse campo nem existe na tela.
+                unidade = None
+                eh_clicklog = empresa == "ClickLog Transportes"
+                if eh_clicklog:
+                    unidades_cadastradas = listar_unidades()
+                    unidade = st.selectbox(
+                        "Selecione sua unidade",
+                        ["Selecione..."] + unidades_cadastradas,
+                        index=0,
+                        key="select_unidade_etapa1"
+                    )
+
+                # Se a unidade escolhida for uma filial (qualquer nome que
+                # contenha a palavra "Filial"), pede telefone de contato —
+                # a matriz não precisa, porque dá pra ir pessoalmente.
+                eh_filial = bool(unidade) and unidade != "Selecione..." and "filial" in unidade.strip().lower()
+                telefone_ddd = ""
+                telefone_numero = ""
+                if eh_filial:
+                    st.markdown(
+                        '<div class="rotulo-telefone-unidade">Telefone para contato</div>',
+                        unsafe_allow_html=True,
+                    )
+                    col_ddd, col_numero = st.columns([1, 3])
+                    with col_ddd:
+                        telefone_ddd = st.text_input(
+                            "DDD",
+                            max_chars=2,
+                            placeholder="(51)",
+                            key="input_ddd_unidade",
+                        )
+                    with col_numero:
+                        telefone_numero = st.text_input(
+                            "Número",
+                            max_chars=10,
+                            placeholder="99999-9999",
+                            key="input_numero_unidade",
+                        )
+
                 nome = st.text_input(
                     "Digite seu Nome e Sobrenome",
                     value=st.session_state["temp_nome"],
@@ -3696,11 +3823,19 @@ elif st.session_state.get("solicitante_logado"):
 
                         if empresa == "Selecione...":
                             st.warning("Selecione a empresa da qual você faz parte.")
+                        elif eh_clicklog and (not unidade or unidade == "Selecione..."):
+                            st.warning("Selecione sua unidade.")
+                        elif eh_filial and (not telefone_ddd.strip() or not telefone_numero.strip()):
+                            st.warning("Informe o telefone para contato (DDD e número).")
                         elif len(partes_nome) < 2:
                             st.warning("Digite seu nome completo (no mínimo Nome e Sobrenome).")
                         else:
                             st.session_state["temp_empresa"] = empresa
                             st.session_state["temp_nome"] = nome_limpo
+                            st.session_state["temp_unidade"] = unidade if eh_clicklog else None
+                            st.session_state["temp_telefone"] = (
+                                f"({telefone_ddd.strip()}) {telefone_numero.strip()}" if eh_filial else None
+                            )
                             st.session_state["etapa_abertura"] = 2
                             st.rerun()
 
@@ -3758,7 +3893,9 @@ elif st.session_state.get("solicitante_logado"):
                                 ferramenta,
                                 assunto,
                                 descricao,
-                                severidade # <--- PASSANDO A SEVERIDADE
+                                severidade, # <--- PASSANDO A SEVERIDADE
+                                st.session_state.get("temp_unidade"),
+                                st.session_state.get("temp_telefone"),
                             )
                             # 2. --- DISPARA O E-MAIL INICIAL ---
                             email_enviado = enviar_email_status(
@@ -3773,6 +3910,8 @@ elif st.session_state.get("solicitante_logado"):
                             st.session_state["etapa_abertura"] = 1
                             st.session_state["temp_nome"] = ""
                             st.session_state["temp_empresa"] = "Selecione..."
+                            st.session_state["temp_unidade"] = None
+                            st.session_state["temp_telefone"] = None
                             st.rerun()
 
                     if st.button("← Voltar Etapa", key="btn_voltar_etapa2"):

@@ -1982,9 +1982,26 @@ st.markdown(
            contato): mesma largura máxima dos campos "Empresa"/"Nome" acima,
            pra não ficarem gigantes/desproporcionais no celular. */
         .st-key-select_unidade_etapa1,
-        .st-key-select_unidade_etapa1 div[data-baseweb="select"],
-        .st-key-linha_telefone_unidade {{
+        .st-key-select_unidade_etapa1 div[data-baseweb="select"] {{
             max-width: 380px !important;
+        }}
+
+        /* A linha do telefone (DDD + Número) é um st.container() com colunas
+           dentro — diferente de um campo solto, esse wrapper não encolhe
+           sozinho com o align-items:center do .st-key-conteudo_publico, então
+           força a largura E a centralização (margin auto) explicitamente,
+           igual já é feito em .st-key-tela_login_solicitante. O rótulo
+           "Telefone para contato" logo acima usa a mesma largura/centro. */
+        .st-key-linha_telefone_unidade,
+        .rotulo-telefone-unidade {{
+            width: 100% !important;
+            max-width: 380px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }}
+
+        .st-key-linha_telefone_unidade [data-testid="stHorizontalBlock"] {{
+            width: 100% !important;
         }}
 
         /* Campo "Digite o Protocolo ou E-mail" (etapa Acompanhar): mais estreito

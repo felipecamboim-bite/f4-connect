@@ -3,6 +3,7 @@ import string
 import hashlib
 import html
 import re
+import secrets
 import unicodedata
 import streamlit as st
 import streamlit.components.v1 as components
@@ -554,7 +555,7 @@ def gerar_protocolo():
     codigo = "".join(random.choices(letras_numeros, k=6))
     return f"#F4-{codigo}"
 
-def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_chamado, status_atual):
+def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_chamado, status_atual, link_avaliacao=None):
     try:
         msg = MIMEMultipart("alternative")
         msg["From"] = f"F4 Connect HelpDesk <{EMAIL_REMETENTE}>"
@@ -562,16 +563,17 @@ def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_cham
         msg["Subject"] = f"Atualização do Chamado {protocolo} - Status: {status_atual}"
 
         # Quando o chamado é marcado como Concluído, acrescenta um convite
-        # com link direto pro portal, pra ficar mais fácil do solicitante
-        # avaliar o atendimento (precisa logar e abrir "Avaliar um
-        # atendimento", já que essa tela também exige login).
+        # com link direto pra avaliação — o link já carrega um token único
+        # (gerado por gerar_e_salvar_token_avaliacao), então a pessoa cai
+        # direto na tela de avaliação DESSE chamado, sem precisar logar de
+        # novo. O token garante que só quem recebeu esse e-mail específico
+        # consegue avaliar por esse link.
         bloco_avaliacao = ""
-        if status_atual == "Concluído":
+        if status_atual == "Concluído" and link_avaliacao:
             bloco_avaliacao = f"""
                 <div style="text-align: center; margin: 24px 0;">
                     <p style="margin: 0 0 12px 0;">Se puder, avalie o nosso atendimento — é rapidinho e nos ajuda a melhorar!</p>
-                    <a href="{URL_PORTAL}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; font-weight: bold; padding: 10px 22px; border-radius: 6px; font-size: 14px;">Avaliar atendimento</a>
-                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #999;">No portal, entre na sua conta e acesse "Avaliar um atendimento" usando o protocolo {protocolo}.</p>
+                    <a href="{link_avaliacao}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; font-weight: bold; padding: 10px 22px; border-radius: 6px; font-size: 14px;">Avaliar atendimento</a>
                 </div>
             """
 
@@ -823,6 +825,25 @@ def listar_chamados():
 def atualizar_status_chamado(protocolo, novo_status):
     if supabase:
         supabase.table("chamados").update({"status": novo_status}).eq("protocolo", protocolo).execute()
+
+def gerar_e_salvar_token_avaliacao(protocolo):
+    """Cria um token único e imprevisível pro link de avaliação enviado por
+    e-mail quando o chamado é concluído — é esse token (e não o protocolo,
+    que é curto e aparece em vários lugares) que garante que só quem
+    recebeu aquele e-mail específico consegue abrir a avaliação direto,
+    sem precisar logar de novo."""
+    token = secrets.token_urlsafe(24)
+    if supabase:
+        supabase.table("chamados").update({"token_avaliacao": token}).eq("protocolo", protocolo).execute()
+    return token
+
+def buscar_chamado_por_token_avaliacao(token):
+    """Usado no link de avaliação por e-mail (sem login): acha o chamado
+    dono desse token, ou None se o token não existir/for inválido."""
+    if not supabase or not token:
+        return None
+    res = supabase.table("chamados").select("*").eq("token_avaliacao", token).execute()
+    return res.data[0] if res.data else None
 
 def atualizar_chamado_solicitante(protocolo, email, empresa, ferramenta, severidade, assunto, descricao):
     """
@@ -2442,6 +2463,23 @@ st.markdown(
             padding-top: 4px;
         }}
 
+        /* Descrição no Painel de Controle: prévia curta + setinha (▾) que
+           abre um popover com o texto completo — mantém todas as linhas da
+           tabela com a mesma altura, sem vazar nem virar caixa de rolagem. */
+        .st-key-painel_admin_tabela [data-testid="stPopover"] button {{
+            min-height: auto !important;
+            height: 22px !important;
+            padding: 0 8px !important;
+            font-size: 12px !important;
+            border-radius: 6px !important;
+            margin-top: 2px !important;
+        }}
+
+        .texto-descricao-completa {{
+            max-width: 320px;
+            white-space: normal;
+        }}
+
         /* Variante centralizada, usada na lista de Empresas/Ferramentas Cadastradas */
         .celula-centro {{
             color: #FFFFFF;
@@ -3040,6 +3078,86 @@ st.markdown(
 )
 
 # ---------------------------------------------------------
+# AVALIAÇÃO VIA LINK DO E-MAIL (SEM LOGIN)
+# ---------------------------------------------------------
+# Pedido do usuário: o botão "Avaliar atendimento" do e-mail de chamado
+# Concluído leva direto pra tela de avaliação DESSE chamado, sem passar
+# pelo login. A identidade de quem está avaliando vem do próprio token do
+# link (gerado só na hora que o chamado é marcado como Concluído e enviado
+# só pro e-mail do solicitante) — ele garante que só quem recebeu aquele
+# e-mail específico consegue avaliar por esse caminho, então dá pra saber
+# de qual chamado (e de qual solicitante) é aquela avaliação sem exigir
+# login de novo. Fica ANTES da sidebar/login de propósito: quem entra pelo
+# link não deve ver nada do login, só a avaliação.
+_token_avaliacao_link = st.query_params.get("avaliar")
+if _token_avaliacao_link:
+    _chamado_do_token = buscar_chamado_por_token_avaliacao(_token_avaliacao_link)
+
+    with st.container(key="conteudo_publico"):
+        st.markdown(
+            f'<div class="logo-boas-vindas-box"><img src="{logo_boas_vindas_src}"></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div class="fala-titulo-sem-balao titulo-identificacao">Deixe sua avaliação:</div>',
+            unsafe_allow_html=True,
+        )
+
+        if not _chamado_do_token:
+            st.error("Este link de avaliação é inválido ou já expirou.")
+        else:
+            _status_token = str(_chamado_do_token.get("status", "")).strip().lower()
+            _status_permitidos_token = ["concluído", "concluido", "encerrado pelo solicitante"]
+
+            if _status_token not in _status_permitidos_token:
+                st.warning(
+                    f"Este chamado está com o status **'{_chamado_do_token.get('status')}'**. "
+                    "Apenas chamados **Concluídos** ou **Encerrados** podem ser avaliados."
+                )
+            elif _chamado_do_token.get("nota_avaliacao"):
+                st.success("Você já avaliou este chamado. Muito obrigado pelo retorno!")
+            else:
+                st.markdown(
+                    f"""
+                    <div class="card-avaliacao-info" style="margin-top: 15px;">
+                        <div class="celula-protocolo">Protocolo: {_chamado_do_token.get('protocolo')}</div>
+                        <div class="celula-texto"><b>Solicitante:</b> {_chamado_do_token.get('nome_solicitante')}</div>
+                        <div class="celula-texto"><b>Assunto:</b> {_chamado_do_token.get('assunto')}</div>
+                        <div class="badge-status" style="margin-top: 8px;">{_chamado_do_token.get('status')}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                st.markdown('<div class="titulo-como-foi">Como foi o seu atendimento?</div>', unsafe_allow_html=True)
+
+                try:
+                    _nota_estrelas_token = st.feedback("stars")
+                    _nota_final_token = (_nota_estrelas_token + 1) if _nota_estrelas_token is not None else 5
+                except AttributeError:
+                    _nota_final_token = st.slider(
+                        "Selecione de 1 a 5 Estrelas", min_value=1, max_value=5, value=5,
+                        key="slider_avaliacao_token",
+                    )
+
+                _comentario_token = st.text_area(
+                    "Opções de melhoria / Comentários (Opcional)",
+                    placeholder="Conte-nos o que achou do atendimento ou o que podemos melhorar...",
+                    key="textarea_comentario_avaliacao_token",
+                )
+
+                if st.button("Enviar Avaliação", key="btn_enviar_avaliacao_token"):
+                    if supabase:
+                        supabase.table("chamados").update({
+                            "nota_avaliacao": _nota_final_token,
+                            "comentario_avaliacao": _comentario_token.strip(),
+                        }).eq("protocolo", _chamado_do_token.get("protocolo")).execute()
+                    st.success("Avaliação enviada, muito obrigado!")
+                    st.balloons()
+
+    st.stop()
+
+# ---------------------------------------------------------
 # SIDEBAR (LOGIN ADMIN)
 # ---------------------------------------------------------
 with st.sidebar:
@@ -3366,7 +3484,31 @@ def painel_admin():
             c_ferr.markdown(f'<div class="celula-texto"><span class="mobile-label">Ferramenta:</span>{c.get("ferramenta", "-")}</div>', unsafe_allow_html=True)
             c_sev.markdown(f'<div class="celula-texto"><span class="mobile-label">Severidade:</span>{formatar_severidade_admin(c.get("severidade"))}</div>', unsafe_allow_html=True)
             c_ass.markdown(f'<div class="celula-texto"><span class="mobile-label">Assunto:</span>{c.get("assunto", "-")}</div>', unsafe_allow_html=True)
-            c_desc.markdown(f'<div class="celula-texto"><span class="mobile-label">Descrição:</span>{c.get("descricao", "-")}</div>', unsafe_allow_html=True)
+            # Descrição: mostra só uma prévia curta (todas as linhas ficam com
+            # a mesma altura, "quadradinho" padronizado) e, só quando o texto
+            # é maior que a prévia, aparece uma setinha (▾) que abre um
+            # balãozinho (popover) com o texto completo — em vez de vazar por
+            # cima das linhas de baixo ou virar uma caixa com rolagem.
+            with c_desc:
+                _descricao_completa = c.get("descricao") or "-"
+                _limite_previa = 60
+                if len(_descricao_completa) > _limite_previa:
+                    _descricao_previa = html.escape(_descricao_completa[:_limite_previa].rstrip()) + "…"
+                else:
+                    _descricao_previa = html.escape(_descricao_completa)
+
+                st.markdown(
+                    f'<div class="celula-texto"><span class="mobile-label">Descrição:</span>{_descricao_previa}</div>',
+                    unsafe_allow_html=True,
+                )
+
+                if len(_descricao_completa) > _limite_previa:
+                    with st.popover("▾", help="Ver descrição completa"):
+                        st.markdown(
+                            f'<div class="celula-texto texto-descricao-completa">'
+                            f'{html.escape(_descricao_completa).replace(chr(10), "<br>")}</div>',
+                            unsafe_allow_html=True,
+                        )
 
             # Ícone de clipe (anexo), numa coluna própria — se o chamado tem
             # um arquivo, o clipe aparece branco e clicável (abre a imagem/PDF
@@ -3396,13 +3538,21 @@ def painel_admin():
                 # 1. Atualiza no Supabase
                 atualizar_status_chamado(c['protocolo'], novo_status)
 
+                # 1.1 Se o chamado virou Concluído, gera o token do link de
+                # avaliação (sem login) que vai junto no e-mail abaixo.
+                link_avaliacao = None
+                if novo_status == "Concluído":
+                    token_avaliacao = gerar_e_salvar_token_avaliacao(c['protocolo'])
+                    link_avaliacao = f"{URL_PORTAL}?avaliar={token_avaliacao}"
+
                 # 2. --- DISPARA O E-MAIL DE ATUALIZAÇÃO ---
                 email_enviado = enviar_email_status(
                     email_destino=c['email_solicitante'],
                     nome_solicitante=c['nome_solicitante'],
                     protocolo=c['protocolo'],
                     assunto_chamado=c['assunto'],
-                    status_atual=novo_status
+                    status_atual=novo_status,
+                    link_avaliacao=link_avaliacao,
                 )
 
                 if email_enviado:

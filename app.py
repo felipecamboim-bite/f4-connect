@@ -3782,13 +3782,17 @@ elif st.session_state.get("solicitante_logado"):
                         key="select_unidade_etapa1"
                     )
 
-                # Se a unidade escolhida for uma filial (qualquer nome que
-                # contenha a palavra "Filial"), pede telefone de contato —
-                # a matriz não precisa, porque dá pra ir pessoalmente.
-                eh_filial = bool(unidade) and unidade != "Selecione..." and "filial" in unidade.strip().lower()
+                # Se a unidade escolhida for uma filial OU um parceiro (qualquer
+                # nome que contenha a palavra "Filial" ou "Parceiro"), pede
+                # telefone de contato — só a matriz não precisa, porque dá
+                # pra ir pessoalmente.
+                _unidade_normalizada = unidade.strip().lower() if unidade else ""
+                precisa_telefone = bool(unidade) and unidade != "Selecione..." and (
+                    "filial" in _unidade_normalizada or "parceiro" in _unidade_normalizada
+                )
                 telefone_ddd = ""
                 telefone_numero = ""
-                if eh_filial:
+                if precisa_telefone:
                     st.markdown(
                         '<div class="rotulo-telefone-unidade">Telefone para contato</div>',
                         unsafe_allow_html=True,
@@ -3825,7 +3829,7 @@ elif st.session_state.get("solicitante_logado"):
                             st.warning("Selecione a empresa da qual você faz parte.")
                         elif eh_clicklog and (not unidade or unidade == "Selecione..."):
                             st.warning("Selecione sua unidade.")
-                        elif eh_filial and (not telefone_ddd.strip() or not telefone_numero.strip()):
+                        elif precisa_telefone and (not telefone_ddd.strip() or not telefone_numero.strip()):
                             st.warning("Informe o telefone para contato (DDD e número).")
                         elif len(partes_nome) < 2:
                             st.warning("Digite seu nome completo (no mínimo Nome e Sobrenome).")
@@ -3834,7 +3838,7 @@ elif st.session_state.get("solicitante_logado"):
                             st.session_state["temp_nome"] = nome_limpo
                             st.session_state["temp_unidade"] = unidade if eh_clicklog else None
                             st.session_state["temp_telefone"] = (
-                                f"({telefone_ddd.strip()}) {telefone_numero.strip()}" if eh_filial else None
+                                f"({telefone_ddd.strip()}) {telefone_numero.strip()}" if precisa_telefone else None
                             )
                             st.session_state["etapa_abertura"] = 2
                             st.rerun()

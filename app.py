@@ -3880,15 +3880,6 @@ def painel_insights():
             )
             st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False}, key="grafico_status_insights")
 
-        # --- FERRAMENTA E EMPRESA COM MAIS CHAMADOS (VOLUME TOTAL NO PERÍODO) ---
-        col_ferr, col_emp = st.columns(2)
-        with col_ferr:
-            st.markdown('<div class="subtitulo-insights">Ferramenta com mais chamados</div>', unsafe_allow_html=True)
-            _grafico_barras_contagem(chamados_periodo, "ferramenta", "Ferramenta", key="grafico_ferramenta_total")
-        with col_emp:
-            st.markdown('<div class="subtitulo-insights">Empresa com mais chamados</div>', unsafe_allow_html=True)
-            _grafico_barras_contagem(chamados_periodo, "empresa", "Empresa", key="grafico_empresa_total")
-
         # --- A MESMA COISA, SÓ ENTRE OS CHAMADOS JÁ ENCERRADOS ---
         status_encerrados = ["Concluído", "Encerrado pelo solicitante"]
         chamados_encerrados = [c for c in chamados_periodo if c.get("status") in status_encerrados]
@@ -3900,11 +3891,20 @@ def painel_insights():
         # gravada a partir desse ajuste, chamados encerrados ANTES dele não
         # têm como entrar nessa média (a informação nunca foi registrada).
         duracoes_em_segundos = []
+        protocolos_sla_ignorados = []
         for _c_sla in chamados_encerrados:
             _abertura_sla = _parse_data_chamado(_c_sla.get("created_at"))
             _fechamento_sla = _parse_data_chamado(_c_sla.get("encerrado_em"))
             if _abertura_sla and _fechamento_sla and _fechamento_sla >= _abertura_sla:
                 duracoes_em_segundos.append((_fechamento_sla - _abertura_sla).total_seconds())
+            else:
+                if not _c_sla.get("encerrado_em"):
+                    _motivo = "sem data de encerramento preenchida"
+                elif not _fechamento_sla:
+                    _motivo = "data de encerramento em formato não reconhecido"
+                else:
+                    _motivo = "data de encerramento anterior à de abertura"
+                protocolos_sla_ignorados.append((_c_sla.get("protocolo", "-"), _motivo))
 
         st.markdown('<div class="subtitulo-insights">SLA médio de atendimento</div>', unsafe_allow_html=True)
         if duracoes_em_segundos:
@@ -3921,6 +3921,20 @@ def painel_insights():
                 "Ainda não há, no período selecionado, chamados encerrados com data de "
                 "encerramento registrada pra calcular o SLA."
             )
+
+        if protocolos_sla_ignorados:
+            with st.popover(f"Ver {len(protocolos_sla_ignorados)} chamado(s) encerrado(s) que não entraram na conta"):
+                for _proto_ignorado, _motivo_ignorado in protocolos_sla_ignorados:
+                    st.caption(f"{_proto_ignorado}: {_motivo_ignorado}")
+
+        # --- FERRAMENTA E EMPRESA COM MAIS CHAMADOS (VOLUME TOTAL NO PERÍODO) ---
+        col_ferr, col_emp = st.columns(2)
+        with col_ferr:
+            st.markdown('<div class="subtitulo-insights">Ferramenta com mais chamados</div>', unsafe_allow_html=True)
+            _grafico_barras_contagem(chamados_periodo, "ferramenta", "Ferramenta", key="grafico_ferramenta_total")
+        with col_emp:
+            st.markdown('<div class="subtitulo-insights">Empresa com mais chamados</div>', unsafe_allow_html=True)
+            _grafico_barras_contagem(chamados_periodo, "empresa", "Empresa", key="grafico_empresa_total")
 
         col_ferr_enc, col_emp_enc = st.columns(2)
         with col_ferr_enc:
@@ -3939,6 +3953,22 @@ def painel_insights():
         # --- QUEM MAIS ATENDEU ---
         st.markdown('<div class="subtitulo-insights" style="text-align: center;">Chamados por atendente</div>', unsafe_allow_html=True)
         _grafico_barras_contagem(chamados_periodo, "atendente", "Atendente", valor_vazio="Não atribuído", key="grafico_atendente")
+
+
+FUSO_BRASIL = timezone(timedelta(hours=-3))  # UTC-3 (Brasília/RS, sem horário de verão atualmente)
+
+def formatar_data_local(valor_iso):
+    """Converte um created_at (string ISO em UTC, como o Supabase guarda) pro
+    horário local (UTC-3) e formata em dd/mm/aaaa hh:mm. Antes disso, as
+    telas mostravam a data direto em UTC, o que fazia chamados abertos de
+    manhã/tarde parecerem ter sido abertos à noite."""
+    if not valor_iso:
+        return "-"
+    try:
+        data_utc = datetime.fromisoformat(str(valor_iso).replace("Z", "+00:00"))
+        return data_utc.astimezone(FUSO_BRASIL).strftime("%d/%m/%Y %H:%M")
+    except Exception:
+        return str(valor_iso)
 
 
 # ------------------ VISÃO ADMIN: LISTA DE EMPRESAS / FERRAMENTAS CADASTRADAS ------------------
@@ -3985,14 +4015,7 @@ def painel_cadastros(tipo):
         for i, item in enumerate(itens):
             c_nome, c_user, c_data, c_del = st.columns(col_widths)
 
-            data_formatada = "-"
-            if item.get("created_at"):
-                try:
-                    data_formatada = datetime.fromisoformat(
-                        item["created_at"].replace("Z", "+00:00")
-                    ).strftime("%d/%m/%Y %H:%M")
-                except Exception:
-                    data_formatada = item["created_at"]
+            data_formatada = formatar_data_local(item.get("created_at"))
 
             c_nome.markdown(f'<div class="celula-centro"><span class="mobile-label">Nome:</span>{item.get("nome", "-")}</div>', unsafe_allow_html=True)
             c_user.markdown(f'<div class="celula-centro"><span class="mobile-label">Usuário:</span>{item.get("criado_por") or "-"}</div>', unsafe_allow_html=True)
@@ -4029,14 +4052,7 @@ def painel_usuarios_admin():
         for item in itens:
             c_user, c_mail, c_por, c_data, c_del = st.columns(col_widths)
 
-            data_formatada = "-"
-            if item.get("created_at"):
-                try:
-                    data_formatada = datetime.fromisoformat(
-                        item["created_at"].replace("Z", "+00:00")
-                    ).strftime("%d/%m/%Y %H:%M")
-                except Exception:
-                    data_formatada = item["created_at"]
+            data_formatada = formatar_data_local(item.get("created_at"))
 
             c_user.markdown(f'<div class="celula-centro"><span class="mobile-label">Usuário:</span>{item.get("usuario", "-")}</div>', unsafe_allow_html=True)
             c_mail.markdown(f'<div class="celula-centro"><span class="mobile-label">E-mail:</span>{item.get("email") or "-"}</div>', unsafe_allow_html=True)

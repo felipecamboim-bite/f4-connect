@@ -1978,6 +1978,15 @@ st.markdown(
             max-width: 380px !important;
         }}
 
+        /* Campos novos da etapa 1 (Selecionar Unidade + Telefone para
+           contato): mesma largura máxima dos campos "Empresa"/"Nome" acima,
+           pra não ficarem gigantes/desproporcionais no celular. */
+        .st-key-select_unidade_etapa1,
+        .st-key-select_unidade_etapa1 div[data-baseweb="select"],
+        .st-key-linha_telefone_unidade {{
+            max-width: 380px !important;
+        }}
+
         /* Campo "Digite o Protocolo ou E-mail" (etapa Acompanhar): mais estreito
            (como o campo Nome da etapa Abrir chamado) */
         .st-key-input_busca_protocolo {{
@@ -3797,21 +3806,22 @@ elif st.session_state.get("solicitante_logado"):
                         '<div class="rotulo-telefone-unidade">Telefone para contato</div>',
                         unsafe_allow_html=True,
                     )
-                    col_ddd, col_numero = st.columns([1, 3])
-                    with col_ddd:
-                        telefone_ddd = st.text_input(
-                            "DDD",
-                            max_chars=2,
-                            placeholder="(51)",
-                            key="input_ddd_unidade",
-                        )
-                    with col_numero:
-                        telefone_numero = st.text_input(
-                            "Número",
-                            max_chars=10,
-                            placeholder="99999-9999",
-                            key="input_numero_unidade",
-                        )
+                    with st.container(key="linha_telefone_unidade"):
+                        col_ddd, col_numero = st.columns([1, 3])
+                        with col_ddd:
+                            telefone_ddd = st.text_input(
+                                "DDD",
+                                max_chars=2,
+                                placeholder="(51)",
+                                key="input_ddd_unidade",
+                            )
+                        with col_numero:
+                            telefone_numero = st.text_input(
+                                "Número",
+                                max_chars=10,
+                                placeholder="99999-9999",
+                                key="input_numero_unidade",
+                            )
 
                 nome = st.text_input(
                     "Digite seu Nome e Sobrenome",

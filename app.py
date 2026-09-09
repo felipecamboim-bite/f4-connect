@@ -3496,7 +3496,12 @@ elif _solicitante_logado:
     )
 
 # ------------------ VISÃO ADMIN (TABELA COM CARDS) ------------------
-@st.fragment
+# Pedido do usuário: a tabela de chamados atualizar sozinha (sem precisar
+# apertar F5, o que derrubava o login) — run_every faz esse fragmento
+# específico se atualizar a cada 20s, buscando de novo no Supabase e
+# redesenhando só essa parte da tela, sem recarregar a página inteira e
+# sem mexer no st.session_state (login continua intacto).
+@st.fragment(run_every="20s")
 def painel_admin():
     # Título centralizado, ocupando o lugar onde ficava "HelpDesk" no topo
     # (que fica escondido só nessa tela — ver _eh_painel_chamados) pra não

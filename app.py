@@ -1072,7 +1072,7 @@ _css_ocultar_sidebar_home = (
 
 st.markdown(
     f"""
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         html {{
@@ -1671,7 +1671,7 @@ st.markdown(
            no celular (os textos são mais longos que "HelpDesk"). */
         .titulo-painel-chamados {{
             text-align: center;
-            font-family: 'Inter', sans-serif !important;
+            font-family: 'Montserrat', sans-serif !important;
             font-weight: 900;
             color: #FFFFFF !important;
             font-size: clamp(20px, 3.4vw, 32px);
@@ -2715,6 +2715,59 @@ st.markdown(
         .st-key-painel_cadastros_tabela [data-testid="stColumn"],
         .st-key-painel_usuarios_admin_tabela [data-testid="stColumn"] {{
             padding: 0 !important;
+        }}
+
+        /* Pedido do usuário: no Painel de Controle (computador), as 12
+           colunas viviam se espremendo pra caber na largura da tela (o
+           Streamlit encolhe cada coluna proporcionalmente até tudo caber,
+           sem um mínimo), deixando tudo "amontoado"/apertado e os títulos
+           quebrando palavra no meio. Agora cada coluna ganha uma largura
+           fixa confortável e a tabela passa a rolar de lado (arrastando)
+           quando não couber tudo de uma vez — em vez de continuar
+           espremendo. Só se aplica no computador; no celular/tablet
+           continua valendo o ajuste de zoom já existente mais abaixo. */
+        @media (min-width: 1001px) {{
+            .st-key-painel_admin_tabela {{
+                overflow-x: auto !important;
+            }}
+
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] {{
+                flex-wrap: nowrap !important;
+                min-width: 1610px !important;
+            }}
+
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
+                flex: none !important;
+                width: auto !important;
+                min-width: 0 !important;
+            }}
+
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1)  {{ width: 140px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2)  {{ width: 110px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3)  {{ width: 130px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4)  {{ width: 190px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ width: 90px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ width: 120px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ width: 130px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ width: 110px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ width: 150px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ width: 220px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ width: 60px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ width: 170px !important; }}
+
+            /* Com espaço de sobra, os títulos (nowrap, já definido no
+               .header-box padrão) e os textos das células (que agora podem
+               quebrar em 2-3 linhas dentro do próprio espaço, em vez de
+               ficar "espremendo" letra por letra) ficam legíveis. */
+            .st-key-painel_admin_tabela .header-box {{
+                white-space: nowrap !important;
+                overflow: visible !important;
+            }}
+
+            .st-key-painel_admin_tabela .celula-texto,
+            .st-key-painel_admin_tabela .celula-protocolo {{
+                white-space: normal !important;
+            }}
         }}
 
         .st-key-painel_admin_tabela .header-box,

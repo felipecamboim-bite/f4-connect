@@ -2729,6 +2729,13 @@ st.markdown(
         @media (min-width: 1001px) {{
             .st-key-painel_admin_tabela {{
                 overflow-x: auto !important;
+                /* Pedido do usuário: limita a altura da tabela e deixa ela
+                   rolar verticalmente por dentro de si mesma — assim a
+                   barra de rolagem horizontal (de arrastar pro lado) fica
+                   sempre visível, sem precisar rolar a página toda até o
+                   final pra alcançá-la. */
+                max-height: 65vh !important;
+                overflow-y: auto !important;
             }}
 
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] {{

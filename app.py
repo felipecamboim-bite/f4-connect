@@ -1699,11 +1699,11 @@ st.markdown(
         .titulo-painel-chamados {{
             text-align: center;
             font-family: 'Montserrat', sans-serif !important;
-            font-weight: 900;
+            font-weight: 600;
             color: #FFFFFF !important;
             font-size: clamp(20px, 3.4vw, 32px);
             margin-bottom: clamp(16px, 3vw, 30px);
-            text-shadow: 0px 4px 12px rgba(0, 0, 0, 0.7);
+            text-shadow: none;
         }}
 
         @media (max-width: 768px) {{

@@ -1070,6 +1070,33 @@ _css_ocultar_sidebar_home = (
     else ""
 )
 
+# Pedido do usuário: na tela do Painel de Controle (admin, computador),
+# existiam 3 barras de rolagem ao mesmo tempo (a da página inteira, mais a
+# vertical e a horizontal da própria tabela) — travar a página deixa só as
+# duas rolagens de dentro da tabela (e a do sidebar, que já existia),
+# evitando a "tela se mexendo" enquanto arrasta a tabela pro lado. Só se
+# aplica nessa tela específica (Painel de Controle) e só no computador —
+# as outras telas do admin (Insights, cadastros, etc.) continuam rolando
+# normalmente, e no celular nada muda.
+_travar_scroll_admin_chamados = bool(st.session_state["usuario_logado"]) and st.session_state[
+    "aba_admin"
+] == "chamados"
+_css_travar_scroll_admin_chamados = (
+    """
+    @media (min-width: 1001px) {
+        html, body {
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        .main .block-container {
+            overflow: hidden !important;
+        }
+    }
+    """
+    if _travar_scroll_admin_chamados
+    else ""
+)
+
 st.markdown(
     f"""
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
@@ -2733,8 +2760,12 @@ st.markdown(
                    rolar verticalmente por dentro de si mesma — assim a
                    barra de rolagem horizontal (de arrastar pro lado) fica
                    sempre visível, sem precisar rolar a página toda até o
-                   final pra alcançá-la. */
-                max-height: 65vh !important;
+                   final pra alcançá-la. Um pouco menor que antes (58vh, era
+                   65vh) pra sobrar espaço garantido pro título + margens
+                   quando a rolagem da página inteira é travada (ver
+                   _css_travar_scroll_admin_chamados), evitando que algum
+                   pedacinho da tabela fique cortado embaixo. */
+                max-height: 58vh !important;
                 overflow-y: auto !important;
             }}
 
@@ -3202,6 +3233,7 @@ st.markdown(
         }}
 
         {_css_ocultar_sidebar_home}
+        {_css_travar_scroll_admin_chamados}
     </style>
     """,
     unsafe_allow_html=True,

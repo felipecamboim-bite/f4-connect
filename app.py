@@ -1263,6 +1263,20 @@ st.markdown(
             font-family: 'Inter', sans-serif !important;
         }}
 
+        /* Pedido do usuário: "Chamados"/"Insights" (navegação) e os itens
+           de "Cadastrar ..." (ações administrativas) ficavam com exatamente
+           a mesma cara, só separados por uma linha fina — esse rotulozinho
+           deixa claro que o bloco de baixo é um grupo à parte (cadastros). */
+        .rotulo-grupo-sidebar {{
+            color: rgba(255, 255, 255, 0.55) !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 800 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1.5px !important;
+            margin: 2px 0 8px 4px !important;
+        }}
+
         /* Painel administrativo: sidebar sem barra de rolagem à toa, mas
            volta a rolar automaticamente se o conteúdo crescer (algum painel
            aberto empurrando os itens abaixo) e não couber na tela — assim
@@ -1550,111 +1564,94 @@ st.markdown(
         }}
 
         /* ========================================================= */
-        /* BALÃOZINHO DE NOTIFICAÇÃO (pedidos de "Criar conta"        */
-        /* pendentes) — visível só no painel do administrador,         */
-        /* flutuando no canto superior direito, igual ícone de         */
-        /* mensagem/notificação flutuante.                             */
+        /* NOTIFICAÇÕES (pedidos de "Criar conta" pendentes) — pedido  */
+        /* do usuário: antes era um sininho flutuante solto no canto   */
+        /* superior direito da tela; agora mora dentro do próprio      */
+        /* menu lateral, como mais um item de navegação                */
+        /* ("Notificações"), com uma bolinha vermelha mostrando        */
+        /* quantos pedidos estão esperando aprovação. Clicando, a      */
+        /* lista abre logo abaixo, ali mesmo no menu.                  */
         /* ========================================================= */
         .st-key-notificacao_pendentes {{
-            position: fixed !important;
-            top: 14px !important;
-            right: 24px !important;
-            z-index: 1000000 !important;
-            width: auto !important;
+            position: relative !important;
         }}
 
-        .st-key-notificacao_pendentes .stButton > button {{
-            background-color: #1D5902 !important;
-            border: 2px solid #FFFFFF !important;
-            border-radius: 999px !important;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
-            width: auto !important;
-            max-width: none !important;
-            padding: 6px 16px !important;
-            min-height: auto !important;
-        }}
-
-        .st-key-notificacao_pendentes .stButton > button p {{
-            color: #FFFFFF !important;
-            font-size: 14px !important;
-            font-weight: 800 !important;
-            white-space: nowrap !important;
-        }}
-
-        .st-key-painel_pendentes {{
-            position: fixed !important;
-            top: 62px !important;
-            right: 24px !important;
-            z-index: 999999 !important;
-            width: 380px !important;
-            max-width: calc(100vw - 48px) !important;
-            max-height: 60vh !important;
-            overflow-y: auto !important;
-            background-color: #1A1A1A !important;
-            border-radius: 12px !important;
-            padding: 14px !important;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45) !important;
-        }}
-
-        .titulo-pendentes {{
+        /* Bolinha vermelha com o número em branco, encostada no canto
+           direito do botão "Notificações" (mesmo botão-texto dos outros
+           itens do menu — sem estilo próprio de botão aqui). */
+        .badge-notificacao {{
+            position: absolute !important;
+            top: 4px !important;
+            right: 10px !important;
+            min-width: 17px !important;
+            height: 17px !important;
+            padding: 0 4px !important;
+            background-color: #E63946 !important;
             color: #FFFFFF !important;
             font-family: 'Inter', sans-serif !important;
+            font-size: 10px !important;
             font-weight: 800 !important;
-            font-size: 14px !important;
-            margin-bottom: 10px !important;
-        }}
-
-        .st-key-painel_pendentes [data-testid="stCaptionContainer"] {{
-            color: #cfcfcf !important;
-        }}
-
-        .st-key-painel_pendentes .celula-texto {{
-            font-size: 12px !important;
-            padding-top: 6px !important;
-        }}
-
-        /* Aprovar/Rejeitar: só o emoji (✓ verde / X vermelho), mas com uma
-           "cara" de botão pequeno e discreto — quadradinho arredondado, em
-           vez de ficar largo com a palavra escrita (que ficava desproporcional
-           nessa coluna estreita). */
-        .st-key-painel_pendentes .stButton > button {{
-            width: 32px !important;
-            height: 32px !important;
-            max-width: 32px !important;
-            min-height: 32px !important;
-            padding: 0 !important;
-            margin: 2px auto !important;
-            background-color: #2b2d31 !important;
-            border: 1px solid rgba(255, 255, 255, 0.15) !important;
-            border-radius: 8px !important;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+            border-radius: 999px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+            pointer-events: none !important;
+        }}
+
+        /* Lista de solicitações pendentes: abre dentro do próprio menu
+           lateral (não mais um painel flutuante) — um cartão escuro por
+           solicitação, com nome/e-mail em cima e Aprovar/Rejeitar embaixo. */
+        .st-key-painel_pendentes {{
+            background-color: rgba(0, 0, 0, 0.25) !important;
+            border-radius: 10px !important;
+            padding: 8px !important;
+            margin: 4px 0 10px 0 !important;
+        }}
+
+        .st-key-painel_pendentes [data-testid="stCaptionContainer"] {{
+            color: rgba(255, 255, 255, 0.65) !important;
+            font-size: 12px !important;
+        }}
+
+        .item-pendente-nome {{
+            color: #FFFFFF !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 12px !important;
+            margin-top: 8px !important;
+        }}
+
+        .item-pendente-email {{
+            color: rgba(255, 255, 255, 0.7) !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 11px !important;
+            word-break: break-all !important;
+            margin-bottom: 4px !important;
+        }}
+
+        /* Aprovar/Rejeitar lado a lado, compactos, dentro da largura
+           estreita do menu lateral. */
+        .st-key-painel_pendentes .stButton > button {{
+            width: 100% !important;
+            max-width: 100% !important;
+            background-color: #2b2d31 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            box-shadow: none !important;
+            border-radius: 8px !important;
+            padding: 4px 6px !important;
+            min-height: auto !important;
+            margin-bottom: 6px !important;
         }}
 
         .st-key-painel_pendentes .stButton > button p {{
-            font-size: 14px !important;
-            line-height: 1 !important;
-            margin: 0 !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
         }}
 
         .st-key-painel_pendentes .stButton > button:hover {{
             background-color: #3a3d42 !important;
             border-color: rgba(255, 255, 255, 0.3) !important;
-        }}
-
-        @media (max-width: 768px) {{
-            .st-key-notificacao_pendentes {{
-                top: 8px !important;
-                right: 12px !important;
-            }}
-            .st-key-painel_pendentes {{
-                top: 52px !important;
-                right: 12px !important;
-                left: 12px !important;
-                width: auto !important;
-            }}
         }}
 
         .main .block-container {{
@@ -2719,6 +2716,72 @@ st.markdown(
         }}
 
         /* ========================================================= */
+        /* PAINEL DE CONTROLE: barra de busca/filtros/ordenação, o    */
+        /* contador de resultados e os botões de paginação — pedido   */
+        /* do usuário pra não precisar mais rolar a tabela inteira    */
+        /* manualmente pra achar um chamado.                          */
+        /* ========================================================= */
+        .st-key-painel_admin_filtros {{
+            margin-bottom: 12px !important;
+        }}
+
+        /* Cinza/branco, igual ao corpo da tabela logo abaixo — em vez do
+           azul/ciano padrão usado no resto do site — pra ficar com cara de
+           barra de ferramentas grudada na tabela, não um formulário à parte. */
+        .st-key-painel_admin_filtros .stTextInput input,
+        .st-key-painel_admin_filtros .stSelectbox div[data-baseweb="select"] {{
+            background-color: #2b2d31 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            color: #FFFFFF !important;
+            font-size: 13px !important;
+        }}
+
+        .st-key-painel_admin_filtros .stSelectbox div[data-baseweb] * {{
+            color: #FFFFFF !important;
+        }}
+
+        .st-key-painel_admin_contador [data-testid="stCaptionContainer"],
+        .st-key-painel_admin_contador p {{
+            color: rgba(255, 255, 255, 0.6) !important;
+            font-size: 12px !important;
+        }}
+
+        .st-key-painel_admin_paginacao {{
+            margin-top: 10px !important;
+        }}
+
+        .st-key-painel_admin_paginacao .stButton {{
+            display: flex !important;
+            justify-content: center !important;
+        }}
+
+        .st-key-painel_admin_paginacao .stButton > button {{
+            background-color: #2b2d31 !important;
+            color: #FFFFFF !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            box-shadow: none !important;
+            border-radius: 8px !important;
+            width: auto !important;
+            max-width: none !important;
+            padding: 6px 16px !important;
+            min-height: auto !important;
+        }}
+
+        .st-key-painel_admin_paginacao .stButton > button p {{
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+        }}
+
+        .st-key-painel_admin_paginacao .stButton > button:hover {{
+            background-color: #3a3d42 !important;
+        }}
+
+        .st-key-painel_admin_paginacao .stButton > button:disabled {{
+            opacity: 0.35 !important;
+        }}
+
+        /* ========================================================= */
         /* PAINEL DE CONTROLE - CENTRAL DE CHAMADOS, EMPRESAS/         */
         /* FERRAMENTAS CADASTRADAS E ADMINISTRADORES CADASTRADOS:      */
         /* mesmo visual de "planilha" (fundo #7C845D, cabeçalho        */
@@ -2806,6 +2869,19 @@ st.markdown(
             .st-key-painel_admin_tabela .celula-protocolo {{
                 white-space: normal !important;
             }}
+        }}
+
+        /* Pedido do usuário: sem nenhuma linha divisória nem alternância de
+           cor entre os chamados, ficava difícil "seguir" uma linha da
+           esquerda até a direita numa tabela larga com rolagem. Uma linha
+           sutil embaixo de cada chamado + uma leve alternância de tom
+           (zebrado) resolve isso, sem quebrar o visual escuro da tabela. */
+        .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"]:has(.celula-protocolo) {{
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+        }}
+
+        .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"]:has(.celula-protocolo):nth-of-type(even) {{
+            background-color: rgba(255, 255, 255, 0.035) !important;
         }}
 
         .st-key-painel_admin_tabela .header-box,
@@ -3319,6 +3395,47 @@ if _token_avaliacao_link:
 
     st.stop()
 
+# ------------------ NOTIFICAÇÕES (SOLICITAÇÕES PENDENTES) NO MENU ------------------
+# Pedido do usuário: antes era um sininho flutuante solto no canto superior
+# direito da tela, sem contexto — agora mora dentro do próprio menu lateral,
+# como mais um item de navegação ("Notificações"), com uma bolinha vermelha
+# mostrando quantos pedidos de "Criar conta" estão esperando aprovação.
+# Clicando, a lista abre ali mesmo, logo abaixo, com Aprovar/Rejeitar.
+@st.fragment
+def notificacao_pendentes_admin():
+    pendentes = listar_solicitantes_pendentes()
+
+    with st.container(key="notificacao_pendentes"):
+        if st.button("Notificações", key="btn_toggle_pendentes"):
+            st.session_state["mostrar_pendentes"] = not st.session_state["mostrar_pendentes"]
+            st.rerun(scope="fragment")
+        if pendentes:
+            st.markdown(
+                f'<div class="badge-notificacao">{len(pendentes)}</div>',
+                unsafe_allow_html=True,
+            )
+
+    if st.session_state["mostrar_pendentes"]:
+        with st.container(key="painel_pendentes"):
+            if not pendentes:
+                st.caption("Nenhuma solicitação pendente no momento.")
+            for p in pendentes:
+                st.markdown(
+                    f'<div class="item-pendente-nome">{html.escape(p.get("nome_usuario", "-"))}</div>'
+                    f'<div class="item-pendente-email">{html.escape(p.get("email", "-"))}</div>',
+                    unsafe_allow_html=True,
+                )
+                col_aprovar, col_rejeitar = st.columns(2)
+                if col_aprovar.button("✅ Aprovar", key=f"aprovar_pendente_{p['nome_usuario']}"):
+                    aprovar_solicitante(p["nome_usuario"])
+                    st.toast(f"Conta de {p['nome_usuario']} aprovada!")
+                    st.rerun(scope="fragment")
+                if col_rejeitar.button("❌ Rejeitar", key=f"rejeitar_pendente_{p['nome_usuario']}"):
+                    rejeitar_solicitante(p["nome_usuario"])
+                    st.toast(f"Pedido de {p['nome_usuario']} recusado.")
+                    st.rerun(scope="fragment")
+
+
 # ---------------------------------------------------------
 # SIDEBAR (LOGIN ADMIN)
 # ---------------------------------------------------------
@@ -3375,7 +3492,14 @@ with st.sidebar:
                 st.session_state["aba_admin"] = "insights"
             st.rerun()
 
+        # ---- NOTIFICAÇÕES (solicitações de "Criar conta" pendentes) ----
+        notificacao_pendentes_admin()
+
         st.markdown("---")
+        st.markdown(
+            '<div class="rotulo-grupo-sidebar">Cadastros</div>',
+            unsafe_allow_html=True,
+        )
 
         # ---- CADASTRAR EMPRESA ----
         if st.button("Cadastrar empresa", key="nav_empresa"):
@@ -3587,6 +3711,11 @@ elif _solicitante_logado:
         unsafe_allow_html=True,
     )
 
+# Ranking de severidade usado só pra ordenar (maior primeiro) no Painel de
+# Controle — quanto maior o número, mais urgente.
+_ORDEM_SEVERIDADE_RANK = {"Crítica": 4, "Alta": 3, "Média": 2, "Baixa": 1}
+
+
 # ------------------ VISÃO ADMIN (TABELA COM CARDS) ------------------
 # Pedido do usuário: a tabela de chamados atualizar sozinha (sem precisar
 # apertar F5, o que derrubava o login) — run_every faz esse fragmento
@@ -3608,11 +3737,136 @@ def painel_admin():
         st.info("Nenhum chamado cadastrado até o momento.")
         return
 
+    # ---- BARRA DE BUSCA / FILTROS / ORDENAÇÃO ----
+    # Pedido do usuário: antes a única forma de achar um chamado era rolando
+    # a tabela inteira manualmente. Agora dá pra buscar por protocolo,
+    # solicitante ou e-mail, filtrar por status/atendente/empresa, e mudar a
+    # ordem de exibição (o mais parecido que dá pra fazer com "ordenar
+    # clicando no cabeçalho da coluna", sem precisar de JavaScript).
+    with st.container(key="painel_admin_filtros"):
+        col_busca, col_status, col_atendente, col_empresa, col_ordenar = st.columns([2, 1.2, 1.2, 1.3, 1.3])
+        busca = col_busca.text_input(
+            "Buscar",
+            placeholder="Buscar por protocolo, solicitante ou e-mail...",
+            key="filtro_busca_admin",
+            label_visibility="collapsed",
+        )
+        status_filtro = col_status.selectbox(
+            "Status", ["Todos os status"] + OPCOES_STATUS,
+            key="filtro_status_admin", label_visibility="collapsed",
+        )
+        atendente_filtro = col_atendente.selectbox(
+            "Atendente", ["Todos os atendentes"] + OPCOES_ATENDENTES,
+            key="filtro_atendente_admin", label_visibility="collapsed",
+        )
+        empresa_filtro = col_empresa.selectbox(
+            "Empresa", ["Todas as empresas"] + listar_empresas(),
+            key="filtro_empresa_admin", label_visibility="collapsed",
+        )
+        ordenar_por = col_ordenar.selectbox(
+            "Ordenar por",
+            ["Mais recentes", "Mais antigos", "Severidade (maior primeiro)", "Status"],
+            key="filtro_ordenar_admin", label_visibility="collapsed",
+        )
+
+    # ---- APLICA BUSCA E FILTROS ----
+    chamados_filtrados = chamados
+    busca_norm = (busca or "").strip().lower()
+    if busca_norm:
+        chamados_filtrados = [
+            c for c in chamados_filtrados
+            if busca_norm in str(c.get("protocolo", "")).lower()
+            or busca_norm in str(c.get("nome_solicitante", "")).lower()
+            or busca_norm in str(c.get("email_solicitante", "")).lower()
+        ]
+    if status_filtro != "Todos os status":
+        chamados_filtrados = [c for c in chamados_filtrados if c.get("status") == status_filtro]
+    if atendente_filtro != "Todos os atendentes":
+        chamados_filtrados = [
+            c for c in chamados_filtrados
+            if (c.get("atendente") or "Não atribuído") == atendente_filtro
+        ]
+    if empresa_filtro != "Todas as empresas":
+        chamados_filtrados = [c for c in chamados_filtrados if c.get("empresa") == empresa_filtro]
+
+    # ---- ORDENAÇÃO ----
+    # "Mais recentes" é a ordem padrão que já vem do listar_chamados()
+    # (mais novo primeiro), então não precisa reordenar nesse caso.
+    if ordenar_por == "Mais antigos":
+        chamados_filtrados = list(reversed(chamados_filtrados))
+    elif ordenar_por == "Severidade (maior primeiro)":
+        chamados_filtrados = sorted(
+            chamados_filtrados,
+            key=lambda c: _ORDEM_SEVERIDADE_RANK.get(normalizar_severidade(c.get("severidade")), 0),
+            reverse=True,
+        )
+    elif ordenar_por == "Status":
+        chamados_filtrados = sorted(
+            chamados_filtrados,
+            key=lambda c: OPCOES_STATUS.index(c["status"]) if c.get("status") in OPCOES_STATUS else 99,
+        )
+
+    if not chamados_filtrados:
+        st.info("Nenhum chamado encontrado com esses filtros.")
+        return
+
+    # ---- PAGINAÇÃO ----
+    # Pedido do usuário: em vez de carregar/renderizar a lista inteira de
+    # uma vez, divide em páginas — com um contador mostrando quantos
+    # chamados existem no total e quantos estão sendo exibidos.
+    TAMANHO_PAGINA_ADMIN = 15
+    _assinatura_filtros_admin = (busca_norm, status_filtro, atendente_filtro, empresa_filtro, ordenar_por)
+    if st.session_state.get("_assinatura_filtros_admin") != _assinatura_filtros_admin:
+        st.session_state["_assinatura_filtros_admin"] = _assinatura_filtros_admin
+        st.session_state["pagina_admin_chamados"] = 1
+
+    total_paginas_admin = max(1, -(-len(chamados_filtrados) // TAMANHO_PAGINA_ADMIN))
+    pagina_atual_admin = st.session_state.get("pagina_admin_chamados", 1)
+    pagina_atual_admin = max(1, min(pagina_atual_admin, total_paginas_admin))
+    st.session_state["pagina_admin_chamados"] = pagina_atual_admin
+
+    _inicio_pagina = (pagina_atual_admin - 1) * TAMANHO_PAGINA_ADMIN
+    _fim_pagina = _inicio_pagina + TAMANHO_PAGINA_ADMIN
+    chamados_pagina = chamados_filtrados[_inicio_pagina:_fim_pagina]
+
+    with st.container(key="painel_admin_contador"):
+        _texto_contador = (
+            f"Mostrando {_inicio_pagina + 1}–{min(_fim_pagina, len(chamados_filtrados))} "
+            f"de {len(chamados_filtrados)} chamado(s)"
+        )
+        if len(chamados_filtrados) != len(chamados):
+            _texto_contador += f" (de {len(chamados)} no total)"
+        st.caption(_texto_contador + ".")
+
     # 1. 12 BLOCOS DE TITULOS/CABEÇALHO (Telefone e Anexo adicionados a
     # pedido do usuário — telefone de contato da unidade/filial/parceiro, e
     # um ícone pra abrir o arquivo anexado na abertura do chamado).
     col_widths = [1.3, 1.1, 1.2, 1.6, 1.0, 1.1, 1.2, 1.1, 1.3, 1.8, 0.6, 1.5]
     headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Telefone", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Anexo", "Status"]
+
+    def _celula_previa_com_popover(col, rotulo_mobile, texto, limite):
+        """Mostra uma prévia curta do texto e, só quando ele for maior que a
+        prévia, uma setinha (▾) que abre um popover com o valor completo —
+        mesmo padrão já usado na Descrição. Pedido do usuário: sem isso,
+        textos longos (e-mail, nome de empresa, etc.) quebravam em várias
+        linhas dentro da própria célula e deixavam a altura de cada linha
+        da tabela toda desigual (a "cara amadora" que ele apontou)."""
+        texto_completo = str(texto) if texto else "-"
+        if len(texto_completo) > limite:
+            previa = html.escape(texto_completo[:limite].rstrip()) + "…"
+        else:
+            previa = html.escape(texto_completo)
+        with col:
+            st.markdown(
+                f'<div class="celula-texto"><span class="mobile-label">{rotulo_mobile}:</span>{previa}</div>',
+                unsafe_allow_html=True,
+            )
+            if len(texto_completo) > limite:
+                with st.popover("▾", help=f"Ver {rotulo_mobile.lower()} completo"):
+                    st.markdown(
+                        f'<div class="celula-texto texto-descricao-completa">{html.escape(texto_completo)}</div>',
+                        unsafe_allow_html=True,
+                    )
 
     with st.container(key="painel_admin_tabela"):
         cols_head = st.columns(col_widths)
@@ -3620,7 +3874,7 @@ def painel_admin():
             col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
 
         # 2. Exibição das linhas com o Seletor de Atendente
-        for c in chamados:
+        for c in chamados_pagina:
             (
                 c_atend, c_proto, c_nome, c_mail, c_tel, c_emp,
                 c_ferr, c_sev, c_ass, c_desc, c_anexo, c_stat,
@@ -3644,13 +3898,13 @@ def painel_admin():
                 st.rerun(scope="fragment")
 
             c_proto.markdown(f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}</div>', unsafe_allow_html=True)
-            c_nome.markdown(f'<div class="celula-texto"><span class="mobile-label">Solicitante:</span>{c.get("nome_solicitante", "-")}</div>', unsafe_allow_html=True)
-            c_mail.markdown(f'<div class="celula-texto"><span class="mobile-label">E-mail:</span>{c.get("email_solicitante", "-")}</div>', unsafe_allow_html=True)
+            _celula_previa_com_popover(c_nome, "Solicitante", c.get("nome_solicitante"), limite=18)
+            _celula_previa_com_popover(c_mail, "E-mail", c.get("email_solicitante"), limite=26)
             c_tel.markdown(f'<div class="celula-texto"><span class="mobile-label">Telefone:</span>{c.get("telefone_contato") or "-"}</div>', unsafe_allow_html=True)
-            c_emp.markdown(f'<div class="celula-texto"><span class="mobile-label">Empresa:</span>{c.get("empresa", "-")}</div>', unsafe_allow_html=True)
-            c_ferr.markdown(f'<div class="celula-texto"><span class="mobile-label">Ferramenta:</span>{c.get("ferramenta", "-")}</div>', unsafe_allow_html=True)
+            _celula_previa_com_popover(c_emp, "Empresa", c.get("empresa"), limite=16)
+            _celula_previa_com_popover(c_ferr, "Ferramenta", c.get("ferramenta"), limite=16)
             c_sev.markdown(f'<div class="celula-texto"><span class="mobile-label">Severidade:</span>{formatar_severidade_admin(c.get("severidade"))}</div>', unsafe_allow_html=True)
-            c_ass.markdown(f'<div class="celula-texto"><span class="mobile-label">Assunto:</span>{c.get("assunto", "-")}</div>', unsafe_allow_html=True)
+            _celula_previa_com_popover(c_ass, "Assunto", c.get("assunto"), limite=20)
             # Descrição: mostra só uma prévia curta (todas as linhas ficam com
             # a mesma altura, "quadradinho" padronizado) e, só quando o texto
             # é maior que a prévia, aparece uma setinha (▾) que abre um
@@ -3730,6 +3984,22 @@ def painel_admin():
                     )
                 # rerun com escopo "fragment": atualiza só este painel,
                 # sem re-executar o app inteiro (login, CSS, imagens etc.)
+                st.rerun(scope="fragment")
+
+    # ---- CONTROLES DE PAGINAÇÃO (embaixo da tabela) ----
+    if total_paginas_admin > 1:
+        with st.container(key="painel_admin_paginacao"):
+            col_pag_ant, col_pag_meio, col_pag_prox = st.columns([1, 2, 1])
+            if col_pag_ant.button("← Anterior", key="pagina_admin_anterior", disabled=(pagina_atual_admin <= 1)):
+                st.session_state["pagina_admin_chamados"] = pagina_atual_admin - 1
+                st.rerun(scope="fragment")
+            col_pag_meio.markdown(
+                f'<div class="celula-texto" style="text-align:center;">'
+                f'Página {pagina_atual_admin} de {total_paginas_admin}</div>',
+                unsafe_allow_html=True,
+            )
+            if col_pag_prox.button("Próxima →", key="pagina_admin_proxima", disabled=(pagina_atual_admin >= total_paginas_admin)):
+                st.session_state["pagina_admin_chamados"] = pagina_atual_admin + 1
                 st.rerun(scope="fragment")
 
 
@@ -4261,56 +4531,7 @@ def resultado_consulta_editavel(resultados):
                 st.rerun(scope="fragment")
 
 
-# ------------------ NOTIFICAÇÃO DE SOLICITAÇÕES PENDENTES (ADMIN) ------------------
-# Pedido do usuário: um balãozinho flutuante (estilo notificação do
-# Messenger), visível só pra quem está logado como admin, mostrando quantos
-# pedidos de "Criar conta" estão esperando aprovação. Clicando, abre a lista
-# com Aprovar/Rejeitar pra cada um.
-@st.fragment
-def notificacao_pendentes_admin():
-    pendentes = listar_solicitantes_pendentes()
-
-    with st.container(key="notificacao_pendentes"):
-        rotulo = f"🔔 {len(pendentes)}" if pendentes else "🔔"
-        if st.button(rotulo, key="btn_toggle_pendentes"):
-            st.session_state["mostrar_pendentes"] = not st.session_state["mostrar_pendentes"]
-            st.rerun(scope="fragment")
-
-    if st.session_state["mostrar_pendentes"]:
-        with st.container(key="painel_pendentes"):
-            st.markdown(
-                '<div class="titulo-pendentes">Solicitações de acesso pendentes</div>',
-                unsafe_allow_html=True,
-            )
-
-            if not pendentes:
-                st.caption("Nenhuma solicitação pendente no momento.")
-
-            for p in pendentes:
-                col_nome, col_email, col_aprovar, col_rejeitar = st.columns([1.4, 1.8, 0.7, 0.7])
-                col_nome.markdown(
-                    f'<div class="celula-texto">{html.escape(p.get("nome_usuario", "-"))}</div>',
-                    unsafe_allow_html=True,
-                )
-                col_email.markdown(
-                    f'<div class="celula-texto">{html.escape(p.get("email", "-"))}</div>',
-                    unsafe_allow_html=True,
-                )
-                if col_aprovar.button("✅", key=f"aprovar_pendente_{p['nome_usuario']}"):
-                    aprovar_solicitante(p["nome_usuario"])
-                    st.toast(f"Conta de {p['nome_usuario']} aprovada!")
-                    st.rerun(scope="fragment")
-                if col_rejeitar.button("❌", key=f"rejeitar_pendente_{p['nome_usuario']}"):
-                    rejeitar_solicitante(p["nome_usuario"])
-                    st.toast(f"Pedido de {p['nome_usuario']} recusado.")
-                    st.rerun(scope="fragment")
-
-
 if st.session_state["usuario_logado"]:
-    # Balãozinho flutuante de notificação (pedidos de "Criar conta"
-    # pendentes) — visível em qualquer tela do admin, não só na de chamados.
-    notificacao_pendentes_admin()
-
     if st.session_state["aba_admin"] == "empresa":
         painel_cadastros("empresa")
     elif st.session_state["aba_admin"] == "ferramenta":

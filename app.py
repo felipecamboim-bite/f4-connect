@@ -1047,6 +1047,14 @@ if "mostrar_pendentes" not in st.session_state:
 # o painel do administrador (logado) continua na cor #1A1A1A.
 _tela_publica = not st.session_state["usuario_logado"]
 _cor_fundo_app = "#FFFFFF" if _tela_publica else "#1A1A1A"
+
+# Pedido do usuário: o verde sólido cobrindo a sidebar inteira ficava
+# "nada a ver" ao lado do resto do painel, que é escuro — só pro
+# administrador logado, a sidebar passa a ser escura (mesmo tom do fundo
+# do painel), com o verde da marca sobrando só como destaque (botão
+# "Logado como", hover/seleção do menu, etc.). A sidebar do solicitante
+# (quando aparece, fora da tela inicial) continua verde, sem alteração.
+_cor_fundo_sidebar = "#1D5902" if _tela_publica else "#1A1A1A"
 _cor_titulo_topo = "#3B3D35" if _tela_publica else "#FFFFFF"
 _cor_label_campo = "#3B3D35" if _tela_publica else "#FFFFFF"
 
@@ -1088,8 +1096,12 @@ _css_travar_scroll_admin_chamados = (
             height: 100vh !important;
             overflow: hidden !important;
         }
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"],
+        .main,
         .main .block-container {
             overflow: hidden !important;
+            height: 100vh !important;
         }
     }
     """
@@ -1148,7 +1160,7 @@ st.markdown(
         section[data-testid="stSidebar"] {{
         width: 280px !important;
         min-width: 280px !important;
-        background-color: #1D5902 !important;
+        background-color: {_cor_fundo_sidebar} !important;
         border-right: 1px solid rgba(0, 183, 255, 0.3) !important;
         }}
 
@@ -2560,13 +2572,42 @@ st.markdown(
         /* Descrição no Painel de Controle: prévia curta + setinha (▾) que
            abre um popover com o texto completo — mantém todas as linhas da
            tabela com a mesma altura, sem vazar nem virar caixa de rolagem. */
+        /* A setinha (▾) que abre o valor completo (Solicitante, E-mail,
+           Empresa, Ferramenta, Assunto, Descrição) ficava numa linha
+           própria embaixo do texto, empurrando a altura daquela linha da
+           tabela e deixando-as desiguais de novo (mesmo problema que a
+           gente tinha corrigido). Agora ela fica sobreposta no fim do
+           texto, sem ocupar espaço vertical — mesma técnica já usada no
+           balãozinho de notificação da sidebar — e todas as linhas da
+           tabela voltam a ter a mesma altura, tenham ou não popover. */
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has([data-testid="stPopover"]) {{
+            position: relative !important;
+        }}
+
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has([data-testid="stPopover"]) .celula-texto {{
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: calc(100% - 4px) !important;
+            padding-right: 20px !important;
+        }}
+
+        .st-key-painel_admin_tabela [data-testid="stPopover"] {{
+            position: absolute !important;
+            top: 2px !important;
+            right: 2px !important;
+            width: auto !important;
+        }}
+
         .st-key-painel_admin_tabela [data-testid="stPopover"] button {{
             min-height: auto !important;
-            height: 22px !important;
-            padding: 0 8px !important;
-            font-size: 12px !important;
-            border-radius: 6px !important;
-            margin-top: 2px !important;
+            height: 18px !important;
+            width: 18px !important;
+            padding: 0 !important;
+            font-size: 11px !important;
+            line-height: 16px !important;
+            border-radius: 4px !important;
+            margin-top: 0 !important;
         }}
 
         .texto-descricao-completa {{
@@ -2877,11 +2918,11 @@ st.markdown(
            sutil embaixo de cada chamado + uma leve alternância de tom
            (zebrado) resolve isso, sem quebrar o visual escuro da tabela. */
         .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"]:has(.celula-protocolo) {{
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
         }}
 
         .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"]:has(.celula-protocolo):nth-of-type(even) {{
-            background-color: rgba(255, 255, 255, 0.035) !important;
+            background-color: rgba(255, 255, 255, 0.06) !important;
         }}
 
         .st-key-painel_admin_tabela .header-box,

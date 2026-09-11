@@ -1310,8 +1310,8 @@ st.markdown(
         }}
 
         .logo-sidebar-admin img {{
-            max-width: 150px !important;
-            width: 75% !important;
+            max-width: 210px !important;
+            width: 92% !important;
             height: auto !important;
         }}
 

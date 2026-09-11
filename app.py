@@ -2864,12 +2864,18 @@ st.markdown(
                    rolar verticalmente por dentro de si mesma — assim a
                    barra de rolagem horizontal (de arrastar pro lado) fica
                    sempre visível, sem precisar rolar a página toda até o
-                   final pra alcançá-la. Um pouco menor que antes (58vh, era
-                   65vh) pra sobrar espaço garantido pro título + margens
-                   quando a rolagem da página inteira é travada (ver
-                   _css_travar_scroll_admin_chamados), evitando que algum
-                   pedacinho da tabela fique cortado embaixo. */
-                max-height: 58vh !important;
+                   final pra alcançá-la. Antes era uma % fixa da tela
+                   (58vh) — em telas/zooms menores isso ainda deixava a
+                   tabela alta demais pro que sobrava de espaço (título +
+                   filtros + contador + paginação, que têm altura fixa em
+                   pixels, não em vh), cortando a paginação/rolagem
+                   horizontal quando a rolagem da página inteira é travada
+                   (ver _css_travar_scroll_admin_chamados). Usando calc()
+                   pra descontar esse espaço fixo em pixels, a tabela
+                   sempre sobra do tamanho certo pra tudo caber, em
+                   qualquer zoom/resolução. */
+                max-height: calc(100vh - 350px) !important;
+                min-height: 180px !important;
                 overflow-y: auto !important;
             }}
 

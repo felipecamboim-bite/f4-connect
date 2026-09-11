@@ -1062,6 +1062,14 @@ _cor_fundo_sidebar = "#1D5902" if _tela_publica else "#1A1A1A"
 # contorno azul original, sem alteração.
 _cor_borda_sidebar = "rgba(0, 183, 255, 0.3)" if _tela_publica else "rgba(114, 167, 3, 0.45)"
 
+# Pedido do usuário: no Painel de Controle sobrava um vão vazio grande no
+# topo (cabeçalho transparente do Streamlit + a margem padrão acima do
+# título) antes da tabela começar. Só pro admin, encolhe os dois pra
+# "subir" o conteúdo — a tela pública (login/menu do solicitante) mantém o
+# espaçamento original, sem alteração.
+_altura_header_admin = "" if _tela_publica else "height: 2.2rem !important; min-height: 2.2rem !important;"
+_padding_top_block_container = "3rem" if _tela_publica else "1rem"
+
 # A barrinha de rolagem da sidebar (nativa do navegador) também aparecia
 # meio azulada/acinzentada em cima do fundo escuro novo — só pro admin,
 # pinta ela também no verde da marca. Sidebar do solicitante (fundo verde,
@@ -1166,6 +1174,7 @@ st.markdown(
         header[data-testid="stHeader"] {{
             background-color: transparent !important;
             background: transparent !important;
+            {_altura_header_admin}
         }}
 
         /* Impede que a sidebar seja recolhida. O nome exato do botão de colapsar
@@ -1718,7 +1727,7 @@ st.markdown(
         }}
 
         .main .block-container {{
-            padding-top: 3rem !important;
+            padding-top: {_padding_top_block_container} !important;
             padding-bottom: 2rem !important;
             padding-left: 3rem !important;
             padding-right: 3rem !important;
@@ -2832,6 +2841,21 @@ st.markdown(
             color: #FFFFFF !important;
         }}
 
+        /* Pedido do usuário: ao clicar/selecionar um desses campos (busca
+           ou os selects), o contorno de foco padrão do Streamlit é
+           vermelho — troca pro verde da marca, cobrindo tanto o campo de
+           texto quanto as duas variantes de selectbox que essa versão do
+           Streamlit pode desenhar (data-baseweb/select mais antigo, ou
+           input[role="combobox"] dentro de um [role="group"] mais novo). */
+        .st-key-painel_admin_filtros .stTextInput input:focus,
+        .st-key-painel_admin_filtros .stSelectbox div[data-baseweb="select"]:focus-within,
+        .st-key-painel_admin_filtros .stSelectbox [role="group"]:focus-within,
+        .st-key-painel_admin_filtros .stSelectbox input[role="combobox"]:focus {{
+            border-color: #72A703 !important;
+            box-shadow: 0 0 0 1px #72A703 !important;
+            outline: none !important;
+        }}
+
         .st-key-painel_admin_contador [data-testid="stCaptionContainer"],
         .st-key-painel_admin_contador p {{
             color: rgba(255, 255, 255, 0.6) !important;
@@ -2925,7 +2949,7 @@ st.markdown(
                    pra descontar esse espaço fixo em pixels, a tabela
                    sempre sobra do tamanho certo pra tudo caber, em
                    qualquer zoom/resolução. */
-                max-height: calc(100vh - 420px) !important;
+                max-height: calc(100vh - 365px) !important;
                 min-height: 160px !important;
                 overflow-y: auto !important;
             }}

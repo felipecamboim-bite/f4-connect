@@ -3362,6 +3362,43 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Pedido do usuário: ao sair da tela de Chamados (ex.: Insights, Cadastrar
+# empresa/ferramenta/unidade/administrador) e voltar, a tela "congelada"
+# reaparecia deslocada (cortada em cima ou embaixo) em vez de sempre no
+# mesmo lugar. Isso acontece porque, enquanto o usuário está numa tela SEM
+# o travamento (as outras abas rolam normalmente), o navegador guarda a
+# posição de rolagem daquele momento; ao voltar pra Chamados e travar a
+# rolagem de novo, ela volta travada bem onde parou, não no topo. Como o
+# st.markdown não executa <script>, isso só é resolvido via componente (ver
+# comentário do <meta color-scheme> logo no início do arquivo) — zera a
+# rolagem de tudo que pode ter ficado deslocado, sempre que essa tela
+# (travada) é carregada.
+if _travar_scroll_admin_chamados:
+    components.html(
+        """
+        <script>
+        (function() {
+            try {
+                var doc = window.parent.document;
+                var alvos = [
+                    doc.documentElement,
+                    doc.body,
+                    doc.querySelector('[data-testid="stAppViewContainer"]'),
+                    doc.querySelector('[data-testid="stMain"]'),
+                    doc.querySelector('.main'),
+                    doc.querySelector('.main .block-container'),
+                ];
+                alvos.forEach(function(el) {
+                    if (el) { el.scrollTop = 0; el.scrollLeft = 0; }
+                });
+                window.parent.scrollTo(0, 0);
+            } catch (e) {}
+        })();
+        </script>
+        """,
+        height=0,
+    )
+
 # ---------------------------------------------------------
 # AVALIAÇÃO VIA LINK DO E-MAIL (SEM LOGIN)
 # ---------------------------------------------------------

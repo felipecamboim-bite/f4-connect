@@ -1055,6 +1055,33 @@ _cor_fundo_app = "#FFFFFF" if _tela_publica else "#1A1A1A"
 # "Logado como", hover/seleção do menu, etc.). A sidebar do solicitante
 # (quando aparece, fora da tela inicial) continua verde, sem alteração.
 _cor_fundo_sidebar = "#1D5902" if _tela_publica else "#1A1A1A"
+# Mesma lógica: a linha fina do contorno direito da sidebar era azul/ciano
+# (resquício de outra tela) — só pro admin, agora acompanha o verde da
+# marca (mesmo tom do botão "Notificações"/hover do menu, #72A703), pra
+# combinar com o fundo escuro novo. A sidebar do solicitante mantém o
+# contorno azul original, sem alteração.
+_cor_borda_sidebar = "rgba(0, 183, 255, 0.3)" if _tela_publica else "rgba(114, 167, 3, 0.45)"
+
+# A barrinha de rolagem da sidebar (nativa do navegador) também aparecia
+# meio azulada/acinzentada em cima do fundo escuro novo — só pro admin,
+# pinta ela também no verde da marca. Sidebar do solicitante (fundo verde,
+# sem alteração) fica com a rolagem padrão do navegador, como sempre foi.
+_css_scrollbar_sidebar_admin = (
+    ""
+    if _tela_publica
+    else """
+    section[data-testid="stSidebar"]::-webkit-scrollbar {
+        width: 8px;
+    }
+    section[data-testid="stSidebar"]::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    section[data-testid="stSidebar"]::-webkit-scrollbar-thumb {
+        background-color: #72A703;
+        border-radius: 8px;
+    }
+    """
+)
 _cor_titulo_topo = "#3B3D35" if _tela_publica else "#FFFFFF"
 _cor_label_campo = "#3B3D35" if _tela_publica else "#FFFFFF"
 
@@ -1161,7 +1188,7 @@ st.markdown(
         width: 280px !important;
         min-width: 280px !important;
         background-color: {_cor_fundo_sidebar} !important;
-        border-right: 1px solid rgba(0, 183, 255, 0.3) !important;
+        border-right: 1px solid {_cor_borda_sidebar} !important;
         }}
 
         /* Reforço: mesmo que algum clique consiga acionar o estado "recolhido"
@@ -3381,6 +3408,7 @@ st.markdown(
 
         {_css_ocultar_sidebar_home}
         {_css_travar_scroll_admin_chamados}
+        {_css_scrollbar_sidebar_admin}
     </style>
     """,
     unsafe_allow_html=True,

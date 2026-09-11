@@ -1306,7 +1306,7 @@ st.markdown(
            abaixo do "Logado como". */
         .logo-sidebar-admin {{
             text-align: center !important;
-            margin-bottom: 34px !important;
+            margin-bottom: 10px !important;
         }}
 
         .logo-sidebar-admin img {{
@@ -1315,12 +1315,36 @@ st.markdown(
             height: auto !important;
         }}
 
-        /* Aviso "Logado como: ..." em branco */
-        section[data-testid="stSidebar"] .stAlert,
-        section[data-testid="stSidebar"] .stAlert p,
-        section[data-testid="stSidebar"] .stAlert div,
-        section[data-testid="stSidebar"] [data-testid="stAlertContentSuccess"] {{
+        /* "Logado como: <nome>" fixo no canto superior direito da tela
+           (fora da sidebar) — pedido do usuário, sem o fundo verde que o
+           st.success tinha. Só no computador; no celular a sidebar já tem
+           seu próprio botão de abrir/fechar nesse canto, então esse texto
+           fica escondido lá pra não sobrepor. */
+        .badge-logado-topo {{
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+        }}
+
+        .badge-logado-topo strong {{
+            font-weight: 700 !important;
             color: #FFFFFF !important;
+        }}
+
+        @media (min-width: 1001px) {{
+            .badge-logado-topo {{
+                position: fixed !important;
+                top: 16px !important;
+                right: 28px !important;
+                z-index: 999999 !important;
+            }}
+        }}
+
+        @media (max-width: 1000px) {{
+            .badge-logado-topo {{
+                display: none !important;
+            }}
         }}
 
         /* PAINEL ADMINISTRATIVO (pós-login): os botões da sidebar viram só texto
@@ -3536,7 +3560,6 @@ with st.sidebar:
             f'<div class="logo-sidebar-admin"><img src="{logo_sidebar_admin_src}"></div>',
             unsafe_allow_html=True,
         )
-        st.success(f"Logado como: **{st.session_state['usuario_logado']}**")
 
         # Destaca (fundo verde-escuro) a opção da sidebar correspondente à
         # tela que está aberta agora, do mesmo jeito que o efeito de hover
@@ -3751,6 +3774,17 @@ with st.sidebar:
             st.session_state["mostrar_alterar_senha"] = False
             st.session_state["codigo_senha_enviado"] = False
             st.rerun()
+
+# Pedido do usuário: "Logado como: <nome>" saiu de dentro da sidebar (onde
+# tinha o fundo verde do st.success) e virou um texto simples fixo no
+# canto superior direito da tela — fora da sidebar, visível em qualquer
+# aba do admin (Chamados, Insights, cadastros, etc.), não só nela.
+if st.session_state["usuario_logado"]:
+    st.markdown(
+        f'<div class="badge-logado-topo">Logado como: '
+        f'<strong>{html.escape(st.session_state["usuario_logado"])}</strong></div>',
+        unsafe_allow_html=True,
+    )
 
 # ---------------------------------------------------------
 # INTERFACE PRINCIPAL

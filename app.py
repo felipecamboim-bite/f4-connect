@@ -2848,12 +2848,17 @@ st.markdown(
            Streamlit pode desenhar (data-baseweb/select mais antigo, ou
            input[role="combobox"] dentro de um [role="group"] mais novo). */
         .st-key-painel_admin_filtros .stTextInput input:focus,
+        .st-key-painel_admin_filtros .stTextInput input:focus-visible,
+        .st-key-painel_admin_filtros .stTextInput div[data-baseweb]:focus-within,
+        .st-key-painel_admin_filtros div[data-testid="stTextInputRootElement"]:focus-within,
         .st-key-painel_admin_filtros .stSelectbox div[data-baseweb="select"]:focus-within,
         .st-key-painel_admin_filtros .stSelectbox [role="group"]:focus-within,
-        .st-key-painel_admin_filtros .stSelectbox input[role="combobox"]:focus {{
-            border-color: #72A703 !important;
+        .st-key-painel_admin_filtros .stSelectbox [role="group"]:has(input:focus-visible),
+        .st-key-painel_admin_filtros .stSelectbox input[role="combobox"]:focus,
+        .st-key-painel_admin_filtros .stSelectbox input[role="combobox"]:focus-visible {{
+            border: 1px solid #72A703 !important;
             box-shadow: 0 0 0 1px #72A703 !important;
-            outline: none !important;
+            outline: #72A703 solid 1px !important;
         }}
 
         .st-key-painel_admin_contador [data-testid="stCaptionContainer"],
@@ -2949,7 +2954,7 @@ st.markdown(
                    pra descontar esse espaço fixo em pixels, a tabela
                    sempre sobra do tamanho certo pra tudo caber, em
                    qualquer zoom/resolução. */
-                max-height: calc(100vh - 365px) !important;
+                max-height: calc(100vh - 420px) !important;
                 min-height: 160px !important;
                 overflow-y: auto !important;
             }}

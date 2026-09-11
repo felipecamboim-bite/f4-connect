@@ -2874,8 +2874,8 @@ st.markdown(
                    pra descontar esse espaço fixo em pixels, a tabela
                    sempre sobra do tamanho certo pra tudo caber, em
                    qualquer zoom/resolução. */
-                max-height: calc(100vh - 350px) !important;
-                min-height: 180px !important;
+                max-height: calc(100vh - 420px) !important;
+                min-height: 160px !important;
                 overflow-y: auto !important;
             }}
 

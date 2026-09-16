@@ -219,7 +219,7 @@ def buscar_solicitante(nome_usuario):
     if supabase:
         res = (
             supabase.table("solicitantes")
-            .select("nome_usuario, email, senha, status")
+            .select("nome_usuario, email, senha, status, nome_completo, empresa, unidade, telefone_contato")
             .eq("nome_usuario", (nome_usuario or "").strip().lower())
             .execute()
         )
@@ -290,10 +290,11 @@ def verificar_situacao_colaborador(nome_completo):
     return None
 
 
-def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha):
+def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha, empresa=None, unidade=None, telefone_contato=None):
     nome_completo_norm = (nome_completo or "").strip()
     nome_norm = (nome_usuario or "").strip().lower()
     email_norm = (email or "").strip()
+    empresa_norm = (empresa or "").strip()
 
     if not nome_completo_norm:
         return {"ok": False, "erro": "Digite seu nome completo."}
@@ -307,6 +308,10 @@ def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha):
         return {"ok": False, "erro": "A senha precisa ter pelo menos 1 caractere especial."}
     if not email_norm or "@" not in email_norm:
         return {"ok": False, "erro": "Digite um e-mail corporativo válido."}
+    if not empresa_norm or empresa_norm == "Selecione...":
+        return {"ok": False, "erro": "Selecione a empresa da qual você faz parte."}
+    if empresa_norm == "ClickLog Transportes" and (not unidade or unidade == "Selecione..."):
+        return {"ok": False, "erro": "Selecione sua unidade."}
     if buscar_solicitante(nome_norm) or buscar_usuario_admin(nome_norm):
         return {"ok": False, "erro": "Já existe uma conta com esse nome de usuário."}
 
@@ -329,6 +334,9 @@ def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha):
                 "email": email_norm,
                 "senha": hash_senha(senha),
                 "status": status_inicial,
+                "empresa": empresa_norm,
+                "unidade": unidade,
+                "telefone_contato": telefone_contato,
             }
         ).execute()
 
@@ -975,9 +983,6 @@ logo_sidebar_admin_src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAggAAAEZ
 if "opcao_menu" not in st.session_state:
     st.session_state["opcao_menu"] = "inicio"
 
-if "etapa_abertura" not in st.session_state:
-    st.session_state["etapa_abertura"] = 1
-
 if "ultimo_protocolo" not in st.session_state:
     st.session_state["ultimo_protocolo"] = None
 
@@ -987,20 +992,6 @@ if "ultimo_email_falhou" not in st.session_state:
 
 if "usuario_logado" not in st.session_state:
     st.session_state["usuario_logado"] = None
-
-if "temp_nome" not in st.session_state:
-    st.session_state["temp_nome"] = ""
-
-if "temp_empresa" not in st.session_state:
-    st.session_state["temp_empresa"] = "Selecione..."
-
-# Unidade (só usada quando a empresa selecionada é a ClickLog Transportes) e
-# telefone de contato (só quando a unidade escolhida é uma filial, não a matriz)
-if "temp_unidade" not in st.session_state:
-    st.session_state["temp_unidade"] = None
-
-if "temp_telefone" not in st.session_state:
-    st.session_state["temp_telefone"] = None
 
 # Controla qual conteúdo aparece na área principal do admin:
 # "chamados" (padrão), "empresa" (cadastro/lista de empresas) ou
@@ -4731,7 +4722,6 @@ elif st.session_state.get("solicitante_logado"):
     with col_balao:
         if st.session_state["opcao_menu"] == "inicio":
             st.session_state["ultimo_protocolo"] = None
-            st.session_state["etapa_abertura"] = 1
             # A saudação "Olá! Como posso te ajudar hoje?" foi removida daqui
             # pra não duplicar com a nova frase de boas-vindas exibida junto
             # da logo, acima (ver .logo-boas-vindas-box / _mostrar_boas_vindas_logo).
@@ -4758,219 +4748,128 @@ elif st.session_state.get("solicitante_logado"):
                     st.rerun()
 
         elif st.session_state["opcao_menu"] == "abrir":
-            if st.session_state["etapa_abertura"] == 1:
+            # Etapa de identificação (empresa/unidade/telefone/nome) foi removida
+            # daqui — esses dados agora vêm direto da conta do solicitante
+            # (preenchidos no cadastro), então essa tela só pede o que muda de
+            # chamado pra chamado: ferramenta, severidade, assunto, descrição e anexo.
+            _dados_conta_sol = st.session_state.get("solicitante_logado") or {}
+
+            st.markdown(
+                '<div class="fala-titulo-sem-balao titulo-identificacao">Detalhes do Chamado:</div>',
+                unsafe_allow_html=True,
+            )
+
+            if st.session_state["ultimo_protocolo"]:
                 st.markdown(
-                    '<div class="fala-titulo-sem-balao titulo-identificacao">Identificação Inicial:</div>',
+                    f"""
+                    <div class="card-sucesso">
+                        <b>Chamado registrado com sucesso!</b><br>
+                        Seu Protocolo: <b style="font-size: 20px; color: #000000;">{st.session_state['ultimo_protocolo']}</b>
+                    </div>
+                    """,
                     unsafe_allow_html=True,
                 )
-
-                if st.session_state["ultimo_protocolo"]:
-                    st.markdown(
-                        f"""
-                        <div class="card-sucesso">
-                            <b>Chamado registrado com sucesso!</b><br>
-                            Seu Protocolo: <b style="font-size: 20px; color: #000000;">{st.session_state['ultimo_protocolo']}</b>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
+                if st.session_state["ultimo_email_falhou"]:
+                    st.warning(
+                        "Não conseguimos enviar o e-mail de confirmação. "
+                        "Guarde o protocolo acima para acompanhar seu chamado."
                     )
-                    if st.session_state["ultimo_email_falhou"]:
-                        st.warning(
-                            "Não conseguimos enviar o e-mail de confirmação. "
-                            "Guarde o protocolo acima para acompanhar seu chamado."
+                st.session_state["ultimo_protocolo"] = None
+                st.session_state["ultimo_email_falhou"] = False
+
+            with st.container(key="etapa2_campos"):
+                ferramentas_cadastradas = listar_ferramentas()
+                ferramenta = st.selectbox(
+                    "Escolha a ferramenta que necessita de ajuda",
+                    ["Selecione..."] + ferramentas_cadastradas + ["Outro"],
+                )
+
+                # --- CAMPO DE SEVERIDADE ---
+                severidade = st.selectbox(
+                    "Nível de Severidade / Urgência do Chamado",
+                    [
+                        "Selecione...",
+                        "Baixa",
+                        "Média",
+                        "Alta",
+                        "Crítica"
+                    ]
+                )
+
+                assunto = st.text_input("Assunto do chamado")
+                descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
+
+                anexo = st.file_uploader(
+                    "Anexar um arquivo (opcional)",
+                    type=["png", "jpg", "jpeg", "pdf"],
+                    key="uploader_anexo_chamado",
+                )
+
+            with st.container(key="etapa2_botoes"):
+                if st.button("Enviar Chamado", key="btn_enviar_chamado"):
+                    if ferramenta == "Selecione...":
+                        st.warning("Selecione a ferramenta.")
+                    elif severidade == "Selecione...":
+                        st.warning("Selecione a severidade do chamado.")
+                    elif not assunto.strip():
+                        st.warning("Informe o assunto.")
+                    elif not descricao.strip():
+                        st.warning("Descreva detalhadamente o problema.")
+                    else:
+                        _nome_sol = _dados_conta_sol.get("nome_completo") or ""
+                        _email_sol = _dados_conta_sol.get("email") or ""
+                        _empresa_sol = _dados_conta_sol.get("empresa") or ""
+                        _unidade_sol = _dados_conta_sol.get("unidade")
+                        _telefone_sol = _dados_conta_sol.get("telefone_contato")
+
+                        # 1. Salva no banco
+                        protocolo = salvar_chamado_supabase(
+                            _nome_sol,
+                            _email_sol,
+                            _empresa_sol,
+                            ferramenta,
+                            assunto,
+                            descricao,
+                            severidade, # <--- PASSANDO A SEVERIDADE
+                            _unidade_sol,
+                            _telefone_sol,
                         )
-                    st.session_state["ultimo_protocolo"] = None
-                    st.session_state["ultimo_email_falhou"] = False
+                        # 2. Sobe o anexo (se tiver um) e grava a URL no chamado —
+                        # feito depois do insert porque o protocolo só existe
+                        # a partir daqui, e ele é usado como nome do arquivo.
+                        # Se o upload falhar, o chamado já foi salvo mesmo assim.
+                        if anexo is not None:
+                            anexo_url = enviar_anexo_chamado(protocolo, anexo)
+                            atualizar_anexo_chamado(protocolo, anexo_url)
 
-                empresas_cadastradas = listar_empresas()
-                empresa = st.selectbox(
-                    "Qual empresa você faz parte?",
-                    ["Selecione..."] + empresas_cadastradas + ["Outra"],
-                    index=0,
-                    key="select_empresa_etapa1"
-                )
+                        # 3. --- DISPARA O E-MAIL INICIAL (pro solicitante) ---
+                        email_enviado = enviar_email_status(
+                            email_destino=_email_sol,
+                            nome_solicitante=_nome_sol,
+                            protocolo=protocolo,
+                            assunto_chamado=assunto,
+                            status_atual="Aguardando atendimento"
+                        )
 
-                # Campo "Selecionar Unidade" só aparece pra quem é da ClickLog
-                # Transportes (empresa com matriz + filiais); pras demais
-                # empresas (ou "Outra") esse campo nem existe na tela.
-                unidade = None
-                eh_clicklog = empresa == "ClickLog Transportes"
-                if eh_clicklog:
-                    unidades_cadastradas = listar_unidades()
-                    unidade = st.selectbox(
-                        "Selecione sua unidade",
-                        ["Selecione..."] + unidades_cadastradas,
-                        index=0,
-                        key="select_unidade_etapa1"
-                    )
+                        # 4. --- AVISA A EQUIPE (Felipe/Rafael) QUE ABRIU UM CHAMADO NOVO ---
+                        # Só esse aviso — eles não recebem as atualizações de
+                        # status que o solicitante recebe.
+                        enviar_email_novo_chamado_admin(
+                            protocolo=protocolo,
+                            nome_solicitante=_nome_sol,
+                            empresa=_empresa_sol,
+                            ferramenta=ferramenta,
+                            assunto=assunto,
+                            severidade=severidade,
+                        )
 
-                # Se a unidade escolhida for uma filial OU um parceiro (qualquer
-                # nome que contenha a palavra "Filial" ou "Parceiro"), pede
-                # telefone de contato — só a matriz não precisa, porque dá
-                # pra ir pessoalmente.
-                _unidade_normalizada = unidade.strip().lower() if unidade else ""
-                precisa_telefone = bool(unidade) and unidade != "Selecione..." and (
-                    "filial" in _unidade_normalizada or "parceiro" in _unidade_normalizada
-                )
-                telefone_ddd = ""
-                telefone_numero = ""
-                if precisa_telefone:
-                    st.markdown(
-                        '<div class="rotulo-telefone-unidade">Telefone para contato</div>',
-                        unsafe_allow_html=True,
-                    )
-                    with st.container(key="linha_telefone_unidade"):
-                        col_ddd, col_numero = st.columns([1, 3])
-                        with col_ddd:
-                            telefone_ddd = st.text_input(
-                                "DDD",
-                                max_chars=2,
-                                placeholder="(51)",
-                                key="input_ddd_unidade",
-                            )
-                        with col_numero:
-                            telefone_numero = st.text_input(
-                                "Número",
-                                max_chars=10,
-                                placeholder="99999-9999",
-                                key="input_numero_unidade",
-                            )
-
-                nome = st.text_input(
-                    "Digite seu Nome e Sobrenome",
-                    value=st.session_state["temp_nome"],
-                    placeholder="Ex: João Silva",
-                    key="input_nome_solicitante"
-                )
-
-                with st.container(key="etapa1_botoes"):
-                    if st.button("Avançar →", key="btn_avancar_etapa1"):
-                        nome_limpo = nome.strip()
-                        partes_nome = nome_limpo.split()
-
-                        if empresa == "Selecione...":
-                            st.warning("Selecione a empresa da qual você faz parte.")
-                        elif eh_clicklog and (not unidade or unidade == "Selecione..."):
-                            st.warning("Selecione sua unidade.")
-                        elif precisa_telefone and (not telefone_ddd.strip() or not telefone_numero.strip()):
-                            st.warning("Informe o telefone para contato (DDD e número).")
-                        elif len(partes_nome) < 2:
-                            st.warning("Digite seu nome completo (no mínimo Nome e Sobrenome).")
-                        else:
-                            st.session_state["temp_empresa"] = empresa
-                            st.session_state["temp_nome"] = nome_limpo
-                            st.session_state["temp_unidade"] = unidade if eh_clicklog else None
-                            st.session_state["temp_telefone"] = (
-                                f"({telefone_ddd.strip()}) {telefone_numero.strip()}" if precisa_telefone else None
-                            )
-                            st.session_state["etapa_abertura"] = 2
-                            st.rerun()
-
-                    if st.button("← Voltar ao Menu", key="btn_voltar_etapa1"):
-                        st.session_state["opcao_menu"] = "inicio"
+                        st.session_state["ultimo_protocolo"] = protocolo
+                        st.session_state["ultimo_email_falhou"] = not email_enviado
                         st.rerun()
 
-            elif st.session_state["etapa_abertura"] == 2:
-                st.markdown(
-                    '<div class="fala-titulo-sem-balao titulo-identificacao">Detalhes do Chamado:</div>',
-                    unsafe_allow_html=True,
-                )
-
-                with st.container(key="etapa2_campos"):
-                    email = st.text_input("Seu E-mail", placeholder="exemplo@empresa.com")
-                    ferramentas_cadastradas = listar_ferramentas()
-                    ferramenta = st.selectbox(
-                        "Escolha a ferramenta que necessita de ajuda",
-                        ["Selecione..."] + ferramentas_cadastradas + ["Outro"],
-                    )
-
-                    # --- CAMPO DE SEVERIDADE ---
-                    severidade = st.selectbox(
-                        "Nível de Severidade / Urgência do Chamado",
-                        [
-                            "Selecione...",
-                            "Baixa",
-                            "Média",
-                            "Alta",
-                            "Crítica"
-                        ]
-                    )
-
-                    assunto = st.text_input("Assunto do chamado")
-                    descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
-
-                    anexo = st.file_uploader(
-                        "Anexar um arquivo (opcional)",
-                        type=["png", "jpg", "jpeg", "pdf"],
-                        key="uploader_anexo_chamado",
-                    )
-
-                with st.container(key="etapa2_botoes"):
-                    if st.button("Enviar Chamado", key="btn_enviar_chamado"):
-                        if not email or "@" not in email:
-                            st.warning("Digite um e-mail válido.")
-                        elif ferramenta == "Selecione...":
-                            st.warning("Selecione a ferramenta.")
-                        elif severidade == "Selecione...":
-                            st.warning("Selecione a severidade do chamado.")
-                        elif not assunto.strip():
-                            st.warning("Informe o assunto.")
-                        elif not descricao.strip():
-                            st.warning("Descreva detalhadamente o problema.")
-                        else:
-                            # 1. Salva no banco
-                            protocolo = salvar_chamado_supabase(
-                                st.session_state["temp_nome"],
-                                email,
-                                st.session_state["temp_empresa"],
-                                ferramenta,
-                                assunto,
-                                descricao,
-                                severidade, # <--- PASSANDO A SEVERIDADE
-                                st.session_state.get("temp_unidade"),
-                                st.session_state.get("temp_telefone"),
-                            )
-                            # 2. Sobe o anexo (se tiver um) e grava a URL no chamado —
-                            # feito depois do insert porque o protocolo só existe
-                            # a partir daqui, e ele é usado como nome do arquivo.
-                            # Se o upload falhar, o chamado já foi salvo mesmo assim.
-                            if anexo is not None:
-                                anexo_url = enviar_anexo_chamado(protocolo, anexo)
-                                atualizar_anexo_chamado(protocolo, anexo_url)
-
-                            # 3. --- DISPARA O E-MAIL INICIAL (pro solicitante) ---
-                            email_enviado = enviar_email_status(
-                                email_destino=email,
-                                nome_solicitante=st.session_state["temp_nome"],
-                                protocolo=protocolo,
-                                assunto_chamado=assunto,
-                                status_atual="Aguardando atendimento"
-                            )
-
-                            # 4. --- AVISA A EQUIPE (Felipe/Rafael) QUE ABRIU UM CHAMADO NOVO ---
-                            # Só esse aviso — eles não recebem as atualizações de
-                            # status que o solicitante recebe.
-                            enviar_email_novo_chamado_admin(
-                                protocolo=protocolo,
-                                nome_solicitante=st.session_state["temp_nome"],
-                                empresa=st.session_state["temp_empresa"],
-                                ferramenta=ferramenta,
-                                assunto=assunto,
-                                severidade=severidade,
-                            )
-
-                            st.session_state["ultimo_protocolo"] = protocolo
-                            st.session_state["ultimo_email_falhou"] = not email_enviado
-                            st.session_state["etapa_abertura"] = 1
-                            st.session_state["temp_nome"] = ""
-                            st.session_state["temp_empresa"] = "Selecione..."
-                            st.session_state["temp_unidade"] = None
-                            st.session_state["temp_telefone"] = None
-                            st.rerun()
-
-                    if st.button("← Voltar Etapa", key="btn_voltar_etapa2"):
-                        st.session_state["etapa_abertura"] = 1
-                        st.rerun()
+                if st.button("← Voltar ao Menu", key="btn_voltar_etapa2"):
+                    st.session_state["opcao_menu"] = "inicio"
+                    st.rerun()
 
         elif st.session_state["opcao_menu"] == "acompanhar":
             st.markdown(
@@ -5216,6 +5115,10 @@ else:
                             st.session_state["solicitante_logado"] = {
                                 "nome_usuario": usuario_norm,
                                 "email": registro_sol["email"] if registro_sol else "",
+                                "nome_completo": registro_sol.get("nome_completo") if registro_sol else "",
+                                "empresa": registro_sol.get("empresa") if registro_sol else None,
+                                "unidade": registro_sol.get("unidade") if registro_sol else None,
+                                "telefone_contato": registro_sol.get("telefone_contato") if registro_sol else None,
                             }
                             st.rerun()
                         elif resultado_login == "pendente":
@@ -5260,6 +5163,59 @@ else:
                 placeholder="voce@suaempresa.com",
                 key="input_novo_email_solicitante",
             )
+
+            empresas_cadastradas_criar = listar_empresas()
+            novo_empresa_sol = st.selectbox(
+                "Qual empresa você faz parte?",
+                ["Selecione..."] + empresas_cadastradas_criar + ["Outra"],
+                index=0,
+                key="select_empresa_criar_conta",
+            )
+
+            # Campo "Selecione sua unidade" só aparece pra quem é da ClickLog
+            # Transportes (empresa com matriz + filiais) — igual à regra que
+            # já existia na abertura de chamado.
+            novo_unidade_sol = None
+            eh_clicklog_criar = novo_empresa_sol == "ClickLog Transportes"
+            if eh_clicklog_criar:
+                unidades_cadastradas_criar = listar_unidades()
+                novo_unidade_sol = st.selectbox(
+                    "Selecione sua unidade",
+                    ["Selecione..."] + unidades_cadastradas_criar,
+                    index=0,
+                    key="select_unidade_criar_conta",
+                )
+
+            # Telefone de contato: só pra unidade filial ou parceiro (a matriz
+            # não precisa, porque dá pra ir pessoalmente) — mesma regra de antes.
+            _unidade_normalizada_criar = novo_unidade_sol.strip().lower() if novo_unidade_sol else ""
+            precisa_telefone_criar = bool(novo_unidade_sol) and novo_unidade_sol != "Selecione..." and (
+                "filial" in _unidade_normalizada_criar or "parceiro" in _unidade_normalizada_criar
+            )
+            telefone_ddd_criar = ""
+            telefone_numero_criar = ""
+            if precisa_telefone_criar:
+                st.markdown(
+                    '<div class="rotulo-telefone-unidade">Telefone para contato</div>',
+                    unsafe_allow_html=True,
+                )
+                with st.container(key="linha_telefone_criar_conta"):
+                    col_ddd_criar, col_numero_criar = st.columns([1, 3])
+                    with col_ddd_criar:
+                        telefone_ddd_criar = st.text_input(
+                            "DDD",
+                            max_chars=2,
+                            placeholder="(51)",
+                            key="input_ddd_criar_conta",
+                        )
+                    with col_numero_criar:
+                        telefone_numero_criar = st.text_input(
+                            "Número",
+                            max_chars=10,
+                            placeholder="99999-9999",
+                            key="input_numero_criar_conta",
+                        )
+
             nova_senha_sol_criar = st.text_input(
                 "Senha desejada", type="password", key="input_nova_senha_solicitante"
             )
@@ -5267,22 +5223,32 @@ else:
 
             with st.container(key="login_solicitante_botoes"):
                 if st.button("Criar usuário", key="btn_criar_usuario_solicitante"):
-                    with st.spinner("Iniciando análise, aguarde..."):
-                        resultado_criacao = criar_solicitacao_conta(
-                            novo_nome_completo_sol, novo_usuario_sol, novo_email_sol, nova_senha_sol_criar
-                        )
-                    if resultado_criacao["ok"]:
-                        if resultado_criacao.get("aprovado_automaticamente"):
-                            st.success(
-                                "Seu cadastro foi criado! Você já pode entrar normalmente."
-                            )
-                        else:
-                            st.success(
-                                "Solicitação enviada para um administrador. Assim que ele "
-                                "aprovar, você receberá um aviso no seu e-mail."
-                            )
+                    if precisa_telefone_criar and (not telefone_ddd_criar.strip() or not telefone_numero_criar.strip()):
+                        st.warning("Informe o telefone para contato (DDD e número).")
                     else:
-                        st.warning(f"{resultado_criacao['erro']}")
+                        telefone_contato_criar = (
+                            f"({telefone_ddd_criar.strip()}) {telefone_numero_criar.strip()}"
+                            if precisa_telefone_criar else None
+                        )
+                        with st.spinner("Iniciando análise, aguarde..."):
+                            resultado_criacao = criar_solicitacao_conta(
+                                novo_nome_completo_sol, novo_usuario_sol, novo_email_sol, nova_senha_sol_criar,
+                                novo_empresa_sol,
+                                novo_unidade_sol if eh_clicklog_criar else None,
+                                telefone_contato_criar,
+                            )
+                        if resultado_criacao["ok"]:
+                            if resultado_criacao.get("aprovado_automaticamente"):
+                                st.success(
+                                    "Seu cadastro foi criado! Você já pode entrar normalmente."
+                                )
+                            else:
+                                st.success(
+                                    "Solicitação enviada para um administrador. Assim que ele "
+                                    "aprovar, você receberá um aviso no seu e-mail."
+                                )
+                        else:
+                            st.warning(f"{resultado_criacao['erro']}")
 
                 if st.button("← Voltar", key="btn_voltar_criar_conta"):
                     st.session_state["mostrar_criar_conta"] = False

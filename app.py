@@ -4,6 +4,7 @@ import hashlib
 import html
 import re
 import secrets
+import types
 import unicodedata
 import streamlit as st
 import streamlit.components.v1 as components
@@ -942,6 +943,28 @@ def atualizar_chamado_solicitante(protocolo, email, empresa, ferramenta, severid
             }
         ).eq("protocolo", protocolo).execute()
 
+# Só esses dois status permitem cancelamento pelo próprio solicitante —
+# pedido do usuário: uma vez que o chamado avançou pra qualquer outro
+# status (Em atendimento, Concluído, Cancelado, Encerrado pelo
+# solicitante), a opção nem deve aparecer pra ele.
+STATUS_CANCELAVEIS_PELO_SOLICITANTE = ["Aguardando atendimento", "Em análise"]
+
+def cancelar_chamado_pelo_solicitante(protocolo, status_atual):
+    """
+    Cancela um chamado a pedido do próprio solicitante (tela "Acompanhar
+    meu chamado"). Confere de novo o status atual aqui dentro (não confia
+    só no botão ter aparecido na tela) — se o chamado já tiver avançado
+    pra outro status entre a consulta e o clique, o cancelamento é negado.
+    Retorna True se cancelou, False se não era mais permitido.
+    """
+    if status_atual not in STATUS_CANCELAVEIS_PELO_SOLICITANTE:
+        return False
+    if supabase:
+        supabase.table("chamados").update(
+            {"status": "Cancelado"}
+        ).eq("protocolo", protocolo).eq("status", status_atual).execute()
+    return True
+
 # ---------------------------------------------------------
 # IMAGENS & SESSÃO
 # ---------------------------------------------------------
@@ -989,6 +1012,16 @@ if "ultimo_protocolo" not in st.session_state:
 # Guarda se o e-mail de confirmação do último chamado falhou, para avisar na tela
 if "ultimo_email_falhou" not in st.session_state:
     st.session_state["ultimo_email_falhou"] = False
+
+# Flag + dados temporários usados para travar o botão "Enviar Chamado"
+# enquanto o chamado está sendo salvo/notificado, evitando que cliques
+# repetidos (durante a espera do banco/e-mail) criem o mesmo chamado
+# várias vezes. Ver fluxo em duas etapas na tela "abrir chamado".
+if "chamado_processando" not in st.session_state:
+    st.session_state["chamado_processando"] = False
+
+if "chamado_dados_pendentes" not in st.session_state:
+    st.session_state["chamado_dados_pendentes"] = None
 
 if "usuario_logado" not in st.session_state:
     st.session_state["usuario_logado"] = None
@@ -4620,8 +4653,8 @@ def resultado_consulta_editavel(resultados):
         unsafe_allow_html=True,
     )
 
-    col_widths = [1.1, 1.2, 1.6, 1.1, 1.2, 1.3, 1.3, 1.8, 1.3, 0.9]
-    headers = ["Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status", ""]
+    col_widths = [1.1, 1.2, 1.6, 1.1, 1.2, 1.3, 1.3, 1.8, 1.3, 0.9, 1.0]
+    headers = ["Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Status", "", ""]
     opcoes_severidade = ["Baixa", "Média", "Alta", "Crítica"]
 
     with st.container(key="resultado_consulta_tabela"):
@@ -4633,7 +4666,7 @@ def resultado_consulta_editavel(resultados):
             protocolo = c.get("protocolo", "-")
             (
                 c_proto, c_nome, c_mail, c_emp, c_ferr,
-                c_sev, c_ass, c_desc, c_stat, c_salvar,
+                c_sev, c_ass, c_desc, c_stat, c_salvar, c_cancelar,
             ) = st.columns(col_widths)
 
             c_proto.markdown(
@@ -4695,6 +4728,25 @@ def resultado_consulta_editavel(resultados):
                 c["descricao"] = nova_desc.strip()
                 st.toast(f"Chamado {protocolo} atualizado!")
                 st.rerun(scope="fragment")
+
+            # Botão "Cancelar chamado": só aparece pro solicitante enquanto o
+            # chamado ainda está em "Aguardando atendimento" ou "Em análise" —
+            # pedido do usuário. Depois que o admin avança pra qualquer outro
+            # status, a função nem é mostrada mais (célula fica vazia).
+            status_atual_linha = c.get("status")
+            if status_atual_linha in STATUS_CANCELAVEIS_PELO_SOLICITANTE:
+                if c_cancelar.button("Cancelar chamado", key=f"cancelar_chamado_{protocolo}"):
+                    if cancelar_chamado_pelo_solicitante(protocolo, status_atual_linha):
+                        c["status"] = "Cancelado"
+                        st.toast(f"Chamado {protocolo} cancelado.")
+                        st.rerun(scope="fragment")
+                    else:
+                        st.toast(
+                            f"Não foi possível cancelar — o chamado {protocolo} já mudou de status.",
+                        )
+                        st.rerun(scope="fragment")
+            else:
+                c_cancelar.markdown('<div class="celula-texto">—</div>', unsafe_allow_html=True)
 
 
 if st.session_state["usuario_logado"]:
@@ -4777,99 +4829,158 @@ elif st.session_state.get("solicitante_logado"):
                 st.session_state["ultimo_protocolo"] = None
                 st.session_state["ultimo_email_falhou"] = False
 
-            with st.container(key="etapa2_campos"):
-                ferramentas_cadastradas = listar_ferramentas()
-                ferramenta = st.selectbox(
-                    "Escolha a ferramenta que necessita de ajuda",
-                    ["Selecione..."] + ferramentas_cadastradas + ["Outro"],
+            if st.session_state["chamado_processando"]:
+                # Etapa 2 do envio: o clique já foi validado no rerun anterior
+                # e o botão já saiu da tela desde então — só agora entramos de
+                # fato no trabalho lento (salvar no banco, subir anexo, mandar
+                # e-mails). Isso evita que cliques repetidos no botão, durante
+                # a espera, dupliquem o mesmo chamado.
+                st.info(
+                    "Seu chamado está sendo encaminhado para o banco de dados... "
+                    "por favor, aguarde a mensagem de confirmação."
                 )
 
-                # --- CAMPO DE SEVERIDADE ---
-                severidade = st.selectbox(
-                    "Nível de Severidade / Urgência do Chamado",
-                    [
-                        "Selecione...",
-                        "Baixa",
-                        "Média",
-                        "Alta",
-                        "Crítica"
-                    ]
+                _dados_pendentes = st.session_state["chamado_dados_pendentes"] or {}
+
+                _nome_sol = _dados_pendentes.get("nome_sol", "")
+                _email_sol = _dados_pendentes.get("email_sol", "")
+                _empresa_sol = _dados_pendentes.get("empresa_sol", "")
+                _unidade_sol = _dados_pendentes.get("unidade_sol")
+                _telefone_sol = _dados_pendentes.get("telefone_sol")
+                _ferramenta = _dados_pendentes.get("ferramenta")
+                _assunto = _dados_pendentes.get("assunto")
+                _descricao = _dados_pendentes.get("descricao")
+                _severidade = _dados_pendentes.get("severidade")
+                _anexo_info = _dados_pendentes.get("anexo_info")
+
+                # 1. Salva no banco
+                protocolo = salvar_chamado_supabase(
+                    _nome_sol,
+                    _email_sol,
+                    _empresa_sol,
+                    _ferramenta,
+                    _assunto,
+                    _descricao,
+                    _severidade, # <--- PASSANDO A SEVERIDADE
+                    _unidade_sol,
+                    _telefone_sol,
                 )
 
-                assunto = st.text_input("Assunto do chamado")
-                descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
+                # 2. Sobe o anexo (se tiver um) e grava a URL no chamado —
+                # feito depois do insert porque o protocolo só existe
+                # a partir daqui, e ele é usado como nome do arquivo.
+                # Se o upload falhar, o chamado já foi salvo mesmo assim.
+                # O anexo foi capturado (nome/tipo/bytes) no clique anterior,
+                # já que o widget de upload não fica mais na tela aqui — por
+                # isso ele é reconstruído num objeto simples só com o que
+                # enviar_anexo_chamado precisa (.name, .type, .getvalue()).
+                if _anexo_info is not None:
+                    _anexo_reconstruido = types.SimpleNamespace(
+                        name=_anexo_info["nome"],
+                        type=_anexo_info["tipo"],
+                        getvalue=lambda _b=_anexo_info["bytes"]: _b,
+                    )
+                    anexo_url = enviar_anexo_chamado(protocolo, _anexo_reconstruido)
+                    atualizar_anexo_chamado(protocolo, anexo_url)
 
-                anexo = st.file_uploader(
-                    "Anexar um arquivo (opcional)",
-                    type=["png", "jpg", "jpeg", "pdf"],
-                    key="uploader_anexo_chamado",
+                # 3. --- DISPARA O E-MAIL INICIAL (pro solicitante) ---
+                email_enviado = enviar_email_status(
+                    email_destino=_email_sol,
+                    nome_solicitante=_nome_sol,
+                    protocolo=protocolo,
+                    assunto_chamado=_assunto,
+                    status_atual="Aguardando atendimento"
                 )
 
-            with st.container(key="etapa2_botoes"):
-                if st.button("Enviar Chamado", key="btn_enviar_chamado"):
-                    if ferramenta == "Selecione...":
-                        st.warning("Selecione a ferramenta.")
-                    elif severidade == "Selecione...":
-                        st.warning("Selecione a severidade do chamado.")
-                    elif not assunto.strip():
-                        st.warning("Informe o assunto.")
-                    elif not descricao.strip():
-                        st.warning("Descreva detalhadamente o problema.")
-                    else:
-                        _nome_sol = _dados_conta_sol.get("nome_completo") or ""
-                        _email_sol = _dados_conta_sol.get("email") or ""
-                        _empresa_sol = _dados_conta_sol.get("empresa") or ""
-                        _unidade_sol = _dados_conta_sol.get("unidade")
-                        _telefone_sol = _dados_conta_sol.get("telefone_contato")
+                # 4. --- AVISA A EQUIPE (Felipe/Rafael) QUE ABRIU UM CHAMADO NOVO ---
+                # Só esse aviso — eles não recebem as atualizações de
+                # status que o solicitante recebe.
+                enviar_email_novo_chamado_admin(
+                    protocolo=protocolo,
+                    nome_solicitante=_nome_sol,
+                    empresa=_empresa_sol,
+                    ferramenta=_ferramenta,
+                    assunto=_assunto,
+                    severidade=_severidade,
+                )
 
-                        # 1. Salva no banco
-                        protocolo = salvar_chamado_supabase(
-                            _nome_sol,
-                            _email_sol,
-                            _empresa_sol,
-                            ferramenta,
-                            assunto,
-                            descricao,
-                            severidade, # <--- PASSANDO A SEVERIDADE
-                            _unidade_sol,
-                            _telefone_sol,
-                        )
-                        # 2. Sobe o anexo (se tiver um) e grava a URL no chamado —
-                        # feito depois do insert porque o protocolo só existe
-                        # a partir daqui, e ele é usado como nome do arquivo.
-                        # Se o upload falhar, o chamado já foi salvo mesmo assim.
-                        if anexo is not None:
-                            anexo_url = enviar_anexo_chamado(protocolo, anexo)
-                            atualizar_anexo_chamado(protocolo, anexo_url)
+                st.session_state["ultimo_protocolo"] = protocolo
+                st.session_state["ultimo_email_falhou"] = not email_enviado
+                st.session_state["chamado_processando"] = False
+                st.session_state["chamado_dados_pendentes"] = None
+                st.rerun()
+            else:
+                with st.container(key="etapa2_campos"):
+                    ferramentas_cadastradas = listar_ferramentas()
+                    ferramenta = st.selectbox(
+                        "Escolha a ferramenta que necessita de ajuda",
+                        ["Selecione..."] + ferramentas_cadastradas + ["Outro"],
+                    )
 
-                        # 3. --- DISPARA O E-MAIL INICIAL (pro solicitante) ---
-                        email_enviado = enviar_email_status(
-                            email_destino=_email_sol,
-                            nome_solicitante=_nome_sol,
-                            protocolo=protocolo,
-                            assunto_chamado=assunto,
-                            status_atual="Aguardando atendimento"
-                        )
+                    # --- CAMPO DE SEVERIDADE ---
+                    severidade = st.selectbox(
+                        "Nível de Severidade / Urgência do Chamado",
+                        [
+                            "Selecione...",
+                            "Baixa",
+                            "Média",
+                            "Alta",
+                            "Crítica"
+                        ]
+                    )
 
-                        # 4. --- AVISA A EQUIPE (Felipe/Rafael) QUE ABRIU UM CHAMADO NOVO ---
-                        # Só esse aviso — eles não recebem as atualizações de
-                        # status que o solicitante recebe.
-                        enviar_email_novo_chamado_admin(
-                            protocolo=protocolo,
-                            nome_solicitante=_nome_sol,
-                            empresa=_empresa_sol,
-                            ferramenta=ferramenta,
-                            assunto=assunto,
-                            severidade=severidade,
-                        )
+                    assunto = st.text_input("Assunto do chamado")
+                    descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
 
-                        st.session_state["ultimo_protocolo"] = protocolo
-                        st.session_state["ultimo_email_falhou"] = not email_enviado
+                    anexo = st.file_uploader(
+                        "Anexar um arquivo (opcional)",
+                        type=["png", "jpg", "jpeg", "pdf"],
+                        key="uploader_anexo_chamado",
+                    )
+
+                with st.container(key="etapa2_botoes"):
+                    if st.button("Enviar Chamado", key="btn_enviar_chamado"):
+                        if ferramenta == "Selecione...":
+                            st.warning("Selecione a ferramenta.")
+                        elif severidade == "Selecione...":
+                            st.warning("Selecione a severidade do chamado.")
+                        elif not assunto.strip():
+                            st.warning("Informe o assunto.")
+                        elif not descricao.strip():
+                            st.warning("Descreva detalhadamente o problema.")
+                        else:
+                            # Não salva nada ainda — só guarda os dados
+                            # validados na sessão e trava a tela. O
+                            # salvamento de fato (banco + anexo + e-mails)
+                            # só roda no próximo rerun, já com o botão
+                            # escondido, pra um clique duplo (ou vários,
+                            # durante a espera do banco/e-mail) não abrir o
+                            # mesmo chamado mais de uma vez.
+                            _anexo_info = None
+                            if anexo is not None:
+                                _anexo_info = {
+                                    "nome": anexo.name,
+                                    "tipo": anexo.type,
+                                    "bytes": anexo.getvalue(),
+                                }
+                            st.session_state["chamado_dados_pendentes"] = {
+                                "nome_sol": _dados_conta_sol.get("nome_completo") or "",
+                                "email_sol": _dados_conta_sol.get("email") or "",
+                                "empresa_sol": _dados_conta_sol.get("empresa") or "",
+                                "unidade_sol": _dados_conta_sol.get("unidade"),
+                                "telefone_sol": _dados_conta_sol.get("telefone_contato"),
+                                "ferramenta": ferramenta,
+                                "assunto": assunto,
+                                "descricao": descricao,
+                                "severidade": severidade,
+                                "anexo_info": _anexo_info,
+                            }
+                            st.session_state["chamado_processando"] = True
+                            st.rerun()
+
+                    if st.button("← Voltar ao Menu", key="btn_voltar_etapa2"):
+                        st.session_state["opcao_menu"] = "inicio"
                         st.rerun()
-
-                if st.button("← Voltar ao Menu", key="btn_voltar_etapa2"):
-                    st.session_state["opcao_menu"] = "inicio"
-                    st.rerun()
 
         elif st.session_state["opcao_menu"] == "acompanhar":
             st.markdown(

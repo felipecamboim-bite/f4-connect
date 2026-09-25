@@ -5386,9 +5386,13 @@ elif st.session_state.get("solicitante_logado"):
                     assunto = st.text_input("Assunto do chamado")
                     descricao = st.text_area("Descrição detalhada do problema", placeholder="Conte-nos o que está acontecendo...")
 
+                    # Pedido do usuário: o anexo virou obrigatório (print,
+                    # PDF ou planilha), pra sempre chegar junto do chamado
+                    # alguma evidência do problema — por isso aceita também
+                    # planilhas agora (antes só imagem/PDF).
                     anexo = st.file_uploader(
-                        "Anexar um arquivo (opcional)",
-                        type=["png", "jpg", "jpeg", "pdf"],
+                        "Anexar um arquivo (obrigatório) — imagem, PDF ou planilha",
+                        type=["png", "jpg", "jpeg", "pdf", "xlsx", "xls", "csv"],
                         key="uploader_anexo_chamado",
                     )
 
@@ -5402,6 +5406,8 @@ elif st.session_state.get("solicitante_logado"):
                             st.warning("Informe o assunto.")
                         elif not descricao.strip():
                             st.warning("Descreva detalhadamente o problema.")
+                        elif anexo is None:
+                            st.warning("Anexe um arquivo (imagem, PDF ou planilha) para prosseguir.")
                         else:
                             # Reconhece um clique repetido do MESMO chamado
                             # (mesmo conteúdo, chegado poucos segundos depois

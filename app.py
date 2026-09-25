@@ -311,7 +311,13 @@ def criar_solicitacao_conta(nome_completo, nome_usuario, email, senha, empresa=N
         return {"ok": False, "erro": "Digite um e-mail corporativo válido."}
     if not empresa_norm or empresa_norm == "Selecione...":
         return {"ok": False, "erro": "Selecione a empresa da qual você faz parte."}
-    if empresa_norm == "ClickLog Transportes" and (not unidade or unidade == "Selecione..."):
+    # Comparação tolerante (sem acento/maiúscula/espaço a mais) — evita que uma
+    # pequena diferença de digitação no cadastro da empresa (ex: "Clicklog
+    # Transportes" ou "ClickLog Transportes ") faça esse "if" nunca bater e a
+    # exigência de selecionar a unidade passar batido sem querer.
+    if _normalizar_texto_busca(empresa_norm) == _normalizar_texto_busca("ClickLog Transportes") and (
+        not unidade or unidade == "Selecione..."
+    ):
         return {"ok": False, "erro": "Selecione sua unidade."}
     if buscar_solicitante(nome_norm) or buscar_usuario_admin(nome_norm):
         return {"ok": False, "erro": "Já existe uma conta com esse nome de usuário."}
@@ -1031,6 +1037,17 @@ if "chamado_processando" not in st.session_state:
 
 if "chamado_dados_pendentes" not in st.session_state:
     st.session_state["chamado_dados_pendentes"] = None
+
+# Guarda a "impressão digital" (ferramenta/severidade/assunto/descrição) do
+# último chamado enviado e quando isso aconteceu. Mesmo com o botão sumindo
+# da tela assim que clicado, cliques bem rápidos e repetidos (a pessoa
+# clicando várias vezes antes da tela atualizar) ainda chegavam no servidor
+# como envios "novos" de verdade — cada um passando pela validação normal e
+# gerando um chamado com protocolo diferente, mas com o mesmo conteúdo. Esse
+# registro serve pra reconhecer e ignorar um clique repetido do MESMO
+# chamado que chegar logo em seguida, sem depender só do botão sumir da tela.
+if "ultimo_chamado_enviado" not in st.session_state:
+    st.session_state["ultimo_chamado_enviado"] = None
 
 if "usuario_logado" not in st.session_state:
     st.session_state["usuario_logado"] = None
@@ -4838,7 +4855,14 @@ elif st.session_state.get("solicitante_logado"):
                 st.session_state["ultimo_protocolo"] = None
                 st.session_state["ultimo_email_falhou"] = False
 
-            if st.session_state["chamado_processando"]:
+            if st.session_state["chamado_processando"] and not st.session_state["chamado_dados_pendentes"]:
+                # Os dados pendentes já foram consumidos (ver comentário mais
+                # abaixo) mas essa etapa acabou rodando de novo antes do
+                # rerun final — não tem mais o que reenviar, então só limpa a
+                # trava e volta pro formulário, sem duplicar nada.
+                st.session_state["chamado_processando"] = False
+                st.rerun()
+            elif st.session_state["chamado_processando"]:
                 # Etapa 2 do envio: o clique já foi validado no rerun anterior
                 # e o botão já saiu da tela desde então — só agora entramos de
                 # fato no trabalho lento (salvar no banco, subir anexo, mandar
@@ -4849,7 +4873,14 @@ elif st.session_state.get("solicitante_logado"):
                     "por favor, aguarde a mensagem de confirmação."
                 )
 
+                # Consome os dados pendentes JÁ AQUI, antes de qualquer
+                # trabalho lento — camada extra de proteção: se por algum
+                # motivo essa etapa for reexecutada do zero (ex: o Streamlit
+                # reiniciar esse rerun no meio do caminho), uma segunda
+                # passagem não encontra mais dados pra reenviar o mesmo
+                # chamado de novo (cai no "if" acima em vez de repetir o envio).
                 _dados_pendentes = st.session_state["chamado_dados_pendentes"] or {}
+                st.session_state["chamado_dados_pendentes"] = None
 
                 _nome_sol = _dados_pendentes.get("nome_sol", "")
                 _email_sol = _dados_pendentes.get("email_sol", "")
@@ -4921,9 +4952,14 @@ elif st.session_state.get("solicitante_logado"):
             else:
                 with st.container(key="etapa2_campos"):
                     ferramentas_cadastradas = listar_ferramentas()
+                    # "Outro" era um valor fixo somado aqui no código, além da
+                    # lista vinda do cadastro — como já existe uma ferramenta
+                    # "Outros" cadastrada no painel, isso duplicava a opção
+                    # (aparecia "Outros" e "Outro" juntos). Removido: agora só
+                    # aparece o que estiver cadastrado em "Cadastrar Ferramenta".
                     ferramenta = st.selectbox(
                         "Escolha a ferramenta que necessita de ajuda",
-                        ["Selecione..."] + ferramentas_cadastradas + ["Outro"],
+                        ["Selecione..."] + ferramentas_cadastradas,
                     )
 
                     # --- CAMPO DE SEVERIDADE ---
@@ -4958,33 +4994,65 @@ elif st.session_state.get("solicitante_logado"):
                         elif not descricao.strip():
                             st.warning("Descreva detalhadamente o problema.")
                         else:
-                            # Não salva nada ainda — só guarda os dados
-                            # validados na sessão e trava a tela. O
-                            # salvamento de fato (banco + anexo + e-mails)
-                            # só roda no próximo rerun, já com o botão
-                            # escondido, pra um clique duplo (ou vários,
-                            # durante a espera do banco/e-mail) não abrir o
-                            # mesmo chamado mais de uma vez.
-                            _anexo_info = None
-                            if anexo is not None:
-                                _anexo_info = {
-                                    "nome": anexo.name,
-                                    "tipo": anexo.type,
-                                    "bytes": anexo.getvalue(),
+                            # Reconhece um clique repetido do MESMO chamado
+                            # (mesmo conteúdo, chegado poucos segundos depois
+                            # do anterior) — mesmo com o botão sumindo da
+                            # tela assim que clicado, cliques bem rápidos e
+                            # seguidos (a pessoa clicando várias vezes antes
+                            # da tela atualizar) ainda chegavam ao servidor
+                            # como envios "novos" de verdade, cada um
+                            # passando pela validação normal e abrindo um
+                            # chamado com protocolo diferente pro mesmo
+                            # pedido. Se bater com o último chamado enviado
+                            # há pouco, ignora silenciosamente em vez de
+                            # abrir de novo.
+                            _fingerprint_chamado_atual = (
+                                _dados_conta_sol.get("nome_usuario"),
+                                ferramenta,
+                                severidade,
+                                assunto.strip(),
+                                descricao.strip(),
+                            )
+                            _ultimo_chamado_enviado = st.session_state.get("ultimo_chamado_enviado")
+                            _agora_envio = datetime.now(timezone.utc)
+                            _eh_clique_repetido = bool(
+                                _ultimo_chamado_enviado
+                                and _ultimo_chamado_enviado["fingerprint"] == _fingerprint_chamado_atual
+                                and (_agora_envio - _ultimo_chamado_enviado["quando"]).total_seconds() < 20
+                            )
+
+                            if not _eh_clique_repetido:
+                                # Não salva nada ainda — só guarda os dados
+                                # validados na sessão e trava a tela. O
+                                # salvamento de fato (banco + anexo + e-mails)
+                                # só roda no próximo rerun, já com o botão
+                                # escondido, pra um clique duplo (ou vários,
+                                # durante a espera do banco/e-mail) não abrir o
+                                # mesmo chamado mais de uma vez.
+                                st.session_state["ultimo_chamado_enviado"] = {
+                                    "fingerprint": _fingerprint_chamado_atual,
+                                    "quando": _agora_envio,
                                 }
-                            st.session_state["chamado_dados_pendentes"] = {
-                                "nome_sol": _dados_conta_sol.get("nome_completo") or "",
-                                "email_sol": _dados_conta_sol.get("email") or "",
-                                "empresa_sol": _dados_conta_sol.get("empresa") or "",
-                                "unidade_sol": _dados_conta_sol.get("unidade"),
-                                "telefone_sol": _dados_conta_sol.get("telefone_contato"),
-                                "ferramenta": ferramenta,
-                                "assunto": assunto,
-                                "descricao": descricao,
-                                "severidade": severidade,
-                                "anexo_info": _anexo_info,
-                            }
-                            st.session_state["chamado_processando"] = True
+                                _anexo_info = None
+                                if anexo is not None:
+                                    _anexo_info = {
+                                        "nome": anexo.name,
+                                        "tipo": anexo.type,
+                                        "bytes": anexo.getvalue(),
+                                    }
+                                st.session_state["chamado_dados_pendentes"] = {
+                                    "nome_sol": _dados_conta_sol.get("nome_completo") or "",
+                                    "email_sol": _dados_conta_sol.get("email") or "",
+                                    "empresa_sol": _dados_conta_sol.get("empresa") or "",
+                                    "unidade_sol": _dados_conta_sol.get("unidade"),
+                                    "telefone_sol": _dados_conta_sol.get("telefone_contato"),
+                                    "ferramenta": ferramenta,
+                                    "assunto": assunto,
+                                    "descricao": descricao,
+                                    "severidade": severidade,
+                                    "anexo_info": _anexo_info,
+                                }
+                                st.session_state["chamado_processando"] = True
                             st.rerun()
 
                     if st.button("← Voltar ao Menu", key="btn_voltar_etapa2"):
@@ -5296,7 +5364,10 @@ else:
             # Transportes (empresa com matriz + filiais) — igual à regra que
             # já existia na abertura de chamado.
             novo_unidade_sol = None
-            eh_clicklog_criar = novo_empresa_sol == "ClickLog Transportes"
+            # Comparação tolerante (ignora acento/maiúscula/espaço a mais) —
+            # se a empresa foi cadastrada com uma grafia levemente diferente
+            # (ex: "Clicklog Transportes"), o campo de unidade ainda aparece.
+            eh_clicklog_criar = _normalizar_texto_busca(novo_empresa_sol) == _normalizar_texto_busca("ClickLog Transportes")
             if eh_clicklog_criar:
                 unidades_cadastradas_criar = listar_unidades()
                 novo_unidade_sol = st.selectbox(

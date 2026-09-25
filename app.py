@@ -1448,17 +1448,17 @@ _css_ocultar_sidebar_home = (
     else ""
 )
 
-# Pedido do usuário: na tela do Painel de Controle (admin, computador),
-# existiam 3 barras de rolagem ao mesmo tempo (a da página inteira, mais a
-# vertical e a horizontal da própria tabela) — travar a página deixa só as
-# duas rolagens de dentro da tabela (e a do sidebar, que já existia),
-# evitando a "tela se mexendo" enquanto arrasta a tabela pro lado. Só se
-# aplica nessa tela específica (Painel de Controle) e só no computador —
-# as outras telas do admin (Insights, cadastros, etc.) continuam rolando
-# normalmente, e no celular nada muda.
-_travar_scroll_admin_chamados = bool(st.session_state["usuario_logado"]) and st.session_state[
-    "aba_admin"
-] == "chamados"
+# Pedido do usuário: essa trava (abaixo) ficava impedindo rolar a página
+# pra baixo na tela do Painel de Controle — inclusive quando aparecia um
+# erro do Python ali (a caixa vermelha nascia embaixo da tabela e não dava
+# pra rolar até ela pra ler o erro inteiro). Por pedido do usuário, ela foi
+# desligada (fica sempre False) pra liberar a rolagem normal da página
+# nessa tela. Trade-off, se algum dia quiser reativar: volta a ter 3
+# barras de rolagem ao mesmo tempo (página inteira + vertical/horizontal
+# da tabela), que foi o problema original que essa trava resolvia — nesse
+# caso é só trocar a linha abaixo de volta pra:
+# _travar_scroll_admin_chamados = bool(st.session_state["usuario_logado"]) and st.session_state["aba_admin"] == "chamados"
+_travar_scroll_admin_chamados = False
 _css_travar_scroll_admin_chamados = (
     """
     @media (min-width: 1001px) {

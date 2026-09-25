@@ -4325,8 +4325,20 @@ def painel_admin():
     # solicitante ou e-mail, filtrar por status/atendente/empresa, e mudar a
     # ordem de exibição (o mais parecido que dá pra fazer com "ordenar
     # clicando no cabeçalho da coluna", sem precisar de JavaScript).
+    # Pedido do usuário: 4 filtros na linha de cima (Busca, Status,
+    # Atendente, Empresa) e 3 na linha de baixo (Ordenar, Filtrar por data,
+    # Período) — antes Ordenar ficava na 1ª linha e o filtro de período
+    # sozinho numa 2ª linha quase inteira pra ele, ficando enorme/desproporcional.
+    _MAPA_CAMPO_DATA_FILTRO = {
+        "Abertura": "created_at",
+        "Em análise": "data_em_analise",
+        "Em atendimento": "data_em_atendimento",
+        "Concluído": "data_concluido",
+        "Cancelado": "data_cancelado",
+        "Encerrado": "data_encerrado_solicitante",
+    }
     with st.container(key="painel_admin_filtros"):
-        col_busca, col_status, col_atendente, col_empresa, col_ordenar = st.columns([2, 1.2, 1.2, 1.3, 1.3])
+        col_busca, col_status, col_atendente, col_empresa = st.columns([2, 1.2, 1.2, 1.3])
         busca = col_busca.text_input(
             "Buscar",
             placeholder="Buscar por protocolo, solicitante ou e-mail...",
@@ -4345,28 +4357,14 @@ def painel_admin():
             "Empresa", ["Todas as empresas"] + listar_empresas(),
             key="filtro_empresa_admin", label_visibility="collapsed",
         )
+
+    with st.container(key="painel_admin_filtro_data"):
+        col_ordenar, col_campo_data, col_periodo_data = st.columns([1.2, 1.2, 1.6])
         ordenar_por = col_ordenar.selectbox(
             "Ordenar por",
             ["Mais recentes", "Mais antigos", "Severidade (maior primeiro)", "Status"],
             key="filtro_ordenar_admin", label_visibility="collapsed",
         )
-
-    # ---- FILTRO POR PERÍODO (data de abertura ou de alguma mudança de
-    # status) — pedido do usuário: escolhe QUAL data usar (Abertura, Em
-    # análise, Em atendimento, Concluído, Cancelado, Encerrado — as mesmas
-    # colunas de data/hora que aparecem na tabela) e um período (dia
-    # inicial e final) no calendário. Só filtra quando as duas pontas do
-    # período já foram escolhidas — enquanto isso, mostra tudo normalmente.
-    _MAPA_CAMPO_DATA_FILTRO = {
-        "Abertura": "created_at",
-        "Em análise": "data_em_analise",
-        "Em atendimento": "data_em_atendimento",
-        "Concluído": "data_concluido",
-        "Cancelado": "data_cancelado",
-        "Encerrado": "data_encerrado_solicitante",
-    }
-    with st.container(key="painel_admin_filtro_data"):
-        col_campo_data, col_periodo_data = st.columns([1.3, 2])
         campo_data_filtro = col_campo_data.selectbox(
             "Filtrar por data",
             ["Nenhuma"] + list(_MAPA_CAMPO_DATA_FILTRO.keys()),

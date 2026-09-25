@@ -3176,15 +3176,25 @@ st.markdown(
            azul/ciano padrão usado no resto do site — pra ficar com cara de
            barra de ferramentas grudada na tabela, não um formulário à parte. */
         .st-key-painel_admin_filtros .stTextInput input,
-        .st-key-painel_admin_filtros .stSelectbox div[data-baseweb="select"] {{
+        .st-key-painel_admin_filtros .stSelectbox div[data-baseweb="select"],
+        .st-key-painel_admin_filtros .stDateInput input {{
             background-color: #2b2d31 !important;
             border: 1px solid rgba(255, 255, 255, 0.15) !important;
             color: #FFFFFF !important;
             font-size: 13px !important;
         }}
 
-        .st-key-painel_admin_filtros .stSelectbox div[data-baseweb] * {{
+        .st-key-painel_admin_filtros .stSelectbox div[data-baseweb] *,
+        .st-key-painel_admin_filtros .stDateInput svg {{
             color: #FFFFFF !important;
+            fill: #FFFFFF !important;
+        }}
+
+        /* Segunda linha de filtros (data): mesmo espaçamento acima da
+           primeira, pra não ficar "colada". */
+        .st-key-painel_admin_filtro_data {{
+            margin-top: 10px !important;
+            margin-bottom: 12px !important;
         }}
 
         /* Pedido do usuário: ao clicar/selecionar um desses campos (busca
@@ -4341,6 +4351,36 @@ def painel_admin():
             key="filtro_ordenar_admin", label_visibility="collapsed",
         )
 
+    # ---- FILTRO POR PERÍODO (data de abertura ou de alguma mudança de
+    # status) — pedido do usuário: escolhe QUAL data usar (Abertura, Em
+    # análise, Em atendimento, Concluído, Cancelado, Encerrado — as mesmas
+    # colunas de data/hora que aparecem na tabela) e um período (dia
+    # inicial e final) no calendário. Só filtra quando as duas pontas do
+    # período já foram escolhidas — enquanto isso, mostra tudo normalmente.
+    _MAPA_CAMPO_DATA_FILTRO = {
+        "Abertura": "created_at",
+        "Em análise": "data_em_analise",
+        "Em atendimento": "data_em_atendimento",
+        "Concluído": "data_concluido",
+        "Cancelado": "data_cancelado",
+        "Encerrado": "data_encerrado_solicitante",
+    }
+    with st.container(key="painel_admin_filtro_data"):
+        col_campo_data, col_periodo_data = st.columns([1.3, 2])
+        campo_data_filtro = col_campo_data.selectbox(
+            "Filtrar por data",
+            ["Nenhuma"] + list(_MAPA_CAMPO_DATA_FILTRO.keys()),
+            key="filtro_campo_data_admin", label_visibility="collapsed",
+        )
+        periodo_data_filtro = col_periodo_data.date_input(
+            "Período",
+            value=(),
+            format="DD/MM/YYYY",
+            key="filtro_periodo_data_admin",
+            label_visibility="collapsed",
+            disabled=(campo_data_filtro == "Nenhuma"),
+        )
+
     # ---- APLICA BUSCA E FILTROS ----
     chamados_filtrados = chamados
     busca_norm = (busca or "").strip().lower()
@@ -4360,6 +4400,18 @@ def painel_admin():
         ]
     if empresa_filtro != "Todas as empresas":
         chamados_filtrados = [c for c in chamados_filtrados if c.get("empresa") == empresa_filtro]
+    if campo_data_filtro != "Nenhuma" and isinstance(periodo_data_filtro, (tuple, list)) and len(periodo_data_filtro) == 2:
+        _campo_banco_filtro = _MAPA_CAMPO_DATA_FILTRO[campo_data_filtro]
+        _data_inicio_filtro, _data_fim_filtro = periodo_data_filtro
+
+        def _chamado_dentro_do_periodo(c):
+            _valor_data = _parse_data_chamado(c.get(_campo_banco_filtro))
+            if not _valor_data:
+                return False
+            _data_local = _valor_data.astimezone(FUSO_BRASIL).date()
+            return _data_inicio_filtro <= _data_local <= _data_fim_filtro
+
+        chamados_filtrados = [c for c in chamados_filtrados if _chamado_dentro_do_periodo(c)]
 
     # ---- ORDENAÇÃO ----
     # "Mais recentes" é a ordem padrão que já vem do listar_chamados()
@@ -4387,7 +4439,7 @@ def painel_admin():
     # uma vez, divide em páginas — com um contador mostrando quantos
     # chamados existem no total e quantos estão sendo exibidos.
     TAMANHO_PAGINA_ADMIN = 15
-    _assinatura_filtros_admin = (busca_norm, status_filtro, atendente_filtro, empresa_filtro, ordenar_por)
+    _assinatura_filtros_admin = (busca_norm, status_filtro, atendente_filtro, empresa_filtro, ordenar_por, campo_data_filtro, periodo_data_filtro)
     if st.session_state.get("_assinatura_filtros_admin") != _assinatura_filtros_admin:
         st.session_state["_assinatura_filtros_admin"] = _assinatura_filtros_admin
         st.session_state["pagina_admin_chamados"] = 1

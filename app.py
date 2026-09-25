@@ -1523,20 +1523,23 @@ st.markdown(
            aberta no desktop (só recolhia no celular/tablet). Agora o botão
            de colapsar (o nome exato muda entre versões do Streamlit, por
            isso cobre todas as variantes conhecidas) fica visível e
-           funcional em qualquer tamanho de tela. */
-        section[data-testid="stSidebar"] {{
-        width: 280px !important;
-        min-width: 280px !important;
-        background-color: {_cor_fundo_sidebar} !important;
-        border-right: 1px solid {_cor_borda_sidebar} !important;
-        }}
+           funcional em qualquer tamanho de tela.
 
-        section[data-testid="stSidebar"][aria-expanded="false"] {{
-            visibility: hidden !important;
-            width: 0px !important;
-            min-width: 0px !important;
-            margin-left: -280px !important;
-            transform: translateX(-100%) !important;
+           IMPORTANTE: a largura/cor fixa só é forçada quando a sidebar está
+           ABERTA ([aria-expanded="true"]). Numa primeira tentativa isso
+           tinha sido aplicado sem essa condição, junto com uma trava manual
+           pro estado fechado (width:0 + transform) — só que o Streamlit já
+           controla esse reflow sozinho nativamente (a área principal ocupa
+           o espaço liberado), e forçar width:280px o tempo todo brigava com
+           esse controle nativo, deixando a tela "meio recolhida" (conteúdo
+           cortado/deslocado, sem um jeito visível de reabrir). Sem forçar
+           nada no estado fechado, o comportamento padrão do Streamlit
+           (que já funciona certo) assume sozinho. */
+        section[data-testid="stSidebar"][aria-expanded="true"] {{
+            width: 280px !important;
+            min-width: 280px !important;
+            background-color: {_cor_fundo_sidebar} !important;
+            border-right: 1px solid {_cor_borda_sidebar} !important;
         }}
 
         /* Seta de abrir (sidebar fechada) e de fechar (dentro da sidebar

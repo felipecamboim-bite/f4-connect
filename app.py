@@ -1383,6 +1383,12 @@ if "mostrar_pendentes" not in st.session_state:
 _tela_publica = not st.session_state["usuario_logado"]
 _cor_fundo_app = "#FFFFFF" if _tela_publica else "#1A1A1A"
 
+# Cor da setinha de recolher/abrir a sidebar (pedido do usuário: branca no
+# Painel de Controle) — no admin o fundo por trás da seta é escuro
+# (_cor_fundo_app acima), então branco combina; na tela pública o fundo é
+# branco, então a seta continua preta aqui (senão ficaria invisível).
+_cor_seta_sidebar = "#000000" if _tela_publica else "#FFFFFF"
+
 # Pedido do usuário: o verde sólido cobrindo a sidebar inteira ficava
 # "nada a ver" ao lado do resto do painel, que é escuro — só pro
 # administrador logado, a sidebar passa a ser escura (mesmo tom do fundo
@@ -1512,22 +1518,12 @@ st.markdown(
             {_altura_header_admin}
         }}
 
-        /* Impede que a sidebar seja recolhida. O nome exato do botão de colapsar
-           muda entre versões do Streamlit, então escondo TODAS as variantes
-           conhecidas (antigas e novas) de uma vez, tanto o botão que fica
-           dentro da sidebar aberta quanto o que reaparece no canto pra reabrir. */
-        button[kind="header"],
-        button[kind="headerNoPadding"],
-        [data-testid="baseButton-header"],
-        [data-testid="baseButton-headerNoPadding"],
-        [data-testid="stSidebarCollapseButton"],
-        [data-testid="stSidebarCollapsedControl"],
-        [data-testid="collapsedControl"] {{
-            display: none !important;
-            visibility: hidden !important;
-            pointer-events: none !important;
-        }}
-
+        /* Pedido do usuário: liberar o recolher/abrir da sidebar também no
+           computador (Painel de Controle) — antes ela ficava travada sempre
+           aberta no desktop (só recolhia no celular/tablet). Agora o botão
+           de colapsar (o nome exato muda entre versões do Streamlit, por
+           isso cobre todas as variantes conhecidas) fica visível e
+           funcional em qualquer tamanho de tela. */
         section[data-testid="stSidebar"] {{
         width: 280px !important;
         min-width: 280px !important;
@@ -1535,67 +1531,30 @@ st.markdown(
         border-right: 1px solid {_cor_borda_sidebar} !important;
         }}
 
-        /* Reforço: mesmo que algum clique consiga acionar o estado "recolhido"
-           internamente, a sidebar continua sendo forçada a aparecer do mesmo
-           jeito (mesma largura/visibilidade) — trava visual, não só o botão.
-           Isso vale só para telas largas (desktop); no celular/tablet essa
-           trava é desfeita logo abaixo, pra sidebar poder ser recolhida. */
         section[data-testid="stSidebar"][aria-expanded="false"] {{
-            visibility: visible !important;
-            width: 280px !important;
-            min-width: 280px !important;
-            margin-left: 0px !important;
-            transform: none !important;
+            visibility: hidden !important;
+            width: 0px !important;
+            min-width: 0px !important;
+            margin-left: -280px !important;
+            transform: translateX(-100%) !important;
         }}
 
-        /* CELULAR/TABLET: a sidebar fixa de 280px toma quase a tela toda nesses
-           aparelhos. Nessa faixa, volta a mostrar o botão de recolher/abrir
-           (padrão do Streamlit) e permite a sidebar realmente sumir quando
-           recolhida — assim dá pra liberar a tela cheia no celular. No
-           desktop (acima de 768px) nada muda: continua sempre travada aberta. */
-        @media (max-width: 768px) {{
-            button[kind="header"],
-            button[kind="headerNoPadding"],
-            [data-testid="baseButton-header"],
-            [data-testid="baseButton-headerNoPadding"],
-            [data-testid="stSidebarCollapseButton"],
-            [data-testid="stSidebarCollapsedControl"],
-            [data-testid="collapsedControl"] {{
-                display: flex !important;
-                visibility: visible !important;
-                pointer-events: auto !important;
-            }}
-
-            section[data-testid="stSidebar"][aria-expanded="false"] {{
-                visibility: hidden !important;
-                width: 0px !important;
-                min-width: 0px !important;
-                margin-left: -280px !important;
-                transform: translateX(-100%) !important;
-            }}
-
-            /* Seta "abrir sidebar" (aparece sobre o fundo branco da tela
-               principal, com a sidebar fechada): preta, pra ficar visível.
-               Seta "fechar sidebar" (aparece dentro da própria sidebar verde,
-               com ela aberta): continua branca. Cobre tanto o ícone em SVG
-               quanto o ícone em fonte (Material Symbols) usado em versões
-               mais novas do Streamlit — por isso o "*" pegando qualquer
-               elemento filho, não só svg/path. */
-            [data-testid="stSidebarCollapsedControl"],
-            [data-testid="stSidebarCollapsedControl"] *,
-            [data-testid="collapsedControl"],
-            [data-testid="collapsedControl"] * {{
-                color: #000000 !important;
-                fill: #000000 !important;
-                opacity: 1 !important;
-            }}
-
-            [data-testid="stSidebarCollapseButton"],
-            [data-testid="stSidebarCollapseButton"] * {{
-                color: #FFFFFF !important;
-                fill: #FFFFFF !important;
-                opacity: 1 !important;
-            }}
+        /* Seta de abrir (sidebar fechada) e de fechar (dentro da sidebar
+           aberta): branca no Painel de Controle (pedido do usuário — fundo
+           escuro por trás dela) e preta na tela pública (fundo branco, pra
+           não ficar invisível). Cobre tanto o ícone em SVG quanto o ícone
+           em fonte (Material Symbols) usado em versões mais novas do
+           Streamlit, por isso o "*" pegando qualquer elemento filho, não
+           só svg/path. */
+        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="stSidebarCollapsedControl"] *,
+        [data-testid="collapsedControl"],
+        [data-testid="collapsedControl"] *,
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="stSidebarCollapseButton"] * {{
+            color: {_cor_seta_sidebar} !important;
+            fill: {_cor_seta_sidebar} !important;
+            opacity: 1 !important;
         }}
 
         /* Logo no topo da sidebar (tamanho fixo, sem esticar).
@@ -3297,22 +3256,19 @@ st.markdown(
         @media (min-width: 1001px) {{
             .st-key-painel_admin_tabela {{
                 overflow-x: auto !important;
-                /* Pedido do usuário: limita a altura da tabela e deixa ela
-                   rolar verticalmente por dentro de si mesma — assim a
-                   barra de rolagem horizontal (de arrastar pro lado) fica
-                   sempre visível, sem precisar rolar a página toda até o
-                   final pra alcançá-la. Antes era uma % fixa da tela
-                   (58vh) — em telas/zooms menores isso ainda deixava a
-                   tabela alta demais pro que sobrava de espaço (título +
-                   filtros + contador + paginação, que têm altura fixa em
-                   pixels, não em vh), cortando a paginação/rolagem
-                   horizontal quando a rolagem da página inteira é travada
-                   (ver _css_travar_scroll_admin_chamados). Usando calc()
-                   pra descontar esse espaço fixo em pixels, a tabela
-                   sempre sobra do tamanho certo pra tudo caber, em
-                   qualquer zoom/resolução. */
-                max-height: calc(100vh - 420px) !important;
-                min-height: 160px !important;
+                /* Pedido do usuário: mostrava só ~4 linhas de chamado antes
+                   de precisar rolar dentro da tabela — pediu pra mostrar
+                   umas 10. Trocado de um limite relativo à tela
+                   (calc(100vh - 420px), pensado pra época em que a rolagem
+                   da página inteira ficava travada nessa tela — ver
+                   _css_travar_scroll_admin_chamados, hoje desligada) pra
+                   uma altura fixa, calculada pra caber o cabeçalho + 10
+                   linhas. Como a rolagem da página não está mais travada,
+                   se em alguma tela/zoom sobrar chamado pra baixo da conta
+                   visível, dá pra rolar a página normalmente até a
+                   paginação — não fica mais cortado. */
+                max-height: 560px !important;
+                min-height: 300px !important;
                 overflow-y: auto !important;
             }}
 

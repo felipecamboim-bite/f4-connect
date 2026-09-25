@@ -1185,6 +1185,23 @@ def listar_chamados():
         return res.data
     return []
 
+# Pedido do usuário: registrar a data/hora de cada mudança de status (Em
+# análise, Em atendimento, Concluído, Cancelado, Encerrado pelo
+# solicitante) numa coluna própria no banco, pra depois mostrar cada uma
+# como coluna separada no Painel de Controle — além da data de abertura
+# (created_at, que já existia). Toda vez que o chamado ENTRA de novo
+# naquele status (mesmo que já tenha passado por ele antes), a data é
+# regravada com o horário mais recente — mesmo padrão já usado no
+# "encerrado_em" logo abaixo, que é uma coluna à parte usada só pro
+# cálculo de SLA no Insights (não mexe nela).
+_MAPA_STATUS_PARA_COLUNA_DATA = {
+    "Em análise": "data_em_analise",
+    "Em atendimento": "data_em_atendimento",
+    "Concluído": "data_concluido",
+    "Cancelado": "data_cancelado",
+    "Encerrado pelo solicitante": "data_encerrado_solicitante",
+}
+
 def atualizar_status_chamado(protocolo, novo_status):
     if supabase:
         dados = {"status": novo_status}
@@ -1194,6 +1211,9 @@ def atualizar_status_chamado(protocolo, novo_status):
         # encerramento) no painel de Insights.
         if novo_status in ("Concluído", "Encerrado pelo solicitante"):
             dados["encerrado_em"] = datetime.now(timezone.utc).isoformat()
+        coluna_data_status = _MAPA_STATUS_PARA_COLUNA_DATA.get(novo_status)
+        if coluna_data_status:
+            dados[coluna_data_status] = datetime.now(timezone.utc).isoformat()
         supabase.table("chamados").update(dados).eq("protocolo", protocolo).execute()
 
 def gerar_e_salvar_token_avaliacao(protocolo):
@@ -3287,7 +3307,7 @@ st.markdown(
 
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] {{
                 flex-wrap: nowrap !important;
-                min-width: 1690px !important;
+                min-width: 2550px !important;
             }}
 
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
@@ -3307,7 +3327,13 @@ st.markdown(
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ width: 220px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ width: 60px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ width: 170px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ width: 170px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ width: 140px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(13) {{ width: 140px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(14) {{ width: 140px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(15) {{ width: 140px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(16) {{ width: 140px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(17) {{ width: 140px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(18) {{ width: 170px !important; }}
 
             /* Com espaço de sobra, os títulos (nowrap, já definido no
                .header-box padrão) e os textos das células (que agora podem
@@ -3506,10 +3532,11 @@ st.markdown(
             /* Reproduz as mesmas proporções de coluna do computador
                (Atendente 1.3, Protocolo 1.1, Solicitante 1.2, E-mail 1.6,
                Empresa 1.1, Ferramenta 1.2, Severidade 1.1, Assunto 1.3,
-               Descrição 1.8, Anexo 0.6, Status 1.5, Comentários 1.4 —
-               mesmos valores do col_widths do Python), já que a regra
-               geral de "vira card empilhado" força 100%/coluna única e
-               precisa ser desfeita aqui. */
+               Descrição 1.8, Anexo 0.6, Status 1.5, Abertura/Em análise/Em
+               atendimento/Concluído/Cancelado/Encerrado 1.3 cada,
+               Comentários 1.4 — mesmos valores do col_widths do Python),
+               já que a regra geral de "vira card empilhado" força
+               100%/coluna única e precisa ser desfeita aqui. */
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
                 width: auto !important;
                 min-width: 0 !important;
@@ -3525,7 +3552,13 @@ st.markdown(
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ flex: 1.8 1 0px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ flex: 0.6 1 0px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ flex: 1.5 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ flex: 1.4 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(13) {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(14) {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(15) {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(16) {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(17) {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(18) {{ flex: 1.4 1 0px !important; }}
 
             .st-key-painel_admin_tabela .mobile-label {{
                 display: none !important;
@@ -4383,8 +4416,17 @@ def painel_admin():
     # Coluna "Comentários" adicionada a pedido do usuário: cada chamado
     # ganha um botão que abre o histórico de comentários do administrador
     # e permite escrever um novo (ver painel_admin_tabela mais abaixo).
-    col_widths = [1.3, 1.1, 1.2, 1.6, 1.1, 1.2, 1.1, 1.3, 1.8, 0.6, 1.5, 1.4]
-    headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Anexo", "Status", "💬"]
+    # Colunas de data/hora (Abertura + uma por status) adicionadas a pedido
+    # do usuário: quer enxergar quando cada chamado abriu e quando mudou
+    # pra cada status (Em análise, Em atendimento, Concluído, Cancelado,
+    # Encerrado pelo solicitante), sem precisar abrir o chamado pra saber.
+    col_widths = [1.3, 1.1, 1.2, 1.6, 1.1, 1.2, 1.1, 1.3, 1.8, 0.6, 1.5, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.4]
+    headers = [
+        "Atendente", "Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta",
+        "Severidade", "Assunto", "Descrição", "Anexo", "Status",
+        "Abertura", "Em análise", "Em atendimento", "Concluído", "Cancelado", "Encerrado",
+        "💬",
+    ]
 
     def _celula_previa_com_popover(col, rotulo_mobile, texto, limite):
         """Mostra uma prévia curta do texto e, só quando ele for maior que a
@@ -4419,7 +4461,9 @@ def painel_admin():
         for c in chamados_pagina:
             (
                 c_atend, c_proto, c_nome, c_mail, c_emp,
-                c_ferr, c_sev, c_ass, c_desc, c_anexo, c_stat, c_coment,
+                c_ferr, c_sev, c_ass, c_desc, c_anexo, c_stat,
+                c_abertura, c_data_analise, c_data_atendimento, c_data_concluido, c_data_cancelado, c_data_encerrado,
+                c_coment,
             ) = st.columns(col_widths)
 
             # --- 1ª COLUNA: SELETOR DE ATENDENTE ---
@@ -4577,6 +4621,18 @@ def painel_admin():
                 # rerun com escopo "fragment": atualiza só este painel,
                 # sem re-executar o app inteiro (login, CSS, imagens etc.)
                 st.rerun(scope="fragment")
+
+            # --- COLUNAS DE DATA/HORA (abertura + uma por status) ---
+            # Pedido do usuário: mostra quando o chamado abriu e quando
+            # mudou pra cada status. "-" enquanto o chamado ainda não
+            # passou por aquele status (a coluna correspondente no banco
+            # fica vazia até a mudança acontecer — ver atualizar_status_chamado).
+            c_abertura.markdown(f'<div class="celula-texto"><span class="mobile-label">Abertura:</span>{formatar_data_local(c.get("created_at"))}</div>', unsafe_allow_html=True)
+            c_data_analise.markdown(f'<div class="celula-texto"><span class="mobile-label">Em análise:</span>{formatar_data_local(c.get("data_em_analise"))}</div>', unsafe_allow_html=True)
+            c_data_atendimento.markdown(f'<div class="celula-texto"><span class="mobile-label">Em atendimento:</span>{formatar_data_local(c.get("data_em_atendimento"))}</div>', unsafe_allow_html=True)
+            c_data_concluido.markdown(f'<div class="celula-texto"><span class="mobile-label">Concluído:</span>{formatar_data_local(c.get("data_concluido"))}</div>', unsafe_allow_html=True)
+            c_data_cancelado.markdown(f'<div class="celula-texto"><span class="mobile-label">Cancelado:</span>{formatar_data_local(c.get("data_cancelado"))}</div>', unsafe_allow_html=True)
+            c_data_encerrado.markdown(f'<div class="celula-texto"><span class="mobile-label">Encerrado:</span>{formatar_data_local(c.get("data_encerrado_solicitante"))}</div>', unsafe_allow_html=True)
 
             # --- COLUNA DE COMENTÁRIOS ---
             # Pedido do usuário: um jeito de o administrador escrever uma

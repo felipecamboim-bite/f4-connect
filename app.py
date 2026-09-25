@@ -378,6 +378,97 @@ def rejeitar_solicitante(nome_usuario):
     if supabase:
         supabase.table("solicitantes").delete().eq("nome_usuario", nome_usuario).execute()
 
+# ---------------------------------------------------------
+# CONFIGURAÇÕES DE USUÁRIOS (painel do administrador) — pedido do usuário:
+# uma tela pra ver/corrigir os dados de cadastro dos solicitantes (nome,
+# empresa, unidade, telefone, e-mail), já que algumas contas antigas ficaram
+# sem "nome" e "empresa" preenchidos (criadas antes desses campos existirem
+# no fluxo de "Criar conta"), e também pra criar uma conta manualmente sem
+# o próprio solicitante precisar se cadastrar sozinho.
+# ---------------------------------------------------------
+def listar_solicitantes_detalhado():
+    """Retorna todos os solicitantes cadastrados (aprovados ou pendentes),
+    com todos os campos usados na tela "Configurações de Usuários"."""
+    if supabase:
+        res = (
+            supabase.table("solicitantes")
+            .select("nome_usuario, email, nome_completo, empresa, unidade, telefone_contato, status, created_at")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return res.data if res.data else []
+    return []
+
+def atualizar_solicitante_admin(nome_usuario, nome_completo, email, empresa, unidade, telefone_contato):
+    """Atualiza os dados de cadastro de um solicitante, editados pelo
+    ADMINISTRADOR na tela "Configurações de Usuários" — usado principalmente
+    pra corrigir contas antigas que ficaram sem nome/empresa preenchidos."""
+    if supabase:
+        supabase.table("solicitantes").update(
+            {
+                "nome_completo": (nome_completo or "").strip(),
+                "email": (email or "").strip(),
+                "empresa": empresa,
+                "unidade": unidade,
+                "telefone_contato": telefone_contato,
+            }
+        ).eq("nome_usuario", (nome_usuario or "").strip().lower()).execute()
+
+def remover_solicitante_admin(nome_usuario):
+    if supabase:
+        supabase.table("solicitantes").delete().eq(
+            "nome_usuario", (nome_usuario or "").strip().lower()
+        ).execute()
+
+def criar_solicitante_admin(nome_completo, nome_usuario, email, empresa, unidade, telefone_contato, criado_por):
+    """
+    Cria uma conta de solicitante direto pelo painel administrativo
+    ("Configurações de Usuários"), já aprovada (sem passar pela fila de
+    aprovação), com uma senha temporária gerada e enviada por e-mail —
+    mesmo padrão já usado em adicionar_usuario_admin() pra administradores.
+    """
+    usuario_norm = (nome_usuario or "").strip().lower()
+    nome_completo_norm = (nome_completo or "").strip()
+    email_norm = (email or "").strip()
+
+    if not nome_completo_norm:
+        return {"ok": False, "erro": "Digite o nome completo."}
+    if not validar_formato_usuario_solicitante(usuario_norm):
+        return {
+            "ok": False,
+            "erro": "Nome de usuário inválido. Use só letras minúsculas, sem espaço "
+                    "(nomes compostos separados por ponto, ex: felipe.rodrigues).",
+        }
+    if not email_norm or "@" not in email_norm:
+        return {"ok": False, "erro": "Digite um e-mail válido."}
+    if buscar_solicitante(usuario_norm) or buscar_usuario_admin(usuario_norm):
+        return {"ok": False, "erro": "Já existe uma conta com esse nome de usuário."}
+
+    senha_temp = gerar_senha_temporaria()
+
+    if supabase:
+        supabase.table("solicitantes").insert(
+            {
+                "nome_completo": nome_completo_norm,
+                "nome_usuario": usuario_norm,
+                "email": email_norm,
+                "senha": hash_senha(senha_temp),
+                "status": "aprovado",
+                "empresa": empresa,
+                "unidade": unidade,
+                "telefone_contato": telefone_contato,
+            }
+        ).execute()
+
+    email_enviado = enviar_email_conta_solicitante_criada_admin(email_norm, usuario_norm, senha_temp)
+
+    return {
+        "ok": True,
+        "usuario": usuario_norm,
+        "email_enviado": email_enviado,
+        "senha_temp": senha_temp,
+    }
+
 def verificar_login_solicitante(nome_usuario, senha):
     """
     Retorna "ok" (login válido e conta aprovada), "pendente" (conta existe
@@ -833,6 +924,57 @@ def enviar_email_conta_solicitante_aprovada(email_destino, nome_usuario):
         return True
     except Exception as e:
         print(f"Erro ao enviar e-mail de conta aprovada: {e}")
+        return False
+
+def enviar_email_conta_solicitante_criada_admin(email_destino, nome_usuario, senha_temporaria):
+    """Igual ao enviar_email_conta_solicitante_aprovada, mas pra quando a
+    conta foi criada diretamente pelo ADMINISTRADOR (tela "Configurações de
+    Usuários"), incluindo a senha temporária gerada — o solicitante não
+    escolheu uma senha própria nesse fluxo, como escolheria no "Criar conta"."""
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["From"] = f"F4 Connect HelpDesk <{EMAIL_REMETENTE}>"
+        msg["To"] = email_destino
+        msg["Subject"] = "Sua conta foi criada - F4 Connect HelpDesk"
+
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
+                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">F4 Helpdesk</h2>
+                <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Acesso liberado</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <p>Olá!</p>
+                <p>Uma conta foi criada para você no F4 HelpDesk. Seus dados de acesso:</p>
+
+                <div style="background-color: #f8fafc; border-left: 4px solid #007aff; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 6px 0;"><b>Usuário:</b> {nome_usuario}</p>
+                    <p style="margin: 6px 0;"><b>Senha temporária:</b> <span style="color: #007aff; font-weight: bold;">{senha_temporaria}</span></p>
+                </div>
+
+                <p>Recomendamos trocar essa senha assim que fizer login, usando a opção "Esqueci minha senha" na tela inicial.</p>
+                <br>
+                <p style="margin-bottom: 0;">Atenciosamente,</p>
+                <p style="margin-top: 2px;"><b>Equipe de Suporte F4 Helpdesk</b></p>
+
+                <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0 15px 0;">
+                <p style="font-size: 11px; color: #999; text-align: center;">Este é um e-mail automático enviado pelo sistema F4 Connect. Por favor, não responda a este e-mail.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        msg.attach(MIMEText(html_body, "html"))
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_REMETENTE, SENHA_REMETENTE)
+        server.sendmail(EMAIL_REMETENTE, email_destino, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Erro ao enviar e-mail de conta de solicitante criada pelo admin: {e}")
         return False
 
 def salvar_chamado_supabase(nome, email, empresa, ferramenta, assunto, descricao, severidade, unidade=None, telefone_contato=None):
@@ -2960,7 +3102,8 @@ st.markdown(
         /* ========================================================= */
         .st-key-painel_admin_tabela,
         .st-key-painel_cadastros_tabela,
-        .st-key-painel_usuarios_admin_tabela {{
+        .st-key-painel_usuarios_admin_tabela,
+        .st-key-painel_config_usuarios_tabela {{
             background-color: #2b2d31 !important;
             border-radius: 10px !important;
             padding: 10px !important;
@@ -2968,13 +3111,15 @@ st.markdown(
 
         .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"],
         .st-key-painel_cadastros_tabela [data-testid="stHorizontalBlock"],
-        .st-key-painel_usuarios_admin_tabela [data-testid="stHorizontalBlock"] {{
+        .st-key-painel_usuarios_admin_tabela [data-testid="stHorizontalBlock"],
+        .st-key-painel_config_usuarios_tabela [data-testid="stHorizontalBlock"] {{
             gap: 0 !important;
         }}
 
         .st-key-painel_admin_tabela [data-testid="stColumn"],
         .st-key-painel_cadastros_tabela [data-testid="stColumn"],
-        .st-key-painel_usuarios_admin_tabela [data-testid="stColumn"] {{
+        .st-key-painel_usuarios_admin_tabela [data-testid="stColumn"],
+        .st-key-painel_config_usuarios_tabela [data-testid="stColumn"] {{
             padding: 0 !important;
         }}
 
@@ -3063,7 +3208,8 @@ st.markdown(
 
         .st-key-painel_admin_tabela .header-box,
         .st-key-painel_cadastros_tabela .header-box,
-        .st-key-painel_usuarios_admin_tabela .header-box {{
+        .st-key-painel_usuarios_admin_tabela .header-box,
+        .st-key-painel_config_usuarios_tabela .header-box {{
             background-color: #1A1A1A !important;
             color: #FFFFFF !important;
             border: none !important;
@@ -3079,14 +3225,16 @@ st.markdown(
            entre as colunas do meio. */
         .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:first-child .header-box,
         .st-key-painel_cadastros_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:first-child .header-box,
-        .st-key-painel_usuarios_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:first-child .header-box {{
+        .st-key-painel_usuarios_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:first-child .header-box,
+        .st-key-painel_config_usuarios_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:first-child .header-box {{
             border-top-left-radius: 10px !important;
             border-bottom-left-radius: 10px !important;
         }}
 
         .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:last-child .header-box,
         .st-key-painel_cadastros_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:last-child .header-box,
-        .st-key-painel_usuarios_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:last-child .header-box {{
+        .st-key-painel_usuarios_admin_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:last-child .header-box,
+        .st-key-painel_config_usuarios_tabela [data-testid="stHorizontalBlock"]:has(.header-box) > [data-testid="stColumn"]:last-child .header-box {{
             border-top-right-radius: 10px !important;
             border-bottom-right-radius: 10px !important;
         }}
@@ -3094,17 +3242,34 @@ st.markdown(
         .st-key-painel_admin_tabela .celula-texto,
         .st-key-painel_admin_tabela .celula-protocolo,
         .st-key-painel_cadastros_tabela .celula-centro,
-        .st-key-painel_usuarios_admin_tabela .celula-centro {{
+        .st-key-painel_usuarios_admin_tabela .celula-centro,
+        .st-key-painel_config_usuarios_tabela .celula-centro {{
             color: #FFFFFF !important;
             text-align: center !important;
             padding: 8px 10px !important;
             font-size: 12px !important;
         }}
 
+        /* Campos editáveis (Nome completo, E-mail, Telefone) dentro da
+           tabela de Configurações de Usuários: mesmo fundo escuro da
+           planilha, texto branco, compactos — sem herdar o azul/borda
+           padrão dos campos públicos. */
+        .st-key-painel_config_usuarios_tabela .stTextInput input,
+        .st-key-painel_config_usuarios_tabela .stTextInput div[data-baseweb] {{
+            background-color: #3B3D35 !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 8px !important;
+            font-size: 12px !important;
+            text-align: center !important;
+        }}
+
         /* Os seletores de Atendente/Status continuam funcionais (não dá pra
            virar texto estático), mas ganham a mesma cor escura do cabeçalho
            pra combinar com a grade */
-        .st-key-painel_admin_tabela .stSelectbox div[data-baseweb="select"] {{
+        .st-key-painel_admin_tabela .stSelectbox div[data-baseweb="select"],
+        .st-key-painel_config_usuarios_tabela .stSelectbox div[data-baseweb="select"] {{
             background-color: #3B3D35 !important;
             border: none !important;
             box-shadow: none !important;
@@ -3114,10 +3279,12 @@ st.markdown(
             font-size: 12px !important;
         }}
 
-        /* Botão "Excluir" (Empresas/Ferramentas e Administradores): compacto,
-           combinando com o resto da planilha */
+        /* Botão "Excluir" (Empresas/Ferramentas, Administradores e
+           Configurações de Usuários) e "Salvar" (Configurações de
+           Usuários): compactos, combinando com o resto da planilha */
         .st-key-painel_cadastros_tabela .stButton > button,
-        .st-key-painel_usuarios_admin_tabela .stButton > button {{
+        .st-key-painel_usuarios_admin_tabela .stButton > button,
+        .st-key-painel_config_usuarios_tabela .stButton > button {{
             background-color: #1A1A1A !important;
             color: #FFFFFF !important;
             border: none !important;
@@ -3130,7 +3297,8 @@ st.markdown(
         }}
 
         .st-key-painel_cadastros_tabela .stButton > button p,
-        .st-key-painel_usuarios_admin_tabela .stButton > button p {{
+        .st-key-painel_usuarios_admin_tabela .stButton > button p,
+        .st-key-painel_config_usuarios_tabela .stButton > button p {{
             font-size: 12px !important;
             font-weight: 400 !important;
         }}
@@ -3677,6 +3845,7 @@ with st.sidebar:
             "ferramenta": "nav_ferramenta",
             "unidade": "nav_unidade",
             "usuarios": "nav_admin",
+            "config_usuarios": "nav_config_usuarios",
         }
         _keys_ativas = []
         _key_aba_atual = _mapa_aba_para_key.get(st.session_state["aba_admin"])
@@ -3810,6 +3979,20 @@ with st.sidebar:
                             f"enviar o e-mail. Senha temporária: **{resultado['senha_temp']}** "
                             "(repasse com segurança e peça para trocar assim que possível)."
                         )
+
+        # ---- CONFIGURAÇÕES DE USUÁRIOS (solicitantes cadastrados) ----
+        # Pedido do usuário: diferente de "Cadastrar Administrador" (que abre
+        # um formulário aqui mesmo na sidebar), essa opção abre uma tabela na
+        # área principal (igual "Chamados"/"Insights") com todos os
+        # solicitantes cadastrados, pra ver/corrigir nome, empresa, unidade,
+        # telefone e e-mail (algumas contas antigas ficaram sem "nome" e
+        # "empresa" preenchidos) e também criar uma conta manualmente.
+        if st.button("Configurações de Usuários", key="nav_config_usuarios"):
+            if st.session_state["aba_admin"] == "config_usuarios":
+                st.session_state["aba_admin"] = "chamados"
+            else:
+                st.session_state["aba_admin"] = "config_usuarios"
+            st.rerun()
 
         st.markdown("---")
 
@@ -4106,18 +4289,35 @@ def painel_admin():
             ) = st.columns(col_widths)
 
             # --- 1ª COLUNA: SELETOR DE ATENDENTE ---
+            # Mesma proteção aplicada no seletor de Status logo abaixo (ver o
+            # comentário grande lá): sem isso, essa tabela se auto-atualizando
+            # a cada 20s podia reatribuir o chamado sozinha pro atendente
+            # antigo que uma aba esquecida ainda tinha na tela, toda vez que
+            # o ciclo de atualização rodava — silenciosamente, sem nem um
+            # e-mail pra denunciar o problema.
+            chave_atend_widget = f"atend_{c['protocolo']}"
+            chave_atend_sincronizado = f"_atend_sincronizado_{c['protocolo']}"
             atendente_atual = c.get("atendente") or "Não atribuído"
+
+            if chave_atend_widget not in st.session_state:
+                st.session_state[chave_atend_widget] = atendente_atual
+                st.session_state[chave_atend_sincronizado] = atendente_atual
+            elif st.session_state.get(chave_atend_sincronizado) != atendente_atual:
+                st.session_state[chave_atend_widget] = atendente_atual
+                st.session_state[chave_atend_sincronizado] = atendente_atual
+
             idx_atend = OPCOES_ATENDENTES.index(atendente_atual) if atendente_atual in OPCOES_ATENDENTES else 0
 
             novo_atendente = c_atend.selectbox(
                 "Atendente",
                 OPCOES_ATENDENTES,
                 index=idx_atend,
-                key=f"atend_{c['protocolo']}",
+                key=chave_atend_widget,
                 label_visibility="collapsed"
             )
 
             if novo_atendente != atendente_atual:
+                st.session_state[chave_atend_sincronizado] = novo_atendente
                 atualizar_atendente_chamado(c['protocolo'], novo_atendente)
                 st.toast(f"Chamado {c['protocolo']} atribuído para: {novo_atendente}")
                 st.rerun(scope="fragment")
@@ -4171,16 +4371,50 @@ def painel_admin():
             c_anexo.markdown(f'<div class="celula-texto celula-anexo"><span class="mobile-label">Anexo:</span>{html_anexo}</div>', unsafe_allow_html=True)
 
             # SELETOR DE STATUS
-            idx_atual = OPCOES_STATUS.index(c['status']) if c['status'] in OPCOES_STATUS else 0
+            # Essa tabela se atualiza sozinha a cada 20s (run_every="20s") e
+            # o valor do seletor fica preso na sessão daquele
+            # navegador/aba (pela "key"). Se você (ou outro administrador)
+            # tiver o Painel de Controle aberto em mais de uma aba/navegador
+            # ao mesmo tempo, uma aba parada podia "achar" — no ciclo de
+            # atualização automática seguinte — que o status tinha voltado
+            # pro valor antigo que ela ainda tinha na tela, e tratar isso
+            # como se o administrador tivesse escolhido aquilo agora: voltava
+            # o status no banco e reenviava o e-mail de status pro
+            # solicitante. Com duas abas fazendo isso uma pra outra, virava
+            # um vai-e-volta sem fim, reenviando e-mail a cada 20s. Por
+            # isso, antes de criar o seletor, a sessão primeiro confere se o
+            # status no banco mudou por fora (outra aba/sessão) desde a
+            # última vez que ELA MESMA sincronizou o seletor — se sim, só
+            # realinha o valor guardado nessa sessão com o banco, sem contar
+            # isso como uma escolha do administrador (sem salvar de novo,
+            # sem e-mail). Só uma mudança feita de fato nesse seletor, nessa
+            # mesma sessão, continua contando como mudança real.
+            chave_status_widget = f"status_{c['protocolo']}"
+            chave_status_sincronizado = f"_status_sincronizado_{c['protocolo']}"
+            status_no_banco = c['status']
+
+            if chave_status_widget not in st.session_state:
+                st.session_state[chave_status_widget] = status_no_banco
+                st.session_state[chave_status_sincronizado] = status_no_banco
+            elif st.session_state.get(chave_status_sincronizado) != status_no_banco:
+                st.session_state[chave_status_widget] = status_no_banco
+                st.session_state[chave_status_sincronizado] = status_no_banco
+
+            idx_atual = OPCOES_STATUS.index(status_no_banco) if status_no_banco in OPCOES_STATUS else 0
             novo_status = c_stat.selectbox(
                 "Status",
                 OPCOES_STATUS,
                 index=idx_atual,
-                key=f"status_{c['protocolo']}",
+                key=chave_status_widget,
                 label_visibility="collapsed"
             )
 
-            if novo_status != c['status']:
+            if novo_status != status_no_banco:
+                # Mudança real: aconteceu nessa mesma sessão, agora — grava
+                # o valor sincronizado já com o novo status, antes de
+                # qualquer coisa, pra essa mesma sessão não se confundir
+                # depois com o que ELA MESMA acabou de salvar.
+                st.session_state[chave_status_sincronizado] = novo_status
                 # 1. Atualiza no Supabase
                 atualizar_status_chamado(c['protocolo'], novo_status)
 
@@ -4667,6 +4901,179 @@ def painel_usuarios_admin():
                     st.rerun(scope="fragment")
 
 
+# ------------------ VISÃO ADMIN: CONFIGURAÇÕES DE USUÁRIOS (SOLICITANTES) ------------------
+# Pedido do usuário: uma tela pra ver e corrigir os dados de cadastro dos
+# solicitantes (nome completo, empresa, unidade, telefone, e-mail) — útil
+# principalmente pra corrigir contas antigas que ficaram sem "nome" e
+# "empresa" preenchidos (criadas antes desses campos existirem no fluxo de
+# "Criar conta") — e também criar uma conta manualmente pelo próprio
+# administrador, sem depender do solicitante se cadastrar sozinho.
+@st.fragment
+def painel_config_usuarios():
+    st.markdown(
+        '<div class="titulo-painel-chamados">Configurações de Usuários</div>',
+        unsafe_allow_html=True,
+    )
+
+    empresas_disponiveis = listar_empresas()
+    unidades_disponiveis = listar_unidades()
+
+    # ---- CRIAR CONTA MANUALMENTE ----
+    with st.expander("➕ Criar conta de solicitante"):
+        novo_nome_completo = st.text_input("Nome completo", key="cfg_usr_novo_nome_completo")
+        novo_nome_usuario = st.text_input(
+            "Nome de usuário (só letras minúsculas, ex: felipe.rodrigues)",
+            key="cfg_usr_novo_nome_usuario",
+        )
+        novo_email = st.text_input("E-mail", key="cfg_usr_novo_email")
+
+        nova_empresa_cfg = st.selectbox(
+            "Empresa", ["Selecione..."] + empresas_disponiveis, key="cfg_usr_nova_empresa",
+        )
+
+        eh_clicklog_cfg = _normalizar_texto_busca(nova_empresa_cfg) == _normalizar_texto_busca("ClickLog Transportes")
+        nova_unidade_cfg = None
+        if eh_clicklog_cfg:
+            nova_unidade_cfg = st.selectbox(
+                "Unidade", ["Selecione..."] + unidades_disponiveis, key="cfg_usr_nova_unidade",
+            )
+
+        _unidade_norm_cfg = (nova_unidade_cfg or "").strip().lower()
+        precisa_telefone_cfg = bool(nova_unidade_cfg) and nova_unidade_cfg != "Selecione..." and (
+            "filial" in _unidade_norm_cfg or "parceiro" in _unidade_norm_cfg
+        )
+        novo_telefone_cfg = None
+        if precisa_telefone_cfg:
+            novo_telefone_cfg = st.text_input("Telefone para contato", key="cfg_usr_novo_telefone")
+
+        if st.button("Criar conta", key="cfg_usr_btn_criar"):
+            if nova_empresa_cfg == "Selecione...":
+                st.warning("Selecione a empresa.")
+            elif eh_clicklog_cfg and (not nova_unidade_cfg or nova_unidade_cfg == "Selecione..."):
+                st.warning("Selecione a unidade.")
+            elif precisa_telefone_cfg and not (novo_telefone_cfg or "").strip():
+                st.warning("Informe o telefone para contato.")
+            else:
+                resultado = criar_solicitante_admin(
+                    novo_nome_completo,
+                    novo_nome_usuario,
+                    novo_email,
+                    nova_empresa_cfg,
+                    nova_unidade_cfg if eh_clicklog_cfg else None,
+                    (novo_telefone_cfg or "").strip() or None,
+                    st.session_state["usuario_logado"],
+                )
+                if not resultado["ok"]:
+                    st.error(resultado["erro"])
+                elif resultado["email_enviado"]:
+                    st.success(
+                        f"Conta '{resultado['usuario']}' criada! A senha temporária foi "
+                        f"enviada para {novo_email.strip()}."
+                    )
+                    st.rerun(scope="fragment")
+                else:
+                    st.warning(
+                        f"Conta '{resultado['usuario']}' criada, mas não foi possível enviar "
+                        f"o e-mail. Senha temporária: **{resultado['senha_temp']}** "
+                        "(repasse com segurança e peça para trocar assim que possível)."
+                    )
+
+    # ---- TABELA DE SOLICITANTES CADASTRADOS ----
+    itens = listar_solicitantes_detalhado()
+    if not itens:
+        st.info("Nenhum solicitante cadastrado até o momento.")
+        return
+
+    col_widths = [1.1, 1.4, 1.7, 1.3, 1.2, 1.1, 0.9, 0.7, 0.7]
+    headers = ["Usuário", "Nome completo", "E-mail", "Empresa", "Unidade", "Telefone", "Status", "", ""]
+
+    with st.container(key="painel_config_usuarios_tabela"):
+        cols_head = st.columns(col_widths)
+        for col, h in zip(cols_head, headers):
+            col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
+
+        for item in itens:
+            usuario_linha = item.get("nome_usuario")
+            (
+                c_user, c_nome, c_mail, c_emp, c_unid,
+                c_tel, c_stat, c_salvar, c_del,
+            ) = st.columns(col_widths)
+
+            c_user.markdown(
+                f'<div class="celula-centro"><span class="mobile-label">Usuário:</span>'
+                f'{html.escape(str(usuario_linha or "-"))}</div>',
+                unsafe_allow_html=True,
+            )
+
+            novo_nome_linha = c_nome.text_input(
+                "Nome completo", value=item.get("nome_completo") or "",
+                key=f"cfg_usr_edit_nome_{usuario_linha}", label_visibility="collapsed",
+            )
+            novo_email_linha = c_mail.text_input(
+                "E-mail", value=item.get("email") or "",
+                key=f"cfg_usr_edit_email_{usuario_linha}", label_visibility="collapsed",
+            )
+
+            empresa_atual_linha = item.get("empresa") or "Selecione..."
+            opcoes_empresa_linha = ["Selecione..."] + empresas_disponiveis
+            # Se a empresa gravada nesse cadastro não estiver (mais) na lista
+            # de empresas cadastradas (ex: foi digitada com uma grafia
+            # diferente, ou removida do cadastro depois), inclui ela mesmo
+            # assim como opção — pra não perder/trocar sem querer o valor
+            # já salvo só por causa da lista de opções.
+            if empresa_atual_linha not in opcoes_empresa_linha:
+                opcoes_empresa_linha.append(empresa_atual_linha)
+            nova_empresa_linha = c_emp.selectbox(
+                "Empresa", opcoes_empresa_linha,
+                index=opcoes_empresa_linha.index(empresa_atual_linha),
+                key=f"cfg_usr_edit_empresa_{usuario_linha}", label_visibility="collapsed",
+            )
+
+            eh_clicklog_linha = _normalizar_texto_busca(nova_empresa_linha) == _normalizar_texto_busca("ClickLog Transportes")
+            if eh_clicklog_linha:
+                unidade_atual_linha = item.get("unidade") or "Selecione..."
+                opcoes_unidade_linha = ["Selecione..."] + unidades_disponiveis
+                if unidade_atual_linha not in opcoes_unidade_linha:
+                    opcoes_unidade_linha.append(unidade_atual_linha)
+                nova_unidade_linha = c_unid.selectbox(
+                    "Unidade", opcoes_unidade_linha,
+                    index=opcoes_unidade_linha.index(unidade_atual_linha),
+                    key=f"cfg_usr_edit_unidade_{usuario_linha}", label_visibility="collapsed",
+                )
+            else:
+                nova_unidade_linha = None
+                c_unid.markdown('<div class="celula-centro">—</div>', unsafe_allow_html=True)
+
+            novo_telefone_linha = c_tel.text_input(
+                "Telefone", value=item.get("telefone_contato") or "",
+                key=f"cfg_usr_edit_telefone_{usuario_linha}", label_visibility="collapsed",
+            )
+
+            status_linha = item.get("status") or "-"
+            c_stat.markdown(
+                f'<div class="celula-centro"><span class="mobile-label">Status:</span>'
+                f'{html.escape(str(status_linha))}</div>',
+                unsafe_allow_html=True,
+            )
+
+            if c_salvar.button("Salvar", key=f"cfg_usr_btn_salvar_{usuario_linha}"):
+                atualizar_solicitante_admin(
+                    usuario_linha,
+                    novo_nome_linha.strip(),
+                    novo_email_linha.strip(),
+                    None if nova_empresa_linha == "Selecione..." else nova_empresa_linha,
+                    nova_unidade_linha if (eh_clicklog_linha and nova_unidade_linha != "Selecione...") else None,
+                    novo_telefone_linha.strip() or None,
+                )
+                st.toast(f"Cadastro de '{usuario_linha}' atualizado!")
+                st.rerun(scope="fragment")
+
+            if c_del.button("Excluir", key=f"cfg_usr_btn_excluir_{usuario_linha}"):
+                remover_solicitante_admin(usuario_linha)
+                st.toast(f"Conta '{usuario_linha}' removida.")
+                st.rerun(scope="fragment")
+
+
 # ------------------ RESULTADO DA CONSULTA: TABELA EDITÁVEL (SOLICITANTE) ------------------
 # Pedido do usuário: na tela "Acompanhar meu chamado", o solicitante pode
 # editar os dados do próprio chamado (E-mail, Empresa, Ferramenta,
@@ -4784,6 +5191,8 @@ if st.session_state["usuario_logado"]:
         painel_cadastros("unidade")
     elif st.session_state["aba_admin"] == "usuarios":
         painel_usuarios_admin()
+    elif st.session_state["aba_admin"] == "config_usuarios":
+        painel_config_usuarios()
     elif st.session_state["aba_admin"] == "insights":
         painel_insights()
     else:

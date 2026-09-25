@@ -3277,7 +3277,7 @@ st.markdown(
 
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] {{
                 flex-wrap: nowrap !important;
-                min-width: 1780px !important;
+                min-width: 1690px !important;
             }}
 
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
@@ -3290,15 +3290,14 @@ st.markdown(
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2)  {{ width: 110px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3)  {{ width: 130px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4)  {{ width: 190px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ width: 90px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ width: 120px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ width: 130px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ width: 110px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ width: 150px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ width: 220px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ width: 60px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ width: 120px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ width: 130px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ width: 110px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ width: 150px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ width: 220px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ width: 60px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ width: 170px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ width: 170px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(13) {{ width: 170px !important; }}
 
             /* Com espaço de sobra, os títulos (nowrap, já definido no
                .header-box padrão) e os textos das células (que agora podem
@@ -3496,11 +3495,11 @@ st.markdown(
             }}
             /* Reproduz as mesmas proporções de coluna do computador
                (Atendente 1.3, Protocolo 1.1, Solicitante 1.2, E-mail 1.6,
-               Telefone 1.0, Empresa 1.1, Ferramenta 1.2, Severidade 1.1,
-               Assunto 1.3, Descrição 1.8, Anexo 0.6, Status 1.5,
-               Comentários 1.4 — mesmos valores do col_widths do Python),
-               já que a regra geral de "vira card empilhado" força
-               100%/coluna única e precisa ser desfeita aqui. */
+               Empresa 1.1, Ferramenta 1.2, Severidade 1.1, Assunto 1.3,
+               Descrição 1.8, Anexo 0.6, Status 1.5, Comentários 1.4 —
+               mesmos valores do col_widths do Python), já que a regra
+               geral de "vira card empilhado" força 100%/coluna única e
+               precisa ser desfeita aqui. */
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
                 width: auto !important;
                 min-width: 0 !important;
@@ -3509,15 +3508,14 @@ st.markdown(
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2)  {{ flex: 1.1 1 0px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3)  {{ flex: 1.2 1 0px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4)  {{ flex: 1.6 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ flex: 1.0 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ flex: 1.1 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ flex: 1.2 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ flex: 1.1 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ flex: 1.3 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ flex: 1.8 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ flex: 0.6 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ flex: 1.5 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(13) {{ flex: 1.4 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ flex: 1.1 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ flex: 1.2 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ flex: 1.1 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ flex: 1.8 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ flex: 0.6 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ flex: 1.5 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ flex: 1.4 1 0px !important; }}
 
             .st-key-painel_admin_tabela .mobile-label {{
                 display: none !important;
@@ -4369,14 +4367,14 @@ def painel_admin():
             _texto_contador += f" (de {len(chamados)} no total)"
         st.caption(_texto_contador + ".")
 
-    # 1. 12 BLOCOS DE TITULOS/CABEÇALHO (Telefone e Anexo adicionados a
-    # pedido do usuário — telefone de contato da unidade/filial/parceiro, e
-    # um ícone pra abrir o arquivo anexado na abertura do chamado).
+    # 1. BLOCOS DE TITULOS/CABEÇALHO (Anexo adicionado a pedido do usuário —
+    # um ícone pra abrir o arquivo anexado na abertura do chamado; coluna
+    # "Telefone" removida depois, também a pedido do usuário).
     # Coluna "Comentários" adicionada a pedido do usuário: cada chamado
     # ganha um botão que abre o histórico de comentários do administrador
     # e permite escrever um novo (ver painel_admin_tabela mais abaixo).
-    col_widths = [1.3, 1.1, 1.2, 1.6, 1.0, 1.1, 1.2, 1.1, 1.3, 1.8, 0.6, 1.5, 1.4]
-    headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Telefone", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Anexo", "Status", "Comentários"]
+    col_widths = [1.3, 1.1, 1.2, 1.6, 1.1, 1.2, 1.1, 1.3, 1.8, 0.6, 1.5, 1.4]
+    headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Anexo", "Status", "Comentários"]
 
     def _celula_previa_com_popover(col, rotulo_mobile, texto, limite):
         """Mostra uma prévia curta do texto e, só quando ele for maior que a
@@ -4410,7 +4408,7 @@ def painel_admin():
         # 2. Exibição das linhas com o Seletor de Atendente
         for c in chamados_pagina:
             (
-                c_atend, c_proto, c_nome, c_mail, c_tel, c_emp,
+                c_atend, c_proto, c_nome, c_mail, c_emp,
                 c_ferr, c_sev, c_ass, c_desc, c_anexo, c_stat, c_coment,
             ) = st.columns(col_widths)
 
@@ -4451,7 +4449,6 @@ def painel_admin():
             c_proto.markdown(f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}</div>', unsafe_allow_html=True)
             _celula_previa_com_popover(c_nome, "Solicitante", c.get("nome_solicitante"), limite=18)
             _celula_previa_com_popover(c_mail, "E-mail", c.get("email_solicitante"), limite=26)
-            c_tel.markdown(f'<div class="celula-texto"><span class="mobile-label">Telefone:</span>{c.get("telefone_contato") or "-"}</div>', unsafe_allow_html=True)
             _celula_previa_com_popover(c_emp, "Empresa", c.get("empresa"), limite=16)
             _celula_previa_com_popover(c_ferr, "Ferramenta", c.get("ferramenta"), limite=16)
             c_sev.markdown(f'<div class="celula-texto"><span class="mobile-label">Severidade:</span>{formatar_severidade_admin(c.get("severidade"))}</div>', unsafe_allow_html=True)

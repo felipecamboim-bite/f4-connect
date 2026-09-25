@@ -2967,23 +2967,33 @@ st.markdown(
             margin-top: 0 !important;
         }}
 
-        /* Coluna "Comentários": desfaz o estilo do botãozinho "▾" acima (não
-           serve aqui — o botão precisa mostrar "💬 (n)" por inteiro, não um
-           quadradinho de 18x18px sobreposto no canto). */
+        /* Coluna "Comentários" (cabeçalho só com o ícone 💬, sem título):
+           desfaz o estilo do botãozinho "▾" acima (não serve aqui) e faz o
+           botão virar um "campo padrão" igual ao pill do Atendente/Status
+           da mesma linha — mesma cor de fundo, mesmo arredondado (pílula),
+           mesma margem vertical (4px, o que alinha na mesma altura) e
+           preenchendo a coluna, centralizado, em vez de ficar pequeno e
+           grudado num canto (deslocado do resto da linha). */
         .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-comentarios) [data-testid="stPopover"] {{
             position: static !important;
             width: 100% !important;
         }}
         .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-comentarios) [data-testid="stPopover"] button {{
-            min-height: 32px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background-color: #3B3D35 !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: #FFFFFF !important;
+            min-height: auto !important;
             height: auto !important;
-            width: auto !important;
-            min-width: 64px !important;
-            padding: 4px 12px !important;
+            width: calc(100% - 16px) !important;
+            margin: 4px 8px !important;
+            padding: 7px 10px !important;
             font-size: 13px !important;
             line-height: normal !important;
-            border-radius: 6px !important;
-            margin-top: 0 !important;
+            border-radius: 20px !important;
         }}
 
         .texto-descricao-completa {{
@@ -4374,7 +4384,7 @@ def painel_admin():
     # ganha um botão que abre o histórico de comentários do administrador
     # e permite escrever um novo (ver painel_admin_tabela mais abaixo).
     col_widths = [1.3, 1.1, 1.2, 1.6, 1.1, 1.2, 1.1, 1.3, 1.8, 0.6, 1.5, 1.4]
-    headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Anexo", "Status", "Comentários"]
+    headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Anexo", "Status", "💬"]
 
     def _celula_previa_com_popover(col, rotulo_mobile, texto, limite):
         """Mostra uma prévia curta do texto e, só quando ele for maior que a

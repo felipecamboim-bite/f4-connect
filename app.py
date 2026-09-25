@@ -955,13 +955,22 @@ def cancelar_chamado_pelo_solicitante(protocolo, status_atual):
     meu chamado"). Confere de novo o status atual aqui dentro (não confia
     só no botão ter aparecido na tela) — se o chamado já tiver avançado
     pra outro status entre a consulta e o clique, o cancelamento é negado.
-    Retorna True se cancelou, False se não era mais permitido.
+    Pedido do usuário: esse cancelamento entra no banco (e aparece pro
+    administrador) como "Encerrado pelo solicitante", não como "Cancelado"
+    (esse último continua existindo só como status que o ADMIN pode
+    escolher manualmente). Retorna True se cancelou, False se não era mais
+    permitido.
     """
     if status_atual not in STATUS_CANCELAVEIS_PELO_SOLICITANTE:
         return False
     if supabase:
         supabase.table("chamados").update(
-            {"status": "Cancelado"}
+            {
+                "status": "Encerrado pelo solicitante",
+                # Mesma lógica do atualizar_status_chamado: grava o horário do
+                # encerramento, usado no cálculo de SLA do painel de Insights.
+                "encerrado_em": datetime.now(timezone.utc).isoformat(),
+            }
         ).eq("protocolo", protocolo).eq("status", status_atual).execute()
     return True
 
@@ -4737,7 +4746,7 @@ def resultado_consulta_editavel(resultados):
             if status_atual_linha in STATUS_CANCELAVEIS_PELO_SOLICITANTE:
                 if c_cancelar.button("Cancelar chamado", key=f"cancelar_chamado_{protocolo}"):
                     if cancelar_chamado_pelo_solicitante(protocolo, status_atual_linha):
-                        c["status"] = "Cancelado"
+                        c["status"] = "Encerrado pelo solicitante"
                         st.toast(f"Chamado {protocolo} cancelado.")
                         st.rerun(scope="fragment")
                     else:

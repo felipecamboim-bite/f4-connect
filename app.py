@@ -733,6 +733,73 @@ def enviar_email_status(email_destino, nome_solicitante, protocolo, assunto_cham
         print(f"Erro ao enviar e-mail: {e}")
         return False
 
+def enviar_email_comentario_chamado(email_destino, nome_solicitante, protocolo, assunto_chamado, autor_comentario, texto_comentario, anexo_url=None):
+    """E-mail disparado quando um administrador salva um comentário num
+    chamado (ver adicionar_comentario_chamado) — pedido do usuário: uma
+    forma de tirar dúvida ou avisar o solicitante sem precisar mudar o
+    status nem chamar ele por outro canal (WhatsApp etc). Esse comentário
+    NÃO aparece na tela "Acompanhar meu chamado" do solicitante — ele só
+    chega por esse e-mail."""
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["From"] = f"F4 Connect HelpDesk <{EMAIL_REMETENTE}>"
+        msg["To"] = email_destino
+        msg["Subject"] = f"Nova mensagem sobre o Chamado {protocolo}"
+
+        bloco_anexo = ""
+        if anexo_url:
+            bloco_anexo = f"""
+                <div style="text-align: center; margin: 16px 0;">
+                    <img src="{anexo_url}" alt="Anexo" style="max-width: 100%; border-radius: 6px; border: 1px solid #e0e0e0;">
+                </div>
+            """
+
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0;">
+                <h2 style="color: #007aff; text-align: center; margin-bottom: 5px;">F4 Connect - Help Desk</h2>
+                <p style="text-align: center; color: #666; font-size: 14px; margin-top: 0;">Nova mensagem sobre o seu chamado</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <p>Olá, <b>{nome_solicitante}</b>!</p>
+                <p>Nossa equipe deixou uma mensagem sobre o seu chamado:</p>
+
+                <div style="background-color: #f8fafc; border-left: 4px solid #007aff; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 6px 0;"><b>Protocolo:</b> <span style="color: #007aff; font-weight: bold;">{protocolo}</span></p>
+                    <p style="margin: 6px 0;"><b>Assunto:</b> {assunto_chamado}</p>
+                </div>
+
+                <div style="background-color: #eef6ff; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                    <p style="margin: 0 0 8px 0; font-size: 13px; color: #666;"><b>{html.escape(str(autor_comentario))}</b> escreveu:</p>
+                    <p style="margin: 0; white-space: pre-wrap;">{html.escape(str(texto_comentario))}</p>
+                </div>
+                {bloco_anexo}
+
+                <p>Se quiser responder ou tirar alguma dúvida, entre em contato com a nossa equipe.</p>
+                <br>
+                <p style="margin-bottom: 0;">Atenciosamente,</p>
+                <p style="margin-top: 2px;"><b>Equipe de Suporte F4 Connect</b></p>
+
+                <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0 15px 0;">
+                <p style="font-size: 11px; color: #999; text-align: center;">Este é um e-mail automático enviado pelo sistema F4 Connect. Por favor, não responda a este e-mail.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        msg.attach(MIMEText(html_body, "html"))
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_REMETENTE, SENHA_REMETENTE)
+        server.sendmail(EMAIL_REMETENTE, email_destino, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Erro ao enviar e-mail de comentário do chamado {protocolo}: {e}")
+        return False
+
 def enviar_email_novo_chamado_admin(protocolo, nome_solicitante, empresa, ferramenta, assunto, severidade):
     """Avisa a equipe (EMAILS_NOTIFICACAO_NOVO_CHAMADO) que um chamado novo
     foi aberto, com o protocolo já destacado — só esse aviso, sem as
@@ -1035,6 +1102,82 @@ def enviar_anexo_chamado(protocolo, arquivo):
 def atualizar_anexo_chamado(protocolo, anexo_url):
     if supabase and anexo_url:
         supabase.table("chamados").update({"anexo_url": anexo_url}).eq("protocolo", protocolo).execute()
+
+def listar_comentarios_chamado(protocolo):
+    """Lista o histórico de comentários que os administradores já
+    escreveram num chamado, do mais antigo pro mais novo — usado no
+    popover de "Comentários" no Painel de Controle. Pedido do usuário:
+    fica registrado tudo que já foi comentado (útil quando mais de um
+    administrador atende o mesmo chamado), mas esse histórico nunca
+    aparece pro solicitante dentro do app — só o e-mail avisa ele."""
+    if supabase:
+        res = (
+            supabase.table("comentarios_chamados")
+            .select("autor, texto, anexo_url, created_at")
+            .eq("protocolo", protocolo)
+            .order("created_at", desc=False)
+            .execute()
+        )
+        return res.data if res.data else []
+    return []
+
+def enviar_anexo_comentario(protocolo, arquivo):
+    """Sobe a imagem anexada num comentário pro Supabase Storage — mesmo
+    bucket dos anexos de abertura de chamado, mas numa subpasta própria
+    ("comentarios/<protocolo>/<timestamp>.<ext>") pra não sobrescrever o
+    anexo original do chamado nem o de outro comentário. Devolve a URL
+    pública, ou None se não tiver arquivo/Supabase ou o upload falhar (o
+    comentário em si já foi salvo antes disso, então um anexo com
+    problema não impede o comentário/e-mail de ir — só fica sem imagem)."""
+    if not supabase or not arquivo:
+        return None
+    try:
+        extensao = arquivo.name.split(".")[-1].lower() if "." in arquivo.name else "bin"
+        protocolo_seguro = protocolo.lstrip("#").replace("/", "-")
+        marca_tempo = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
+        caminho = f"comentarios/{protocolo_seguro}/{marca_tempo}.{extensao}"
+        supabase.storage.from_(NOME_BUCKET_ANEXOS).upload(
+            path=caminho,
+            file=arquivo.getvalue(),
+            file_options={"content-type": arquivo.type or "application/octet-stream"},
+        )
+        resultado = supabase.storage.from_(NOME_BUCKET_ANEXOS).get_public_url(caminho)
+        if isinstance(resultado, dict):
+            return resultado.get("publicURL") or resultado.get("public_url") or resultado.get("data", {}).get("publicUrl")
+        return resultado
+    except Exception as erro:
+        print(f"[comentario] Falha ao enviar anexo do comentário do chamado {protocolo}: {erro}")
+        return None
+
+def adicionar_comentario_chamado(protocolo, autor, texto, arquivo_anexo, email_destino, nome_solicitante, assunto_chamado):
+    """Salva um novo comentário do administrador sobre o chamado (fica no
+    histórico, nunca sobrescreve os anteriores) e avisa o solicitante por
+    e-mail, com o mesmo texto escrito e, se houver, a imagem anexada.
+    Pedido do usuário: uma forma de tirar dúvida ou comunicar algo sobre o
+    chamado (além do status) sem precisar chamar o solicitante no
+    WhatsApp — o comentário fica só no e-mail, não aparece no app pra ele.
+    Retorna True/False conforme o envio do e-mail (pro toast de aviso)."""
+    anexo_url = enviar_anexo_comentario(protocolo, arquivo_anexo) if arquivo_anexo is not None else None
+
+    if supabase:
+        supabase.table("comentarios_chamados").insert(
+            {
+                "protocolo": protocolo,
+                "autor": autor,
+                "texto": texto,
+                "anexo_url": anexo_url,
+            }
+        ).execute()
+
+    return enviar_email_comentario_chamado(
+        email_destino=email_destino,
+        nome_solicitante=nome_solicitante,
+        protocolo=protocolo,
+        assunto_chamado=assunto_chamado,
+        autor_comentario=autor,
+        texto_comentario=texto,
+        anexo_url=anexo_url,
+    )
 
 def listar_chamados():
     if supabase:
@@ -2862,6 +3005,25 @@ st.markdown(
             margin-top: 0 !important;
         }}
 
+        /* Coluna "Comentários": desfaz o estilo do botãozinho "▾" acima (não
+           serve aqui — o botão precisa mostrar "💬 (n)" por inteiro, não um
+           quadradinho de 18x18px sobreposto no canto). */
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-comentarios) [data-testid="stPopover"] {{
+            position: static !important;
+            width: 100% !important;
+        }}
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-comentarios) [data-testid="stPopover"] button {{
+            min-height: 32px !important;
+            height: auto !important;
+            width: auto !important;
+            min-width: 64px !important;
+            padding: 4px 12px !important;
+            font-size: 13px !important;
+            line-height: normal !important;
+            border-radius: 6px !important;
+            margin-top: 0 !important;
+        }}
+
         .texto-descricao-completa {{
             max-width: 320px;
             white-space: normal;
@@ -3156,7 +3318,7 @@ st.markdown(
 
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] {{
                 flex-wrap: nowrap !important;
-                min-width: 1610px !important;
+                min-width: 1780px !important;
             }}
 
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
@@ -3177,6 +3339,7 @@ st.markdown(
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ width: 220px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ width: 60px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ width: 170px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(13) {{ width: 170px !important; }}
 
             /* Com espaço de sobra, os títulos (nowrap, já definido no
                .header-box padrão) e os textos das células (que agora podem
@@ -3375,10 +3538,10 @@ st.markdown(
             /* Reproduz as mesmas proporções de coluna do computador
                (Atendente 1.3, Protocolo 1.1, Solicitante 1.2, E-mail 1.6,
                Telefone 1.0, Empresa 1.1, Ferramenta 1.2, Severidade 1.1,
-               Assunto 1.3, Descrição 1.8, Anexo 0.6, Status 1.5 — mesmos
-               valores do col_widths do Python), já que a regra geral de
-               "vira card empilhado" força 100%/coluna única e precisa ser
-               desfeita aqui. */
+               Assunto 1.3, Descrição 1.8, Anexo 0.6, Status 1.5,
+               Comentários 1.4 — mesmos valores do col_widths do Python),
+               já que a regra geral de "vira card empilhado" força
+               100%/coluna única e precisa ser desfeita aqui. */
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
                 width: auto !important;
                 min-width: 0 !important;
@@ -3395,6 +3558,7 @@ st.markdown(
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ flex: 1.8 1 0px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ flex: 0.6 1 0px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ flex: 1.5 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(13) {{ flex: 1.4 1 0px !important; }}
 
             .st-key-painel_admin_tabela .mobile-label {{
                 display: none !important;
@@ -4249,8 +4413,11 @@ def painel_admin():
     # 1. 12 BLOCOS DE TITULOS/CABEÇALHO (Telefone e Anexo adicionados a
     # pedido do usuário — telefone de contato da unidade/filial/parceiro, e
     # um ícone pra abrir o arquivo anexado na abertura do chamado).
-    col_widths = [1.3, 1.1, 1.2, 1.6, 1.0, 1.1, 1.2, 1.1, 1.3, 1.8, 0.6, 1.5]
-    headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Telefone", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Anexo", "Status"]
+    # Coluna "Comentários" adicionada a pedido do usuário: cada chamado
+    # ganha um botão que abre o histórico de comentários do administrador
+    # e permite escrever um novo (ver painel_admin_tabela mais abaixo).
+    col_widths = [1.3, 1.1, 1.2, 1.6, 1.0, 1.1, 1.2, 1.1, 1.3, 1.8, 0.6, 1.5, 1.4]
+    headers = ["Atendente", "Protocolo", "Solicitante", "E-mail", "Telefone", "Empresa", "Ferramenta", "Severidade", "Assunto", "Descrição", "Anexo", "Status", "Comentários"]
 
     def _celula_previa_com_popover(col, rotulo_mobile, texto, limite):
         """Mostra uma prévia curta do texto e, só quando ele for maior que a
@@ -4285,7 +4452,7 @@ def painel_admin():
         for c in chamados_pagina:
             (
                 c_atend, c_proto, c_nome, c_mail, c_tel, c_emp,
-                c_ferr, c_sev, c_ass, c_desc, c_anexo, c_stat,
+                c_ferr, c_sev, c_ass, c_desc, c_anexo, c_stat, c_coment,
             ) = st.columns(col_widths)
 
             # --- 1ª COLUNA: SELETOR DE ATENDENTE ---
@@ -4444,6 +4611,95 @@ def painel_admin():
                 # rerun com escopo "fragment": atualiza só este painel,
                 # sem re-executar o app inteiro (login, CSS, imagens etc.)
                 st.rerun(scope="fragment")
+
+            # --- COLUNA DE COMENTÁRIOS ---
+            # Pedido do usuário: um jeito de o administrador escrever uma
+            # mensagem sobre o chamado (tirar dúvida, avisar que foi
+            # concluído com mais detalhes, etc.) sem mudar o status nem
+            # chamar o solicitante por outro canal. Fica num histórico
+            # (pode ter mais de um administrador comentando o mesmo
+            # chamado ao longo do tempo) e cada comentário novo dispara UM
+            # e-mail pro solicitante, com o mesmo texto — o comentário em
+            # si nunca aparece pra ele dentro do app.
+            with c_coment:
+                # Marcador invisível só pra CSS conseguir identificar essa
+                # coluna (:has(.marcador-coluna-comentarios)) e não aplicar
+                # nela o estilo de botãozinho "▾" (18x18px, sobreposto no
+                # canto) usado nas outras colunas com popover — aqui o botão
+                # precisa ficar com o texto "💬 (n)" legível e por conta
+                # própria, sem herdar aquele tamanho minúsculo.
+                st.markdown('<span class="marcador-coluna-comentarios"></span>', unsafe_allow_html=True)
+                comentarios_chamado = listar_comentarios_chamado(c['protocolo'])
+                rotulo_comentarios = (
+                    f"💬 ({len(comentarios_chamado)})" if comentarios_chamado else "💬"
+                )
+                with st.popover(rotulo_comentarios, help="Comentários do administrador"):
+                    st.markdown("**Histórico de comentários**")
+                    if comentarios_chamado:
+                        for comentario in comentarios_chamado:
+                            _data_comentario = formatar_data_local(comentario.get("created_at"))
+                            st.markdown(
+                                f'<div class="celula-texto texto-descricao-completa">'
+                                f'<b>{html.escape(str(comentario.get("autor") or "-"))}</b> '
+                                f'<span style="opacity:0.7;font-size:11px;">({_data_comentario})</span><br>'
+                                f'{html.escape(str(comentario.get("texto") or "")).replace(chr(10), "<br>")}'
+                                f'</div>',
+                                unsafe_allow_html=True,
+                            )
+                            if comentario.get("anexo_url"):
+                                st.markdown(
+                                    f'<a href="{html.escape(comentario["anexo_url"])}" target="_blank" rel="noopener">Ver imagem anexada</a>',
+                                    unsafe_allow_html=True,
+                                )
+                            st.markdown("---")
+                    else:
+                        st.caption("Nenhum comentário ainda.")
+
+                    # Contador de versão do uploader: como o Streamlit não
+                    # deixa "limpar" um file_uploader já enviado só
+                    # reatribuindo o session_state dele, a cada comentário
+                    # enviado com sucesso incrementamos esse número — o que
+                    # troca a "key" do uploader e faz ele nascer vazio de
+                    # novo no próximo rerun (em vez de continuar mostrando o
+                    # mesmo arquivo já enviado, o que podia levar a clicar
+                    # "Enviar comentário" de novo sem querer e mandar o
+                    # mesmo anexo/e-mail duplicado).
+                    chave_versao_uploader = f"_comentario_versao_{c['protocolo']}"
+                    versao_uploader = st.session_state.get(chave_versao_uploader, 0)
+
+                    texto_novo_comentario = st.text_area(
+                        "Novo comentário",
+                        key=f"novo_comentario_{c['protocolo']}",
+                        label_visibility="collapsed",
+                        placeholder="Escreva uma mensagem para o solicitante...",
+                    )
+                    anexo_novo_comentario = st.file_uploader(
+                        "Anexar imagem (opcional)",
+                        type=["png", "jpg", "jpeg"],
+                        key=f"anexo_comentario_{c['protocolo']}_{versao_uploader}",
+                    )
+                    if st.button("Enviar comentário", key=f"btn_comentario_{c['protocolo']}"):
+                        if not texto_novo_comentario or not texto_novo_comentario.strip():
+                            st.warning("Escreva o comentário antes de enviar.")
+                        else:
+                            email_comentario_enviado = adicionar_comentario_chamado(
+                                protocolo=c['protocolo'],
+                                autor=st.session_state.get("usuario_logado", "Administrador"),
+                                texto=texto_novo_comentario.strip(),
+                                arquivo_anexo=anexo_novo_comentario,
+                                email_destino=c['email_solicitante'],
+                                nome_solicitante=c['nome_solicitante'],
+                                assunto_chamado=c['assunto'],
+                            )
+                            if email_comentario_enviado:
+                                st.toast(f"Comentário salvo e e-mail enviado para {c['nome_solicitante']}.")
+                            else:
+                                st.toast("Comentário salvo, mas o e-mail para o solicitante falhou.")
+                            # Limpa o texto digitado e "reseta" o uploader
+                            # pra próxima vez que esse popover for aberto.
+                            st.session_state[f"novo_comentario_{c['protocolo']}"] = ""
+                            st.session_state[chave_versao_uploader] = versao_uploader + 1
+                            st.rerun(scope="fragment")
 
     # ---- CONTROLES DE PAGINAÇÃO (embaixo da tabela) ----
     if total_paginas_admin > 1:

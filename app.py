@@ -3018,10 +3018,22 @@ st.markdown(
             min-height: auto !important;
             height: auto !important;
             width: 100% !important;
+            display: flex !important;
             justify-content: center !important;
         }}
         .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-protocolo) .stButton > button:hover {{
             color: #7dd3fc !important;
+        }}
+        /* Pedido do usuário: o código do protocolo ficava "colado" na
+           esquerda em vez de centralizado — "justify-content:center" no
+           botão não bastava porque o texto vem dentro de um <div>/<p>
+           interno que o Streamlit desenha com largura só do próprio texto
+           (mesmo caso do ícone do Chat, resolvido do mesmo jeito). */
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-protocolo) .stButton > button > div,
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-protocolo) .stButton > button p {{
+            width: 100% !important;
+            text-align: center !important;
+            justify-content: center !important;
         }}
 
         /* Coluna "Comentários" (cabeçalho só com o ícone 💬, sem título):
@@ -4618,9 +4630,16 @@ def _dialog_detalhe_chamado(c):
             chave_enviando_resposta = f"_enviando_resposta_{protocolo}"
             enviando_resposta = st.session_state.get(chave_enviando_resposta, False)
 
+            # A key do campo de texto é "versionada" com o mesmo contador do
+            # anexo — é assim (e não escrevendo "" direto no session_state
+            # depois de enviar) que dá pra "limpar" o campo pra próxima
+            # mensagem: o Streamlit não deixa mudar o session_state de um
+            # campo de texto que já foi criado nessa mesma execução (dava o
+            # erro "StreamlitWidgetAlreadyInstantiatedError" relatado pelo
+            # usuário) — só dá pra "resetar" nascendo com uma key nova.
             texto_novo_comentario = st.text_area(
                 "Mensagem",
-                key=f"novo_comentario_{protocolo}",
+                key=f"novo_comentario_{protocolo}_{versao_uploader}",
                 placeholder="Escreva uma mensagem para o solicitante...",
                 disabled=enviando_resposta,
             )
@@ -4671,7 +4690,6 @@ def _dialog_detalhe_chamado(c):
                     st.toast(f"Mensagem enviada para {c['nome_solicitante']}.")
                 else:
                     st.toast("Mensagem salva, mas o e-mail para o solicitante falhou.")
-                st.session_state[f"novo_comentario_{protocolo}"] = ""
                 st.session_state[chave_versao_uploader] = versao_uploader + 1
                 st.session_state[chave_responder_aberto] = False
                 st.session_state[chave_enviando_resposta] = False

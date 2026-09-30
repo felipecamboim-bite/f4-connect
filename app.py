@@ -5039,6 +5039,40 @@ def _grafico_barras_contagem(lista_chamados, campo, rotulo, valor_vazio="Não in
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=key)
 
 
+def _grafico_severidade_colunas(lista_chamados, key=None):
+    """Gráfico de colunas (barras verticais) com a quantidade de chamados por
+    severidade, sempre na ordem Crítica > Alta > Média > Baixa, cada barra na
+    cor correspondente (mesmas cores das bolinhas 🔴🟠🟡🟢 usadas na tabela)."""
+    contagem = {s: 0 for s in OPCOES_SEVERIDADE_INSIGHTS}
+    for c in lista_chamados:
+        sev_normalizada = normalizar_severidade(c.get("severidade"))
+        if sev_normalizada in contagem:
+            contagem[sev_normalizada] += 1
+
+    df = pd.DataFrame({
+        "Severidade": list(contagem.keys()),
+        "Quantidade": list(contagem.values()),
+    })
+
+    fig = px.bar(
+        df, x="Severidade", y="Quantidade", text="Quantidade",
+        color="Severidade", color_discrete_map=CORES_SEVERIDADE_INSIGHTS,
+    )
+    fig.update_traces(textposition="outside", cliponaxis=False, width=0.35)
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="#FFFFFF",
+        xaxis_title=None,
+        yaxis_title=None,
+        showlegend=False,
+        margin=dict(t=10, b=10, l=10, r=10),
+        height=260,
+        bargap=0.5,
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=key)
+
+
 def painel_insights():
     st.markdown(
         '<div class="titulo-painel-chamados">Insights - Central de Chamados</div>',
@@ -5237,50 +5271,6 @@ def painel_insights():
             )
             st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False}, key="grafico_status_insights")
 
-        # --- CONTAGEM POR SEVERIDADE ---
-        # Pedido do usuário: mesma lógica do "Chamados por status" (métricas +
-        # pizza), só que agrupando por severidade em vez de status. Entra
-        # também no filtro de Severidade lá em cima — se o admin filtrar
-        # "Crítica", esse indicador (e todos os outros abaixo, como "Chamados
-        # por atendente") já mostra só os chamados daquela severidade.
-        st.markdown('<div class="subtitulo-insights">Quantidade por severidade</div>', unsafe_allow_html=True)
-
-        contagem_severidade = {s: 0 for s in OPCOES_SEVERIDADE_INSIGHTS}
-        for c in chamados_periodo:
-            sev_normalizada = normalizar_severidade(c.get("severidade"))
-            if sev_normalizada in contagem_severidade:
-                contagem_severidade[sev_normalizada] += 1
-
-        cols_metricas_severidade = st.columns(len(OPCOES_SEVERIDADE_INSIGHTS))
-        for col, sev_nome in zip(cols_metricas_severidade, OPCOES_SEVERIDADE_INSIGHTS):
-            col.metric(sev_nome, contagem_severidade[sev_nome])
-
-        df_severidade = pd.DataFrame({
-            "Severidade": list(contagem_severidade.keys()),
-            "Quantidade": list(contagem_severidade.values()),
-        })
-        df_severidade = df_severidade[df_severidade["Quantidade"] > 0]
-        if not df_severidade.empty:
-            fig_severidade = px.pie(
-                df_severidade, names="Severidade", values="Quantidade", hole=0.5,
-                color="Severidade", color_discrete_map=CORES_SEVERIDADE_INSIGHTS,
-            )
-            fig_severidade.update_traces(
-                texttemplate="<b>%{label}</b><br>%{percent}",
-                textposition="outside",
-                textfont=dict(color="#FFFFFF", size=13),
-                automargin=True,
-            )
-            fig_severidade.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#FFFFFF",
-                showlegend=False,
-                margin=dict(t=50, b=50, l=70, r=70),
-                height=300,
-            )
-            st.plotly_chart(fig_severidade, use_container_width=True, config={"displayModeBar": False}, key="grafico_severidade_insights")
-
         # --- A MESMA COISA, SÓ ENTRE OS CHAMADOS JÁ ENCERRADOS ---
         status_encerrados = ["Concluído", "Encerrado pelo solicitante"]
         chamados_encerrados = [c for c in chamados_periodo if c.get("status") in status_encerrados]
@@ -5337,9 +5327,18 @@ def painel_insights():
             st.markdown('<div class="subtitulo-insights">Empresa com mais chamados</div>', unsafe_allow_html=True)
             _grafico_barras_contagem(chamados_periodo, "empresa", "Empresa", key="grafico_empresa_total")
 
-        # --- QUEM MAIS ATENDEU ---
-        st.markdown('<div class="subtitulo-insights" style="text-align: center;">Chamados por atendente</div>', unsafe_allow_html=True)
-        _grafico_barras_contagem(chamados_periodo, "atendente", "Atendente", valor_vazio="Não atribuído", key="grafico_atendente")
+        # --- QUANTIDADE POR SEVERIDADE E QUEM MAIS ATENDEU ---
+        # Pedido do usuário: severidade em formato de coluna (não mais rosca),
+        # lado a lado com "Chamados por atendente". Os dois entram no filtro
+        # de Severidade lá em cima — se o admin filtrar "Crítica", ambos já
+        # mostram só os chamados daquela severidade.
+        col_severidade, col_atendente = st.columns(2)
+        with col_severidade:
+            st.markdown('<div class="subtitulo-insights">Quantidade por severidade</div>', unsafe_allow_html=True)
+            _grafico_severidade_colunas(chamados_periodo, key="grafico_severidade_insights")
+        with col_atendente:
+            st.markdown('<div class="subtitulo-insights">Chamados por atendente</div>', unsafe_allow_html=True)
+            _grafico_barras_contagem(chamados_periodo, "atendente", "Atendente", valor_vazio="Não atribuído", key="grafico_atendente")
 
 
 FUSO_BRASIL = timezone(timedelta(hours=-3))  # UTC-3 (Brasília/RS, sem horário de verão atualmente)

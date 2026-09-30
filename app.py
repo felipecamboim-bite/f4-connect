@@ -3350,6 +3350,16 @@ st.markdown(
         @media (min-width: 1001px) {{
             .st-key-painel_admin_tabela {{
                 overflow-x: auto !important;
+                /* Pedido do usuário: com o grid reduzido a 6 colunas, a
+                   tabela em si ficou bem mais estreita (~1260px) do que
+                   antes (18 colunas) — mas esse fundo cinza-escuro, sem
+                   isso, continuava esticando até preencher 100% da largura
+                   da tela (como um <div> normal), sobrando um espaço vazio
+                   à direita da tabela. Com "width: fit-content", o fundo
+                   agora encolhe pra abraçar só o tamanho real da tabela (e
+                   ainda cabe 100% da tela, se a tabela precisar disso). */
+                width: fit-content !important;
+                max-width: 100% !important;
                 /* Pedido do usuário: mostrava só ~4 linhas de chamado antes
                    de precisar rolar dentro da tabela — pediu pra mostrar
                    umas 10. Trocado de um limite relativo à tela

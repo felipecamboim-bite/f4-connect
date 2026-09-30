@@ -526,6 +526,17 @@ CORES_STATUS_INSIGHTS = {
     "Encerrado pelo solicitante": "#72A703",
 }
 
+# Cores do indicador "Quantidade por severidade" no Insights — mesmas cores
+# das bolinhas usadas na tabela de Chamados (🔴🟠🟡🟢), pra manter a
+# associação visual entre as duas telas.
+CORES_SEVERIDADE_INSIGHTS = {
+    "Crítica": "#E53935",
+    "Alta": "#FB8C00",
+    "Média": "#FDD835",
+    "Baixa": "#43A047",
+}
+OPCOES_SEVERIDADE_INSIGHTS = ["Crítica", "Alta", "Média", "Baixa"]
+
 # Pedido do usuário: nenhum emoji nas telas do solicitante nem nos rótulos
 # que ele escolhe (por isso as opções de severidade abaixo não têm mais a
 # bolinha colorida embutida no valor). A bolinha continua existindo, mas só
@@ -3005,6 +3016,19 @@ st.markdown(
            detalhes do chamado) em vez de texto simples — estilizado pra
            continuar parecendo aquele texto azul/negrito de antes, sem cara
            de botão cinza padrão do Streamlit. */
+        /* Pedido do usuário: o código do protocolo ficava "colado" na
+           esquerda em vez de centralizado. Tentativas anteriores mexendo no
+           <button> ou na coluna toda (align-items) não pegaram — essa
+           última, na real, deixou o botão desalinhado verticalmente do
+           seletor de Status da mesma linha (column ganhou altura extra por
+           empilhar os elementos). O que já funciona nesse arquivo pros
+           botões de paginação é centralizar o "wrapper" que o Streamlit
+           cria em volta de TODO botão (a div .stButton, pai direto do
+           <button>) — mesma receita aplicada aqui. */
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-protocolo) .stButton {{
+            display: flex !important;
+            justify-content: center !important;
+        }}
         .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-protocolo) .stButton > button {{
             background: transparent !important;
             border: none !important;
@@ -3017,23 +3041,11 @@ st.markdown(
             padding: 4px 6px !important;
             min-height: auto !important;
             height: auto !important;
-            width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
+            width: auto !important;
+            margin-top: 0 !important;
         }}
         .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-protocolo) .stButton > button:hover {{
             color: #7dd3fc !important;
-        }}
-        /* Pedido do usuário: o código do protocolo ficava "colado" na
-           esquerda em vez de centralizado — "justify-content:center" no
-           botão não bastava porque o texto vem dentro de um <div>/<p>
-           interno que o Streamlit desenha com largura só do próprio texto
-           (mesmo caso do ícone do Chat, resolvido do mesmo jeito). */
-        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-protocolo) .stButton > button > div,
-        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-protocolo) .stButton > button p {{
-            width: 100% !important;
-            text-align: center !important;
-            justify-content: center !important;
         }}
 
         /* Coluna "Comentários" (cabeçalho só com o ícone 💬, sem título):
@@ -4936,7 +4948,7 @@ def painel_admin():
             with c_proto:
                 st.markdown('<span class="celula-protocolo" style="display:none;"></span>', unsafe_allow_html=True)
                 st.markdown('<span class="marcador-coluna-protocolo"></span>', unsafe_allow_html=True)
-                if st.button(c.get("protocolo", "-"), key=f"abrir_detalhe_{c['protocolo']}", help="Ver detalhes do chamado", use_container_width=True):
+                if st.button(c.get("protocolo", "-"), key=f"abrir_detalhe_{c['protocolo']}", help="Ver detalhes do chamado"):
                     st.session_state["_chamado_detalhe_aberto"] = c["protocolo"]
                     st.rerun(scope="fragment")
 
@@ -4971,7 +4983,7 @@ def painel_admin():
 # ------------------ VISÃO ADMIN: INSIGHTS (PAINEL TIPO BI) ------------------
 # Pedido do usuário: um painel de indicadores/gráficos sobre os chamados
 # (quantos aguardando/em atendimento/concluídos/cancelados/encerrados,
-# ferramenta e empresa com mais chamados — total e só entre os encerrados —
+# quantidade por severidade, ferramenta e empresa com mais chamados
 # e quem mais atendeu), pra acompanhar o atendimento no dia a dia. Os
 # gráficos sempre leem os chamados direto do Supabase (mesma listar_chamados()
 # usada no painel de Chamados), então não existe nada pra "atualizar
@@ -5045,10 +5057,10 @@ def painel_insights():
             "Últimos 90 dias": 90,
             "Tudo": None,
         }
-        # Linha de filtros: Período, Empresa, Ferramenta e Atendente lado a
-        # lado — pedido do usuário pra poder cruzar os Insights por qualquer
-        # um desses campos, além do período.
-        col_periodo, col_empresa, col_ferramenta, col_atendente = st.columns(4)
+        # Linha de filtros: Período, Empresa, Ferramenta, Atendente e
+        # Severidade lado a lado — pedido do usuário pra poder cruzar os
+        # Insights por qualquer um desses campos, além do período.
+        col_periodo, col_empresa, col_ferramenta, col_atendente, col_severidade = st.columns(5)
         with col_periodo:
             periodo_escolhido = st.selectbox(
                 "Período",
@@ -5073,6 +5085,12 @@ def painel_insights():
                 "Atendente",
                 ["Todos"] + OPCOES_ATENDENTES,
                 key="select_atendente_insights",
+            )
+        with col_severidade:
+            severidade_filtro = st.selectbox(
+                "Severidade",
+                ["Todas"] + OPCOES_SEVERIDADE_INSIGHTS,
+                key="select_severidade_insights",
             )
 
         # --- PERÍODO "PERSONALIZADO" ---
@@ -5166,6 +5184,11 @@ def painel_insights():
                 c for c in chamados_periodo
                 if (c.get("atendente") or "Não atribuído") == atendente_filtro
             ]
+        if severidade_filtro != "Todas":
+            chamados_periodo = [
+                c for c in chamados_periodo
+                if normalizar_severidade(c.get("severidade")) == severidade_filtro
+            ]
 
         if not chamados_periodo:
             st.info("Nenhum chamado encontrado com os filtros selecionados.")
@@ -5213,6 +5236,50 @@ def painel_insights():
                 height=300,
             )
             st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False}, key="grafico_status_insights")
+
+        # --- CONTAGEM POR SEVERIDADE ---
+        # Pedido do usuário: mesma lógica do "Chamados por status" (métricas +
+        # pizza), só que agrupando por severidade em vez de status. Entra
+        # também no filtro de Severidade lá em cima — se o admin filtrar
+        # "Crítica", esse indicador (e todos os outros abaixo, como "Chamados
+        # por atendente") já mostra só os chamados daquela severidade.
+        st.markdown('<div class="subtitulo-insights">Quantidade por severidade</div>', unsafe_allow_html=True)
+
+        contagem_severidade = {s: 0 for s in OPCOES_SEVERIDADE_INSIGHTS}
+        for c in chamados_periodo:
+            sev_normalizada = normalizar_severidade(c.get("severidade"))
+            if sev_normalizada in contagem_severidade:
+                contagem_severidade[sev_normalizada] += 1
+
+        cols_metricas_severidade = st.columns(len(OPCOES_SEVERIDADE_INSIGHTS))
+        for col, sev_nome in zip(cols_metricas_severidade, OPCOES_SEVERIDADE_INSIGHTS):
+            col.metric(sev_nome, contagem_severidade[sev_nome])
+
+        df_severidade = pd.DataFrame({
+            "Severidade": list(contagem_severidade.keys()),
+            "Quantidade": list(contagem_severidade.values()),
+        })
+        df_severidade = df_severidade[df_severidade["Quantidade"] > 0]
+        if not df_severidade.empty:
+            fig_severidade = px.pie(
+                df_severidade, names="Severidade", values="Quantidade", hole=0.5,
+                color="Severidade", color_discrete_map=CORES_SEVERIDADE_INSIGHTS,
+            )
+            fig_severidade.update_traces(
+                texttemplate="<b>%{label}</b><br>%{percent}",
+                textposition="outside",
+                textfont=dict(color="#FFFFFF", size=13),
+                automargin=True,
+            )
+            fig_severidade.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#FFFFFF",
+                showlegend=False,
+                margin=dict(t=50, b=50, l=70, r=70),
+                height=300,
+            )
+            st.plotly_chart(fig_severidade, use_container_width=True, config={"displayModeBar": False}, key="grafico_severidade_insights")
 
         # --- A MESMA COISA, SÓ ENTRE OS CHAMADOS JÁ ENCERRADOS ---
         status_encerrados = ["Concluído", "Encerrado pelo solicitante"]
@@ -5269,20 +5336,6 @@ def painel_insights():
         with col_emp:
             st.markdown('<div class="subtitulo-insights">Empresa com mais chamados</div>', unsafe_allow_html=True)
             _grafico_barras_contagem(chamados_periodo, "empresa", "Empresa", key="grafico_empresa_total")
-
-        col_ferr_enc, col_emp_enc = st.columns(2)
-        with col_ferr_enc:
-            st.markdown('<div class="subtitulo-insights">Ferramenta com mais chamados encerrados</div>', unsafe_allow_html=True)
-            if chamados_encerrados:
-                _grafico_barras_contagem(chamados_encerrados, "ferramenta", "Ferramenta", key="grafico_ferramenta_encerrados")
-            else:
-                st.caption("Nenhum chamado encerrado no período.")
-        with col_emp_enc:
-            st.markdown('<div class="subtitulo-insights">Empresa com mais chamados encerrados</div>', unsafe_allow_html=True)
-            if chamados_encerrados:
-                _grafico_barras_contagem(chamados_encerrados, "empresa", "Empresa", key="grafico_empresa_encerrados")
-            else:
-                st.caption("Nenhum chamado encerrado no período.")
 
         # --- QUEM MAIS ATENDEU ---
         st.markdown('<div class="subtitulo-insights" style="text-align: center;">Chamados por atendente</div>', unsafe_allow_html=True)

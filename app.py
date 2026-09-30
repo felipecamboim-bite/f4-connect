@@ -2,6 +2,7 @@ import random
 import string
 import hashlib
 import html
+import inspect
 import re
 import secrets
 import types
@@ -1963,14 +1964,21 @@ st.markdown(
         /* ========================================================= */
         .st-key-notificacao_pendentes {{
             position: relative !important;
+            height: auto !important;
+            min-height: 0 !important;
         }}
 
         /* Bolinha vermelha com o número em branco, encostada no canto
            direito do botão "Notificações" (mesmo botão-texto dos outros
-           itens do menu — sem estilo próprio de botão aqui). */
+           itens do menu — sem estilo próprio de botão aqui). Pedido do
+           usuário: estava desalinhada do texto — em vez de um "top" fixo
+           (que só acerta se o botão tiver sempre a mesma altura exata),
+           agora centraliza verticalmente relativo ao próprio contêiner do
+           botão, então acompanha a altura real dele. */
         .badge-notificacao {{
             position: absolute !important;
-            top: 4px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
             right: 10px !important;
             min-width: 17px !important;
             height: 17px !important;
@@ -3354,7 +3362,13 @@ st.markdown(
                    visível, dá pra rolar a página normalmente até a
                    paginação — não fica mais cortado. */
                 max-height: 560px !important;
-                min-height: 300px !important;
+                /* Pedido do usuário: com o grid enxuto (6 colunas, linhas
+                   de uma linha só) sobrava um espaço vazio embaixo quando
+                   tinha poucos chamados na página/filtro, porque essa altura
+                   mínima forçava o fundo escuro a ficar "esticado" mesmo sem
+                   conteúdo pra preencher. Sem min-height, o fundo agora
+                   acompanha a quantidade real de linhas — só rola (até os
+                   560px acima) quando realmente tiver muito chamado. */
                 overflow-y: auto !important;
             }}
 
@@ -4410,6 +4424,28 @@ def _seletor_atendente_chamado(c, sufixo_key, container=None):
         st.rerun(scope="fragment")
 
 
+# Correção de bug relatado pelo usuário: a janela de detalhes estava
+# "abrindo sozinha" de tempos em tempos. Causa: esse painel se atualiza
+# sozinho a cada 20s (run_every="20s"), e a cada atualização a gente
+# checava "tem chamado marcado pra abrir?" e chamava a janela de novo — só
+# que fechar pelo X/Esc/clique fora, por padrão, NÃO avisa o nosso código
+# (só o botão "Fechar" avisava, limpando esse controle). Resultado: fechou
+# pelo X, 20s depois a atualização automática rodava de novo, via encontrava
+# o controle ainda "aberto" e reabria a janela sozinha. Streamlit tem um
+# jeito de avisar quando o X/Esc/fora é usado (on_dismiss) — só existe em
+# versões mais novas, então checamos com inspect antes de usar, pra nunca
+# quebrar o app se a versão publicada for mais antiga.
+def _ao_fechar_dialog_detalhe_chamado():
+    st.session_state["_chamado_detalhe_aberto"] = None
+
+_kwargs_dialog_detalhe_chamado = {"width": "large"}
+try:
+    if "on_dismiss" in inspect.signature(st.dialog).parameters:
+        _kwargs_dialog_detalhe_chamado["on_dismiss"] = _ao_fechar_dialog_detalhe_chamado
+except Exception:
+    pass
+
+
 # Pedido do usuário: clicar no Protocolo, no grid, abre uma janela com
 # "todos os dados" do chamado — de cima pra baixo, do registro mais
 # recente pro mais antigo, mostrando o horário de cada etapa (abertura,
@@ -4418,7 +4454,7 @@ def _seletor_atendente_chamado(c, sufixo_key, container=None):
 # "Responder" abre o formulário de nova mensagem só quando clicado, em vez
 # de ficar sempre visível. Datas continuam vindo das mesmas colunas de
 # sempre no Supabase (nada mudou no banco).
-@st.dialog("Detalhes do Chamado", width="large")
+@st.dialog("Detalhes do Chamado", **_kwargs_dialog_detalhe_chamado)
 def _dialog_detalhe_chamado(c):
     protocolo = c.get("protocolo", "-")
     st.markdown(f"### {protocolo}")

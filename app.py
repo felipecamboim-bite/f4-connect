@@ -2918,6 +2918,15 @@ st.markdown(
             backdrop-filter: blur(6px);
             white-space: nowrap;
             overflow: hidden;
+            /* Centralização "de verdade" via flex (não só text-align) —
+               pedido do usuário: o ícone do cabeçalho da coluna de
+               Comentários (💬) ficava grudado na esquerda em vez de
+               centralizado, mesmo com text-align:center — com display:flex
+               ele centraliza certinho, texto ou ícone. */
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
         }}
 
         .chamado-card-container {{
@@ -2987,6 +2996,29 @@ st.markdown(
             margin-top: 0 !important;
         }}
 
+        /* Coluna "Protocolo": agora é um botão (clicar abre a tela de
+           detalhes do chamado) em vez de texto simples — estilizado pra
+           continuar parecendo aquele texto azul/negrito de antes, sem cara
+           de botão cinza padrão do Streamlit. */
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-protocolo) .stButton > button {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: #38bdf8 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            text-decoration: underline !important;
+            padding: 4px 6px !important;
+            min-height: auto !important;
+            height: auto !important;
+            width: 100% !important;
+            justify-content: center !important;
+        }}
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-protocolo) .stButton > button:hover {{
+            color: #7dd3fc !important;
+        }}
+
         /* Coluna "Comentários" (cabeçalho só com o ícone 💬, sem título):
            desfaz o estilo do botãozinho "▾" acima (não serve aqui) e faz o
            botão virar um "campo padrão" igual ao pill do Atendente/Status
@@ -3014,6 +3046,17 @@ st.markdown(
             font-size: 13px !important;
             line-height: normal !important;
             border-radius: 20px !important;
+        }}
+        /* Garante que o ícone/texto dentro do botão (o wrapper interno que o
+           Streamlit cria dentro do <button>) também fique centralizado,
+           mesmo que esse wrapper "encolha" para o tamanho do conteúdo —
+           sem isso, em alguns navegadores a "nuvenzinha" 💬 ficava puxada
+           pra esquerda dentro da pílula em vez de no centro dela. */
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-comentarios) [data-testid="stPopover"] button > div,
+        .st-key-painel_admin_tabela [data-testid="stColumn"]:has(.marcador-coluna-comentarios) [data-testid="stPopover"] button p {{
+            width: 100% !important;
+            text-align: center !important;
+            justify-content: center !important;
         }}
 
         .texto-descricao-completa {{
@@ -3317,7 +3360,7 @@ st.markdown(
 
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] {{
                 flex-wrap: nowrap !important;
-                min-width: 2550px !important;
+                min-width: 1260px !important;
             }}
 
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
@@ -3326,24 +3369,14 @@ st.markdown(
                 min-width: 0 !important;
             }}
 
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1)  {{ width: 140px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2)  {{ width: 110px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3)  {{ width: 130px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4)  {{ width: 190px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ width: 120px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ width: 130px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ width: 110px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ width: 150px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ width: 220px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ width: 60px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ width: 170px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ width: 140px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(13) {{ width: 140px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(14) {{ width: 140px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(15) {{ width: 140px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(16) {{ width: 140px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(17) {{ width: 140px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(18) {{ width: 170px !important; }}
+            /* Grid reduzido a 6 colunas a pedido do usuário: Protocolo,
+               Solicitante, Empresa, Assunto, Severidade, Status. */
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1)  {{ width: 150px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2)  {{ width: 220px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3)  {{ width: 180px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4)  {{ width: 320px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ width: 160px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ width: 230px !important; }}
 
             /* Com espaço de sobra, os títulos (nowrap, já definido no
                .header-box padrão) e os textos das células (que agora podem
@@ -3540,35 +3573,20 @@ st.markdown(
                 gap: 6px !important;
             }}
             /* Reproduz as mesmas proporções de coluna do computador
-               (Atendente 1.3, Protocolo 1.1, Solicitante 1.2, E-mail 1.6,
-               Empresa 1.1, Ferramenta 1.2, Severidade 1.1, Assunto 1.3,
-               Descrição 1.8, Anexo 0.6, Status 1.5, Abertura/Em análise/Em
-               atendimento/Concluído/Cancelado/Encerrado 1.3 cada,
-               Comentários 1.4 — mesmos valores do col_widths do Python),
-               já que a regra geral de "vira card empilhado" força
+               (Protocolo 1.1, Solicitante 1.7, Empresa 1.3, Assunto 2.2,
+               Severidade 1.1, Status 1.6 — mesmos valores do col_widths do
+               Python), já que a regra geral de "vira card empilhado" força
                100%/coluna única e precisa ser desfeita aqui. */
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
                 width: auto !important;
                 min-width: 0 !important;
             }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1)  {{ flex: 1.3 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2)  {{ flex: 1.1 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3)  {{ flex: 1.2 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4)  {{ flex: 1.6 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1)  {{ flex: 1.1 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2)  {{ flex: 1.7 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3)  {{ flex: 1.3 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4)  {{ flex: 2.2 1 0px !important; }}
             .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5)  {{ flex: 1.1 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ flex: 1.2 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7)  {{ flex: 1.1 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8)  {{ flex: 1.3 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9)  {{ flex: 1.8 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(10) {{ flex: 0.6 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(11) {{ flex: 1.5 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(12) {{ flex: 1.3 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(13) {{ flex: 1.3 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(14) {{ flex: 1.3 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(15) {{ flex: 1.3 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(16) {{ flex: 1.3 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(17) {{ flex: 1.3 1 0px !important; }}
-            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(18) {{ flex: 1.4 1 0px !important; }}
+            .st-key-painel_admin_tabela [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6)  {{ flex: 1.6 1 0px !important; }}
 
             .st-key-painel_admin_tabela .mobile-label {{
                 display: none !important;
@@ -4298,6 +4316,267 @@ elif _solicitante_logado:
 _ORDEM_SEVERIDADE_RANK = {"Crítica": 4, "Alta": 3, "Média": 2, "Baixa": 1}
 
 
+# Pedido do usuário: reduzir o grid do Painel de Controle a só 6 colunas
+# (Protocolo, Solicitante, Empresa, Assunto, Severidade, Status) e mover
+# todo o resto (Atendente, E-mail, Ferramenta, Descrição, Anexo, as datas
+# de cada etapa e o histórico de mensagens) pra uma tela de detalhes que
+# abre ao clicar no Protocolo. O seletor de Status continua no grid (pedido
+# explícito do usuário) — por isso a lógica dele foi extraída pra cá, pra
+# ser usada tanto na linha do grid quanto dentro da tela de detalhes sem
+# duplicar o código (e sem arriscar os dois ficarem diferentes um do outro).
+def _seletor_status_chamado(c, sufixo_key, container=None):
+    """Desenha o seletor de Status de um chamado (mesma proteção contra
+    múltiplas abas/sessões brigando entre si que já existia aqui) e, se o
+    valor mudar de verdade, salva no banco e dispara o e-mail pro
+    solicitante. `sufixo_key` mantém a key única quando esse mesmo seletor
+    aparece em mais de um lugar da tela ao mesmo tempo (grid + modal)."""
+    alvo = container if container is not None else st
+    protocolo = c["protocolo"]
+    chave_status_widget = f"status_{sufixo_key}_{protocolo}"
+    chave_status_sincronizado = f"_status_sincronizado_{sufixo_key}_{protocolo}"
+    status_no_banco = c["status"]
+
+    if chave_status_widget not in st.session_state:
+        st.session_state[chave_status_widget] = status_no_banco
+        st.session_state[chave_status_sincronizado] = status_no_banco
+    elif st.session_state.get(chave_status_sincronizado) != status_no_banco:
+        st.session_state[chave_status_widget] = status_no_banco
+        st.session_state[chave_status_sincronizado] = status_no_banco
+
+    idx_atual = OPCOES_STATUS.index(status_no_banco) if status_no_banco in OPCOES_STATUS else 0
+    novo_status = alvo.selectbox(
+        "Status",
+        OPCOES_STATUS,
+        index=idx_atual,
+        key=chave_status_widget,
+        label_visibility="collapsed",
+    )
+
+    if novo_status != status_no_banco:
+        st.session_state[chave_status_sincronizado] = novo_status
+        atualizar_status_chamado(protocolo, novo_status)
+
+        link_avaliacao = None
+        if novo_status == "Concluído":
+            token_avaliacao = gerar_e_salvar_token_avaliacao(protocolo)
+            link_avaliacao = f"{URL_PORTAL}?avaliar={token_avaliacao}"
+
+        email_enviado = enviar_email_status(
+            email_destino=c["email_solicitante"],
+            nome_solicitante=c["nome_solicitante"],
+            protocolo=protocolo,
+            assunto_chamado=c["assunto"],
+            status_atual=novo_status,
+            link_avaliacao=link_avaliacao,
+        )
+
+        if email_enviado:
+            st.toast(f"Status do {protocolo} atualizado para: {novo_status}")
+        else:
+            st.toast(f"Status do {protocolo} atualizado, mas o e-mail para o solicitante falhou.")
+        st.rerun(scope="fragment")
+
+
+def _seletor_atendente_chamado(c, sufixo_key, container=None):
+    """Mesma ideia do seletor de Status acima, só que pro Atendente — agora
+    só aparece dentro da tela de detalhes do chamado (saiu do grid a
+    pedido do usuário)."""
+    alvo = container if container is not None else st
+    protocolo = c["protocolo"]
+    chave_atend_widget = f"atend_{sufixo_key}_{protocolo}"
+    chave_atend_sincronizado = f"_atend_sincronizado_{sufixo_key}_{protocolo}"
+    atendente_atual = c.get("atendente") or "Não atribuído"
+
+    if chave_atend_widget not in st.session_state:
+        st.session_state[chave_atend_widget] = atendente_atual
+        st.session_state[chave_atend_sincronizado] = atendente_atual
+    elif st.session_state.get(chave_atend_sincronizado) != atendente_atual:
+        st.session_state[chave_atend_widget] = atendente_atual
+        st.session_state[chave_atend_sincronizado] = atendente_atual
+
+    idx_atend = OPCOES_ATENDENTES.index(atendente_atual) if atendente_atual in OPCOES_ATENDENTES else 0
+    novo_atendente = alvo.selectbox(
+        "Atendente",
+        OPCOES_ATENDENTES,
+        index=idx_atend,
+        key=chave_atend_widget,
+        label_visibility="collapsed",
+    )
+
+    if novo_atendente != atendente_atual:
+        st.session_state[chave_atend_sincronizado] = novo_atendente
+        atualizar_atendente_chamado(protocolo, novo_atendente)
+        st.toast(f"Chamado {protocolo} atribuído para: {novo_atendente}")
+        st.rerun(scope="fragment")
+
+
+# Pedido do usuário: clicar no Protocolo, no grid, abre uma janela com
+# "todos os dados" do chamado — de cima pra baixo, do registro mais
+# recente pro mais antigo, mostrando o horário de cada etapa (abertura,
+# cada mudança de status) e também as mensagens trocadas (que por isso
+# saíram do grid — não tem mais coluna/ícone de chat separada). O texto
+# "Responder" abre o formulário de nova mensagem só quando clicado, em vez
+# de ficar sempre visível. Datas continuam vindo das mesmas colunas de
+# sempre no Supabase (nada mudou no banco).
+@st.dialog("Detalhes do Chamado", width="large")
+def _dialog_detalhe_chamado(c):
+    protocolo = c.get("protocolo", "-")
+    st.markdown(f"### {protocolo}")
+
+    col_info_a, col_info_b = st.columns(2)
+    with col_info_a:
+        st.markdown(f"**Solicitante:** {html.escape(str(c.get('nome_solicitante') or '-'))}")
+        st.markdown(f"**E-mail:** {html.escape(str(c.get('email_solicitante') or '-'))}")
+        st.markdown(f"**Empresa:** {html.escape(str(c.get('empresa') or '-'))}")
+        st.markdown(f"**Ferramenta:** {html.escape(str(c.get('ferramenta') or '-'))}")
+    with col_info_b:
+        st.markdown(f"**Severidade:** {formatar_severidade_admin(c.get('severidade'))}")
+        anexo_url_chamado = c.get("anexo_url")
+        if anexo_url_chamado:
+            st.markdown(f"**Anexo do chamado:** [Ver anexo]({anexo_url_chamado})")
+        else:
+            st.markdown("**Anexo do chamado:** Nenhum")
+
+    st.markdown(f"**Assunto:** {html.escape(str(c.get('assunto') or '-'))}")
+    st.markdown("**Descrição:**")
+    st.markdown(
+        f'<div class="celula-texto texto-descricao-completa">'
+        f'{html.escape(str(c.get("descricao") or "-")).replace(chr(10), "<br>")}</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.divider()
+
+    col_status_dialog, col_atend_dialog = st.columns(2)
+    with col_status_dialog:
+        st.markdown("**Status**")
+        _seletor_status_chamado(c, sufixo_key="dialog", container=col_status_dialog)
+    with col_atend_dialog:
+        st.markdown("**Atendente**")
+        _seletor_atendente_chamado(c, sufixo_key="dialog", container=col_atend_dialog)
+
+    st.divider()
+    st.markdown("**Histórico do chamado**")
+    st.caption("Do registro mais recente para o mais antigo.")
+
+    eventos = []
+    if c.get("created_at"):
+        eventos.append({
+            "momento": _parse_data_chamado(c.get("created_at")),
+            "rotulo": "Chamado aberto",
+            "texto": None,
+            "anexo": None,
+        })
+    _mapa_rotulo_etapa_dialog = {
+        "data_em_analise": "Status alterado para: Em análise",
+        "data_em_atendimento": "Status alterado para: Em atendimento",
+        "data_concluido": "Status alterado para: Concluído",
+        "data_cancelado": "Status alterado para: Cancelado",
+        "data_encerrado_solicitante": "Encerrado pelo solicitante",
+    }
+    for _campo_etapa, _rotulo_etapa in _mapa_rotulo_etapa_dialog.items():
+        if c.get(_campo_etapa):
+            eventos.append({
+                "momento": _parse_data_chamado(c.get(_campo_etapa)),
+                "rotulo": _rotulo_etapa,
+                "texto": None,
+                "anexo": None,
+            })
+
+    for comentario in listar_comentarios_chamado(protocolo):
+        eventos.append({
+            "momento": _parse_data_chamado(comentario.get("created_at")),
+            "rotulo": f"Mensagem de {comentario.get('autor') or '-'}",
+            "texto": comentario.get("texto"),
+            "anexo": comentario.get("anexo_url"),
+        })
+
+    eventos = [e for e in eventos if e["momento"] is not None]
+    eventos.sort(key=lambda e: e["momento"], reverse=True)
+
+    if not eventos:
+        st.caption("Nenhum registro ainda.")
+    for evento in eventos:
+        _quando_evento = formatar_data_local(evento["momento"].isoformat())
+        _texto_evento = (
+            f'<br>{html.escape(evento["texto"]).replace(chr(10), "<br>")}'
+            if evento["texto"] else ""
+        )
+        st.markdown(
+            f'<div class="celula-texto texto-descricao-completa">'
+            f'<b>{html.escape(evento["rotulo"])}</b> '
+            f'<span style="opacity:0.7;font-size:11px;">({_quando_evento})</span>'
+            f'{_texto_evento}</div>',
+            unsafe_allow_html=True,
+        )
+        if evento["anexo"]:
+            st.markdown(
+                f'<a href="{html.escape(evento["anexo"])}" target="_blank" rel="noopener">Ver anexo</a>',
+                unsafe_allow_html=True,
+            )
+        st.markdown("---")
+
+    st.divider()
+
+    # ---- RESPONDER ----
+    # Pedido do usuário: sem ícone, só o texto "Responder" — só quando
+    # clicado é que aparece a caixa pra escrever a mensagem (e anexar
+    # docx/xlsx/pdf/imagem), em vez de ficar sempre visível como antes.
+    chave_responder_aberto = f"_responder_aberto_{protocolo}"
+    if not st.session_state.get(chave_responder_aberto):
+        if st.button("Responder", key=f"btn_toggle_responder_{protocolo}"):
+            st.session_state[chave_responder_aberto] = True
+            st.rerun(scope="fragment")
+    else:
+        chave_versao_uploader = f"_comentario_versao_{protocolo}"
+        versao_uploader = st.session_state.get(chave_versao_uploader, 0)
+
+        texto_novo_comentario = st.text_area(
+            "Mensagem",
+            key=f"novo_comentario_{protocolo}",
+            placeholder="Escreva uma mensagem para o solicitante...",
+        )
+        anexo_novo_comentario = st.file_uploader(
+            "Anexo (opcional) — imagem, PDF, Word ou Excel",
+            type=["png", "jpg", "jpeg", "pdf", "docx", "xlsx"],
+            key=f"anexo_comentario_{protocolo}_{versao_uploader}",
+        )
+        col_enviar_resposta, col_cancelar_resposta = st.columns(2)
+        if col_enviar_resposta.button("Enviar", key=f"btn_comentario_{protocolo}", type="primary"):
+            if not texto_novo_comentario or not texto_novo_comentario.strip():
+                st.warning("Escreva a mensagem antes de enviar.")
+            else:
+                email_comentario_enviado = adicionar_comentario_chamado(
+                    protocolo=protocolo,
+                    autor=st.session_state.get("usuario_logado", "Administrador"),
+                    texto=texto_novo_comentario.strip(),
+                    arquivo_anexo=anexo_novo_comentario,
+                    email_destino=c["email_solicitante"],
+                    nome_solicitante=c["nome_solicitante"],
+                    assunto_chamado=c["assunto"],
+                )
+                if email_comentario_enviado:
+                    st.toast(f"Mensagem enviada para {c['nome_solicitante']}.")
+                else:
+                    st.toast("Mensagem salva, mas o e-mail para o solicitante falhou.")
+                st.session_state[f"novo_comentario_{protocolo}"] = ""
+                st.session_state[chave_versao_uploader] = versao_uploader + 1
+                st.session_state[chave_responder_aberto] = False
+                st.rerun(scope="fragment")
+        if col_cancelar_resposta.button("Cancelar", key=f"btn_cancelar_responder_{protocolo}"):
+            st.session_state[chave_responder_aberto] = False
+            st.rerun(scope="fragment")
+
+    st.divider()
+    # Fechar "de verdade" (também limpa o nosso controle de qual chamado
+    # está aberto) — usar esse botão em vez do X do canto garante que o
+    # modal não volte a abrir sozinho na próxima atualização automática
+    # (essa tela se atualiza sozinha a cada 20s).
+    if st.button("Fechar", key=f"btn_fechar_detalhe_{protocolo}", use_container_width=True):
+        st.session_state["_chamado_detalhe_aberto"] = None
+        st.rerun(scope="fragment")
+
+
 # ------------------ VISÃO ADMIN (TABELA COM CARDS) ------------------
 # Pedido do usuário: a tabela de chamados atualizar sozinha (sem precisar
 # apertar F5, o que derrubava o login) — run_every faz esse fragmento
@@ -4318,6 +4597,21 @@ def painel_admin():
     if not chamados:
         st.info("Nenhum chamado cadastrado até o momento.")
         return
+
+    # Abre a tela de detalhes do chamado clicado no Protocolo (ver
+    # _dialog_detalhe_chamado) — precisa ficar aqui em cima, antes de
+    # qualquer "return" de filtro/busca, pra continuar sendo chamado (e o
+    # modal continuar visível) mesmo nas atualizações automáticas a cada
+    # 20s desse painel.
+    protocolo_detalhe_aberto = st.session_state.get("_chamado_detalhe_aberto")
+    if protocolo_detalhe_aberto:
+        chamado_detalhe = next(
+            (c for c in chamados if c.get("protocolo") == protocolo_detalhe_aberto), None
+        )
+        if chamado_detalhe:
+            _dialog_detalhe_chamado(chamado_detalhe)
+        else:
+            st.session_state["_chamado_detalhe_aberto"] = None
 
     # ---- BARRA DE BUSCA / FILTROS / ORDENAÇÃO ----
     # Pedido do usuário: antes a única forma de achar um chamado era rolando
@@ -4460,23 +4754,14 @@ def painel_admin():
             _texto_contador += f" (de {len(chamados)} no total)"
         st.caption(_texto_contador + ".")
 
-    # 1. BLOCOS DE TITULOS/CABEÇALHO (Anexo adicionado a pedido do usuário —
-    # um ícone pra abrir o arquivo anexado na abertura do chamado; coluna
-    # "Telefone" removida depois, também a pedido do usuário).
-    # Coluna "Comentários" adicionada a pedido do usuário: cada chamado
-    # ganha um botão que abre o histórico de comentários do administrador
-    # e permite escrever um novo (ver painel_admin_tabela mais abaixo).
-    # Colunas de data/hora (Abertura + uma por status) adicionadas a pedido
-    # do usuário: quer enxergar quando cada chamado abriu e quando mudou
-    # pra cada status (Em análise, Em atendimento, Concluído, Cancelado,
-    # Encerrado pelo solicitante), sem precisar abrir o chamado pra saber.
-    col_widths = [1.3, 1.1, 1.2, 1.6, 1.1, 1.2, 1.1, 1.3, 1.8, 0.6, 1.5, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.4]
-    headers = [
-        "Atendente", "Protocolo", "Solicitante", "E-mail", "Empresa", "Ferramenta",
-        "Severidade", "Assunto", "Descrição", "Anexo", "Status",
-        "Abertura", "Em análise", "Em atendimento", "Concluído", "Cancelado", "Encerrado",
-        "💬",
-    ]
+    # Pedido do usuário: o grid ficou com colunas demais — reduzido a só 6
+    # (Protocolo, Solicitante, Empresa, Assunto, Severidade, Status).
+    # Atendente, E-mail, Ferramenta, Descrição, Anexo, as datas de cada
+    # etapa e as mensagens trocadas saíram daqui e passaram a viver na tela
+    # de detalhes (clicando no Protocolo — ver _dialog_detalhe_chamado). O
+    # Status continua editável direto aqui, a pedido do usuário.
+    col_widths = [1.1, 1.7, 1.3, 2.2, 1.1, 1.6]
+    headers = ["Protocolo", "Solicitante", "Empresa", "Assunto", "Severidade", "Status"]
 
     def _celula_previa_com_popover(col, rotulo_mobile, texto, limite):
         """Mostra uma prévia curta do texto e, só quando ele for maior que a
@@ -4507,271 +4792,36 @@ def painel_admin():
         for col, h in zip(cols_head, headers):
             col.markdown(f'<div class="header-box">{h}</div>', unsafe_allow_html=True)
 
-        # 2. Exibição das linhas com o Seletor de Atendente
+        # 2. Exibição das linhas — grid enxuto (Protocolo/Solicitante/
+        # Empresa/Assunto/Severidade/Status). Atendente, E-mail, Ferramenta,
+        # Descrição, Anexo, datas de cada etapa e mensagens ficam na tela de
+        # detalhes (clique no Protocolo).
         for c in chamados_pagina:
-            (
-                c_atend, c_proto, c_nome, c_mail, c_emp,
-                c_ferr, c_sev, c_ass, c_desc, c_anexo, c_stat,
-                c_abertura, c_data_analise, c_data_atendimento, c_data_concluido, c_data_cancelado, c_data_encerrado,
-                c_coment,
-            ) = st.columns(col_widths)
+            (c_proto, c_nome, c_emp, c_ass, c_sev, c_stat) = st.columns(col_widths)
 
-            # --- 1ª COLUNA: SELETOR DE ATENDENTE ---
-            # Mesma proteção aplicada no seletor de Status logo abaixo (ver o
-            # comentário grande lá): sem isso, essa tabela se auto-atualizando
-            # a cada 20s podia reatribuir o chamado sozinha pro atendente
-            # antigo que uma aba esquecida ainda tinha na tela, toda vez que
-            # o ciclo de atualização rodava — silenciosamente, sem nem um
-            # e-mail pra denunciar o problema.
-            chave_atend_widget = f"atend_{c['protocolo']}"
-            chave_atend_sincronizado = f"_atend_sincronizado_{c['protocolo']}"
-            atendente_atual = c.get("atendente") or "Não atribuído"
+            # --- PROTOCOLO: agora é um botão — clicar abre a tela de
+            # detalhes do chamado (todos os outros dados + histórico +
+            # mensagens). O <span> com a classe "celula-protocolo" continua
+            # aqui (mesmo escondido) só pra não quebrar as regras de CSS que
+            # usam ":has(.celula-protocolo)" pra identificar uma linha de
+            # dado (zebrado, borda, layout do celular etc.).
+            with c_proto:
+                st.markdown('<span class="celula-protocolo" style="display:none;"></span>', unsafe_allow_html=True)
+                st.markdown('<span class="marcador-coluna-protocolo"></span>', unsafe_allow_html=True)
+                if st.button(c.get("protocolo", "-"), key=f"abrir_detalhe_{c['protocolo']}", help="Ver detalhes do chamado", use_container_width=True):
+                    st.session_state["_chamado_detalhe_aberto"] = c["protocolo"]
+                    st.rerun(scope="fragment")
 
-            if chave_atend_widget not in st.session_state:
-                st.session_state[chave_atend_widget] = atendente_atual
-                st.session_state[chave_atend_sincronizado] = atendente_atual
-            elif st.session_state.get(chave_atend_sincronizado) != atendente_atual:
-                st.session_state[chave_atend_widget] = atendente_atual
-                st.session_state[chave_atend_sincronizado] = atendente_atual
-
-            idx_atend = OPCOES_ATENDENTES.index(atendente_atual) if atendente_atual in OPCOES_ATENDENTES else 0
-
-            novo_atendente = c_atend.selectbox(
-                "Atendente",
-                OPCOES_ATENDENTES,
-                index=idx_atend,
-                key=chave_atend_widget,
-                label_visibility="collapsed"
-            )
-
-            if novo_atendente != atendente_atual:
-                st.session_state[chave_atend_sincronizado] = novo_atendente
-                atualizar_atendente_chamado(c['protocolo'], novo_atendente)
-                st.toast(f"Chamado {c['protocolo']} atribuído para: {novo_atendente}")
-                st.rerun(scope="fragment")
-
-            c_proto.markdown(f'<div class="celula-protocolo"><span class="mobile-label">Protocolo:</span>{c.get("protocolo", "-")}</div>', unsafe_allow_html=True)
             _celula_previa_com_popover(c_nome, "Solicitante", c.get("nome_solicitante"), limite=18)
-            _celula_previa_com_popover(c_mail, "E-mail", c.get("email_solicitante"), limite=26)
-            _celula_previa_com_popover(c_emp, "Empresa", c.get("empresa"), limite=16)
-            _celula_previa_com_popover(c_ferr, "Ferramenta", c.get("ferramenta"), limite=16)
+            _celula_previa_com_popover(c_emp, "Empresa", c.get("empresa"), limite=18)
+            _celula_previa_com_popover(c_ass, "Assunto", c.get("assunto"), limite=32)
             c_sev.markdown(f'<div class="celula-texto"><span class="mobile-label">Severidade:</span>{formatar_severidade_admin(c.get("severidade"))}</div>', unsafe_allow_html=True)
-            _celula_previa_com_popover(c_ass, "Assunto", c.get("assunto"), limite=20)
-            # Descrição: mostra só uma prévia curta (todas as linhas ficam com
-            # a mesma altura, "quadradinho" padronizado) e, só quando o texto
-            # é maior que a prévia, aparece uma setinha (▾) que abre um
-            # balãozinho (popover) com o texto completo — em vez de vazar por
-            # cima das linhas de baixo ou virar uma caixa com rolagem.
-            with c_desc:
-                _descricao_completa = c.get("descricao") or "-"
-                _limite_previa = 60
-                if len(_descricao_completa) > _limite_previa:
-                    _descricao_previa = html.escape(_descricao_completa[:_limite_previa].rstrip()) + "…"
-                else:
-                    _descricao_previa = html.escape(_descricao_completa)
 
-                st.markdown(
-                    f'<div class="celula-texto"><span class="mobile-label">Descrição:</span>{_descricao_previa}</div>',
-                    unsafe_allow_html=True,
-                )
-
-                if len(_descricao_completa) > _limite_previa:
-                    with st.popover("▾", help="Ver descrição completa"):
-                        st.markdown(
-                            f'<div class="celula-texto texto-descricao-completa">'
-                            f'{html.escape(_descricao_completa).replace(chr(10), "<br>")}</div>',
-                            unsafe_allow_html=True,
-                        )
-
-            # Ícone de clipe (anexo), numa coluna própria — se o chamado tem
-            # um arquivo, o clipe aparece branco e clicável (abre a imagem/PDF
-            # numa aba nova); se não tem, o mesmo clipe aparece "apagado"
-            # (esmaecido), sem link, indicando que não tem nada pra abrir.
-            anexo_url = c.get("anexo_url")
-            if anexo_url:
-                html_anexo = (
-                    f'<a href="{html.escape(anexo_url)}" target="_blank" rel="noopener" '
-                    f'title="Ver anexo" class="link-anexo-chamado">{ICONE_CLIPS_SVG}</a>'
-                )
-            else:
-                html_anexo = f'<span class="icone-anexo-bloqueado" title="Nenhum anexo">{ICONE_CLIPS_SVG}</span>'
-            c_anexo.markdown(f'<div class="celula-texto celula-anexo"><span class="mobile-label">Anexo:</span>{html_anexo}</div>', unsafe_allow_html=True)
-
-            # SELETOR DE STATUS
-            # Essa tabela se atualiza sozinha a cada 20s (run_every="20s") e
-            # o valor do seletor fica preso na sessão daquele
-            # navegador/aba (pela "key"). Se você (ou outro administrador)
-            # tiver o Painel de Controle aberto em mais de uma aba/navegador
-            # ao mesmo tempo, uma aba parada podia "achar" — no ciclo de
-            # atualização automática seguinte — que o status tinha voltado
-            # pro valor antigo que ela ainda tinha na tela, e tratar isso
-            # como se o administrador tivesse escolhido aquilo agora: voltava
-            # o status no banco e reenviava o e-mail de status pro
-            # solicitante. Com duas abas fazendo isso uma pra outra, virava
-            # um vai-e-volta sem fim, reenviando e-mail a cada 20s. Por
-            # isso, antes de criar o seletor, a sessão primeiro confere se o
-            # status no banco mudou por fora (outra aba/sessão) desde a
-            # última vez que ELA MESMA sincronizou o seletor — se sim, só
-            # realinha o valor guardado nessa sessão com o banco, sem contar
-            # isso como uma escolha do administrador (sem salvar de novo,
-            # sem e-mail). Só uma mudança feita de fato nesse seletor, nessa
-            # mesma sessão, continua contando como mudança real.
-            chave_status_widget = f"status_{c['protocolo']}"
-            chave_status_sincronizado = f"_status_sincronizado_{c['protocolo']}"
-            status_no_banco = c['status']
-
-            if chave_status_widget not in st.session_state:
-                st.session_state[chave_status_widget] = status_no_banco
-                st.session_state[chave_status_sincronizado] = status_no_banco
-            elif st.session_state.get(chave_status_sincronizado) != status_no_banco:
-                st.session_state[chave_status_widget] = status_no_banco
-                st.session_state[chave_status_sincronizado] = status_no_banco
-
-            idx_atual = OPCOES_STATUS.index(status_no_banco) if status_no_banco in OPCOES_STATUS else 0
-            novo_status = c_stat.selectbox(
-                "Status",
-                OPCOES_STATUS,
-                index=idx_atual,
-                key=chave_status_widget,
-                label_visibility="collapsed"
-            )
-
-            if novo_status != status_no_banco:
-                # Mudança real: aconteceu nessa mesma sessão, agora — grava
-                # o valor sincronizado já com o novo status, antes de
-                # qualquer coisa, pra essa mesma sessão não se confundir
-                # depois com o que ELA MESMA acabou de salvar.
-                st.session_state[chave_status_sincronizado] = novo_status
-                # 1. Atualiza no Supabase
-                atualizar_status_chamado(c['protocolo'], novo_status)
-
-                # 1.1 Se o chamado virou Concluído, gera o token do link de
-                # avaliação (sem login) que vai junto no e-mail abaixo.
-                link_avaliacao = None
-                if novo_status == "Concluído":
-                    token_avaliacao = gerar_e_salvar_token_avaliacao(c['protocolo'])
-                    link_avaliacao = f"{URL_PORTAL}?avaliar={token_avaliacao}"
-
-                # 2. --- DISPARA O E-MAIL DE ATUALIZAÇÃO ---
-                email_enviado = enviar_email_status(
-                    email_destino=c['email_solicitante'],
-                    nome_solicitante=c['nome_solicitante'],
-                    protocolo=c['protocolo'],
-                    assunto_chamado=c['assunto'],
-                    status_atual=novo_status,
-                    link_avaliacao=link_avaliacao,
-                )
-
-                if email_enviado:
-                    st.toast(f"Status do {c['protocolo']} atualizado para: {novo_status}")
-                else:
-                    st.toast(
-                        f"Status do {c['protocolo']} atualizado, mas o e-mail para o solicitante falhou.",
-                    )
-                # rerun com escopo "fragment": atualiza só este painel,
-                # sem re-executar o app inteiro (login, CSS, imagens etc.)
-                st.rerun(scope="fragment")
-
-            # --- COLUNAS DE DATA/HORA (abertura + uma por status) ---
-            # Pedido do usuário: mostra quando o chamado abriu e quando
-            # mudou pra cada status. "-" enquanto o chamado ainda não
-            # passou por aquele status (a coluna correspondente no banco
-            # fica vazia até a mudança acontecer — ver atualizar_status_chamado).
-            c_abertura.markdown(f'<div class="celula-texto"><span class="mobile-label">Abertura:</span>{formatar_data_local(c.get("created_at"))}</div>', unsafe_allow_html=True)
-            c_data_analise.markdown(f'<div class="celula-texto"><span class="mobile-label">Em análise:</span>{formatar_data_local(c.get("data_em_analise"))}</div>', unsafe_allow_html=True)
-            c_data_atendimento.markdown(f'<div class="celula-texto"><span class="mobile-label">Em atendimento:</span>{formatar_data_local(c.get("data_em_atendimento"))}</div>', unsafe_allow_html=True)
-            c_data_concluido.markdown(f'<div class="celula-texto"><span class="mobile-label">Concluído:</span>{formatar_data_local(c.get("data_concluido"))}</div>', unsafe_allow_html=True)
-            c_data_cancelado.markdown(f'<div class="celula-texto"><span class="mobile-label">Cancelado:</span>{formatar_data_local(c.get("data_cancelado"))}</div>', unsafe_allow_html=True)
-            c_data_encerrado.markdown(f'<div class="celula-texto"><span class="mobile-label">Encerrado:</span>{formatar_data_local(c.get("data_encerrado_solicitante"))}</div>', unsafe_allow_html=True)
-
-            # --- COLUNA DE COMENTÁRIOS ---
-            # Pedido do usuário: um jeito de o administrador escrever uma
-            # mensagem sobre o chamado (tirar dúvida, avisar que foi
-            # concluído com mais detalhes, etc.) sem mudar o status nem
-            # chamar o solicitante por outro canal. Fica num histórico
-            # (pode ter mais de um administrador comentando o mesmo
-            # chamado ao longo do tempo) e cada comentário novo dispara UM
-            # e-mail pro solicitante, com o mesmo texto — o comentário em
-            # si nunca aparece pra ele dentro do app.
-            with c_coment:
-                # Marcador invisível só pra CSS conseguir identificar essa
-                # coluna (:has(.marcador-coluna-comentarios)) e não aplicar
-                # nela o estilo de botãozinho "▾" (18x18px, sobreposto no
-                # canto) usado nas outras colunas com popover — aqui o botão
-                # precisa ficar com o texto "💬 (n)" legível e por conta
-                # própria, sem herdar aquele tamanho minúsculo.
-                st.markdown('<span class="marcador-coluna-comentarios"></span>', unsafe_allow_html=True)
-                comentarios_chamado = listar_comentarios_chamado(c['protocolo'])
-                rotulo_comentarios = (
-                    f"💬 ({len(comentarios_chamado)})" if comentarios_chamado else "💬"
-                )
-                with st.popover(rotulo_comentarios, help="Comentários do administrador"):
-                    st.markdown("**Histórico de comentários**")
-                    if comentarios_chamado:
-                        for comentario in comentarios_chamado:
-                            _data_comentario = formatar_data_local(comentario.get("created_at"))
-                            st.markdown(
-                                f'<div class="celula-texto texto-descricao-completa">'
-                                f'<b>{html.escape(str(comentario.get("autor") or "-"))}</b> '
-                                f'<span style="opacity:0.7;font-size:11px;">({_data_comentario})</span><br>'
-                                f'{html.escape(str(comentario.get("texto") or "")).replace(chr(10), "<br>")}'
-                                f'</div>',
-                                unsafe_allow_html=True,
-                            )
-                            if comentario.get("anexo_url"):
-                                st.markdown(
-                                    f'<a href="{html.escape(comentario["anexo_url"])}" target="_blank" rel="noopener">Ver imagem anexada</a>',
-                                    unsafe_allow_html=True,
-                                )
-                            st.markdown("---")
-                    else:
-                        st.caption("Nenhum comentário ainda.")
-
-                    # Contador de versão do uploader: como o Streamlit não
-                    # deixa "limpar" um file_uploader já enviado só
-                    # reatribuindo o session_state dele, a cada comentário
-                    # enviado com sucesso incrementamos esse número — o que
-                    # troca a "key" do uploader e faz ele nascer vazio de
-                    # novo no próximo rerun (em vez de continuar mostrando o
-                    # mesmo arquivo já enviado, o que podia levar a clicar
-                    # "Enviar comentário" de novo sem querer e mandar o
-                    # mesmo anexo/e-mail duplicado).
-                    chave_versao_uploader = f"_comentario_versao_{c['protocolo']}"
-                    versao_uploader = st.session_state.get(chave_versao_uploader, 0)
-
-                    texto_novo_comentario = st.text_area(
-                        "Novo comentário",
-                        key=f"novo_comentario_{c['protocolo']}",
-                        label_visibility="collapsed",
-                        placeholder="Escreva uma mensagem para o solicitante...",
-                    )
-                    anexo_novo_comentario = st.file_uploader(
-                        "Anexar imagem (opcional)",
-                        type=["png", "jpg", "jpeg"],
-                        key=f"anexo_comentario_{c['protocolo']}_{versao_uploader}",
-                    )
-                    if st.button("Enviar comentário", key=f"btn_comentario_{c['protocolo']}"):
-                        if not texto_novo_comentario or not texto_novo_comentario.strip():
-                            st.warning("Escreva o comentário antes de enviar.")
-                        else:
-                            email_comentario_enviado = adicionar_comentario_chamado(
-                                protocolo=c['protocolo'],
-                                autor=st.session_state.get("usuario_logado", "Administrador"),
-                                texto=texto_novo_comentario.strip(),
-                                arquivo_anexo=anexo_novo_comentario,
-                                email_destino=c['email_solicitante'],
-                                nome_solicitante=c['nome_solicitante'],
-                                assunto_chamado=c['assunto'],
-                            )
-                            if email_comentario_enviado:
-                                st.toast(f"Comentário salvo e e-mail enviado para {c['nome_solicitante']}.")
-                            else:
-                                st.toast("Comentário salvo, mas o e-mail para o solicitante falhou.")
-                            # Limpa o texto digitado e "reseta" o uploader
-                            # pra próxima vez que esse popover for aberto.
-                            st.session_state[f"novo_comentario_{c['protocolo']}"] = ""
-                            st.session_state[chave_versao_uploader] = versao_uploader + 1
-                            st.rerun(scope="fragment")
+            # SELETOR DE STATUS — continua no grid a pedido do usuário (ver
+            # _seletor_status_chamado logo acima de painel_admin(), que
+            # concentra a proteção contra corrida entre abas/sessões e o
+            # disparo do e-mail de status).
+            _seletor_status_chamado(c, sufixo_key="grid", container=c_stat)
 
     # ---- CONTROLES DE PAGINAÇÃO (embaixo da tabela) ----
     if total_paginas_admin > 1:

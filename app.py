@@ -2292,6 +2292,33 @@ st.markdown(
             box-shadow: 0 10px 25px rgba(0, 212, 255, 0.35);
         }}
 
+        /* Botões dentro da janela de detalhes do chamado (Responder, Enviar,
+           Cancelar, Fechar): a regra "BOTÕES AMPLIADOS" acima deixa todo
+           botão do site grande/arredondado — pensada pros botões das telas
+           do solicitante (Abrir chamado, Acompanhar, etc). Pedido do
+           usuário: aqui dentro precisam ficar compactos, do tamanho do
+           texto, não esticados. */
+        div[data-testid="stDialog"] .stButton > button {{
+            max-width: none !important;
+            padding: 6px 16px !important;
+            border-radius: 8px !important;
+            margin-bottom: 0 !important;
+            box-shadow: none !important;
+            min-height: auto !important;
+            transform: none !important;
+        }}
+        div[data-testid="stDialog"] .stButton > button p {{
+            font-size: 13px !important;
+            font-weight: 600 !important;
+        }}
+        /* "Responder", "Enviar" e "Cancelar": largura só do texto — só o
+           "Fechar" (lá embaixo, fora desse container) continua ocupando a
+           largura toda do modal, de propósito, por ser a ação principal de
+           sair da tela. */
+        .st-key-dialog_area_responder .stButton > button {{
+            width: auto !important;
+        }}
+
         /* Os 3 botões de menu da tela inicial (Abrir/Acompanhar/Avaliar):
            fundo verde da marca e texto branco. Vale pra computador e celular,
            já que essa regra não é restrita por media query. */
@@ -4334,7 +4361,7 @@ _ORDEM_SEVERIDADE_RANK = {"Crítica": 4, "Alta": 3, "Média": 2, "Baixa": 1}
 # explícito do usuário) — por isso a lógica dele foi extraída pra cá, pra
 # ser usada tanto na linha do grid quanto dentro da tela de detalhes sem
 # duplicar o código (e sem arriscar os dois ficarem diferentes um do outro).
-def _seletor_status_chamado(c, sufixo_key, container=None):
+def _seletor_status_chamado(c, sufixo_key, container=None, usar_rerun_fragment=True):
     """Desenha o seletor de Status de um chamado (mesma proteção contra
     múltiplas abas/sessões brigando entre si que já existia aqui) e, se o
     valor mudar de verdade, salva no banco e dispara o e-mail pro
@@ -4384,10 +4411,19 @@ def _seletor_status_chamado(c, sufixo_key, container=None):
             st.toast(f"Status do {protocolo} atualizado para: {novo_status}")
         else:
             st.toast(f"Status do {protocolo} atualizado, mas o e-mail para o solicitante falhou.")
-        st.rerun(scope="fragment")
+        # Dentro da janela de detalhes (um st.dialog), um rerun "de
+        # fragmento" force a re-execução do painel inteiro por fora (busca
+        # tudo nos Supabase de novo) em vez de só a própria janela — pesado
+        # e, em alguns casos, trava a tela até dar "connection error" (bug
+        # relatado pelo usuário). Um rerun comum, dentro do diálogo, atualiza
+        # só a própria janela.
+        if usar_rerun_fragment:
+            st.rerun(scope="fragment")
+        else:
+            st.rerun()
 
 
-def _seletor_atendente_chamado(c, sufixo_key, container=None):
+def _seletor_atendente_chamado(c, sufixo_key, container=None, usar_rerun_fragment=True):
     """Mesma ideia do seletor de Status acima, só que pro Atendente — agora
     só aparece dentro da tela de detalhes do chamado (saiu do grid a
     pedido do usuário)."""
@@ -4417,7 +4453,10 @@ def _seletor_atendente_chamado(c, sufixo_key, container=None):
         st.session_state[chave_atend_sincronizado] = novo_atendente
         atualizar_atendente_chamado(protocolo, novo_atendente)
         st.toast(f"Chamado {protocolo} atribuído para: {novo_atendente}")
-        st.rerun(scope="fragment")
+        if usar_rerun_fragment:
+            st.rerun(scope="fragment")
+        else:
+            st.rerun()
 
 
 # Correção de bug relatado pelo usuário: a janela de detalhes estava
@@ -4482,10 +4521,10 @@ def _dialog_detalhe_chamado(c):
     col_status_dialog, col_atend_dialog = st.columns(2)
     with col_status_dialog:
         st.markdown("**Status**")
-        _seletor_status_chamado(c, sufixo_key="dialog", container=col_status_dialog)
+        _seletor_status_chamado(c, sufixo_key="dialog", container=col_status_dialog, usar_rerun_fragment=False)
     with col_atend_dialog:
         st.markdown("**Atendente**")
-        _seletor_atendente_chamado(c, sufixo_key="dialog", container=col_atend_dialog)
+        _seletor_atendente_chamado(c, sufixo_key="dialog", container=col_atend_dialog, usar_rerun_fragment=False)
 
     st.divider()
     st.markdown("**Histórico do chamado**")
@@ -4554,50 +4593,56 @@ def _dialog_detalhe_chamado(c):
     # Pedido do usuário: sem ícone, só o texto "Responder" — só quando
     # clicado é que aparece a caixa pra escrever a mensagem (e anexar
     # docx/xlsx/pdf/imagem), em vez de ficar sempre visível como antes.
-    chave_responder_aberto = f"_responder_aberto_{protocolo}"
-    if not st.session_state.get(chave_responder_aberto):
-        if st.button("Responder", key=f"btn_toggle_responder_{protocolo}"):
-            st.session_state[chave_responder_aberto] = True
-            st.rerun(scope="fragment")
-    else:
-        chave_versao_uploader = f"_comentario_versao_{protocolo}"
-        versao_uploader = st.session_state.get(chave_versao_uploader, 0)
+    # Os reruns aqui dentro usam st.rerun() simples (não scope="fragment"):
+    # dentro do st.dialog, um rerun de fragmento re-executa o painel INTEIRO
+    # por fora (busca tudo no Supabase de novo) em vez de só a janela —
+    # pesado, e foi a causa do travamento/"connection error" relatado pelo
+    # usuário ao clicar em "Responder".
+    with st.container(key="dialog_area_responder"):
+        chave_responder_aberto = f"_responder_aberto_{protocolo}"
+        if not st.session_state.get(chave_responder_aberto):
+            if st.button("Responder", key=f"btn_toggle_responder_{protocolo}"):
+                st.session_state[chave_responder_aberto] = True
+                st.rerun()
+        else:
+            chave_versao_uploader = f"_comentario_versao_{protocolo}"
+            versao_uploader = st.session_state.get(chave_versao_uploader, 0)
 
-        texto_novo_comentario = st.text_area(
-            "Mensagem",
-            key=f"novo_comentario_{protocolo}",
-            placeholder="Escreva uma mensagem para o solicitante...",
-        )
-        anexo_novo_comentario = st.file_uploader(
-            "Anexo (opcional) — imagem, PDF, Word ou Excel",
-            type=["png", "jpg", "jpeg", "pdf", "docx", "xlsx"],
-            key=f"anexo_comentario_{protocolo}_{versao_uploader}",
-        )
-        col_enviar_resposta, col_cancelar_resposta = st.columns(2)
-        if col_enviar_resposta.button("Enviar", key=f"btn_comentario_{protocolo}", type="primary"):
-            if not texto_novo_comentario or not texto_novo_comentario.strip():
-                st.warning("Escreva a mensagem antes de enviar.")
-            else:
-                email_comentario_enviado = adicionar_comentario_chamado(
-                    protocolo=protocolo,
-                    autor=st.session_state.get("usuario_logado", "Administrador"),
-                    texto=texto_novo_comentario.strip(),
-                    arquivo_anexo=anexo_novo_comentario,
-                    email_destino=c["email_solicitante"],
-                    nome_solicitante=c["nome_solicitante"],
-                    assunto_chamado=c["assunto"],
-                )
-                if email_comentario_enviado:
-                    st.toast(f"Mensagem enviada para {c['nome_solicitante']}.")
+            texto_novo_comentario = st.text_area(
+                "Mensagem",
+                key=f"novo_comentario_{protocolo}",
+                placeholder="Escreva uma mensagem para o solicitante...",
+            )
+            anexo_novo_comentario = st.file_uploader(
+                "Anexo (opcional) — imagem, PDF, Word ou Excel",
+                type=["png", "jpg", "jpeg", "pdf", "docx", "xlsx"],
+                key=f"anexo_comentario_{protocolo}_{versao_uploader}",
+            )
+            col_enviar_resposta, col_cancelar_resposta = st.columns(2)
+            if col_enviar_resposta.button("Enviar", key=f"btn_comentario_{protocolo}", type="primary"):
+                if not texto_novo_comentario or not texto_novo_comentario.strip():
+                    st.warning("Escreva a mensagem antes de enviar.")
                 else:
-                    st.toast("Mensagem salva, mas o e-mail para o solicitante falhou.")
-                st.session_state[f"novo_comentario_{protocolo}"] = ""
-                st.session_state[chave_versao_uploader] = versao_uploader + 1
+                    email_comentario_enviado = adicionar_comentario_chamado(
+                        protocolo=protocolo,
+                        autor=st.session_state.get("usuario_logado", "Administrador"),
+                        texto=texto_novo_comentario.strip(),
+                        arquivo_anexo=anexo_novo_comentario,
+                        email_destino=c["email_solicitante"],
+                        nome_solicitante=c["nome_solicitante"],
+                        assunto_chamado=c["assunto"],
+                    )
+                    if email_comentario_enviado:
+                        st.toast(f"Mensagem enviada para {c['nome_solicitante']}.")
+                    else:
+                        st.toast("Mensagem salva, mas o e-mail para o solicitante falhou.")
+                    st.session_state[f"novo_comentario_{protocolo}"] = ""
+                    st.session_state[chave_versao_uploader] = versao_uploader + 1
+                    st.session_state[chave_responder_aberto] = False
+                    st.rerun()
+            if col_cancelar_resposta.button("Cancelar", key=f"btn_cancelar_responder_{protocolo}"):
                 st.session_state[chave_responder_aberto] = False
-                st.rerun(scope="fragment")
-        if col_cancelar_resposta.button("Cancelar", key=f"btn_cancelar_responder_{protocolo}"):
-            st.session_state[chave_responder_aberto] = False
-            st.rerun(scope="fragment")
+                st.rerun()
 
     st.divider()
     # Fechar "de verdade" (também limpa o nosso controle de qual chamado
@@ -4606,7 +4651,7 @@ def _dialog_detalhe_chamado(c):
     # (essa tela se atualiza sozinha a cada 20s).
     if st.button("Fechar", key=f"btn_fechar_detalhe_{protocolo}", use_container_width=True):
         st.session_state["_chamado_detalhe_aberto"] = None
-        st.rerun(scope="fragment")
+        st.rerun()
 
 
 # ------------------ VISÃO ADMIN (TABELA COM CARDS) ------------------

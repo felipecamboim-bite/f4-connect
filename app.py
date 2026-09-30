@@ -1958,42 +1958,12 @@ st.markdown(
         /* do usuário: antes era um sininho flutuante solto no canto   */
         /* superior direito da tela; agora mora dentro do próprio      */
         /* menu lateral, como mais um item de navegação                */
-        /* ("Notificações"), com uma bolinha vermelha mostrando        */
-        /* quantos pedidos estão esperando aprovação. Clicando, a      */
+        /* ("Notificações"). O número de pendentes vem dentro do       */
+        /* próprio texto do botão (🔴 N) — não é mais uma bolinha       */
+        /* sobreposta por CSS, porque isso nunca ficou alinhado de      */
+        /* verdade com o texto em nenhuma tentativa. Clicando, a       */
         /* lista abre logo abaixo, ali mesmo no menu.                  */
         /* ========================================================= */
-        .st-key-notificacao_pendentes {{
-            position: relative !important;
-            height: auto !important;
-            min-height: 0 !important;
-        }}
-
-        /* Bolinha vermelha com o número em branco, encostada no canto
-           direito do botão "Notificações" (mesmo botão-texto dos outros
-           itens do menu — sem estilo próprio de botão aqui). Pedido do
-           usuário: estava desalinhada do texto — em vez de um "top" fixo
-           (que só acerta se o botão tiver sempre a mesma altura exata),
-           agora centraliza verticalmente relativo ao próprio contêiner do
-           botão, então acompanha a altura real dele. */
-        .badge-notificacao {{
-            position: absolute !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            right: 10px !important;
-            min-width: 17px !important;
-            height: 17px !important;
-            padding: 0 4px !important;
-            background-color: #E63946 !important;
-            color: #FFFFFF !important;
-            font-family: 'Inter', sans-serif !important;
-            font-size: 10px !important;
-            font-weight: 800 !important;
-            border-radius: 999px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            pointer-events: none !important;
-        }}
 
         /* Lista de solicitações pendentes: abre dentro do próprio menu
            lateral (não mais um painel flutuante) — um cartão escuro por
@@ -3347,19 +3317,30 @@ st.markdown(
            quando não couber tudo de uma vez — em vez de continuar
            espremendo. Só se aplica no computador; no celular/tablet
            continua valendo o ajuste de zoom já existente mais abaixo. */
+        /* Pedido do usuário: o grid (6 colunas, ~1260px) ficou bem mais
+           estreito que antes (18 colunas) — só encolher o fundo cinza
+           (width: fit-content) deixava ele "grudado" na esquerda em vez de
+           centralizado, e ainda ficava desalinhado dos filtros de cima
+           (que continuavam esticando 100% da tela). Solução: filtros,
+           contador, tabela e paginação — as 5 peças dessa tela — ganham
+           TODAS a mesma largura máxima e ficam centralizadas (margin:auto)
+           juntas, como um bloco só. Assim, ao recolher/abrir o sidebar (que
+           muda quanto espaço sobra na tela), todo mundo anda/centraliza
+           junto — nunca fica uma parte esticada e outra encolhida. */
         @media (min-width: 1001px) {{
+            .st-key-painel_admin_filtros,
+            .st-key-painel_admin_filtro_data,
+            .st-key-painel_admin_contador,
+            .st-key-painel_admin_tabela,
+            .st-key-painel_admin_paginacao {{
+                width: 100% !important;
+                max-width: 1300px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }}
+
             .st-key-painel_admin_tabela {{
                 overflow-x: auto !important;
-                /* Pedido do usuário: com o grid reduzido a 6 colunas, a
-                   tabela em si ficou bem mais estreita (~1260px) do que
-                   antes (18 colunas) — mas esse fundo cinza-escuro, sem
-                   isso, continuava esticando até preencher 100% da largura
-                   da tela (como um <div> normal), sobrando um espaço vazio
-                   à direita da tabela. Com "width: fit-content", o fundo
-                   agora encolhe pra abraçar só o tamanho real da tabela (e
-                   ainda cabe 100% da tela, se a tabela precisar disso). */
-                width: fit-content !important;
-                max-width: 100% !important;
                 /* Pedido do usuário: mostrava só ~4 linhas de chamado antes
                    de precisar rolar dentro da tabela — pediu pra mostrar
                    umas 10. Trocado de um limite relativo à tela
@@ -4005,14 +3986,19 @@ def notificacao_pendentes_admin():
     pendentes = listar_solicitantes_pendentes()
 
     with st.container(key="notificacao_pendentes"):
-        if st.button("Notificações", key="btn_toggle_pendentes"):
+        # Pedido do usuário: a bolinha vermelha flutuante (posicionada por
+        # cima do botão via CSS) nunca ficou alinhada de verdade com o
+        # texto — tentativa de centralizar via CSS não resolveu porque a
+        # altura real do contêiner do botão não era a esperada. Solução
+        # mais confiável: o número entra dentro do próprio texto do botão
+        # (mesma linha, mesma fonte), então sempre fica alinhado, não
+        # importa a altura do botão.
+        rotulo_notificacoes = (
+            f"Notificações 🔴 {len(pendentes)}" if pendentes else "Notificações"
+        )
+        if st.button(rotulo_notificacoes, key="btn_toggle_pendentes"):
             st.session_state["mostrar_pendentes"] = not st.session_state["mostrar_pendentes"]
             st.rerun(scope="fragment")
-        if pendentes:
-            st.markdown(
-                f'<div class="badge-notificacao">{len(pendentes)}</div>',
-                unsafe_allow_html=True,
-            )
 
     if st.session_state["mostrar_pendentes"]:
         with st.container(key="painel_pendentes"):

@@ -5041,8 +5041,9 @@ def _grafico_barras_contagem(lista_chamados, campo, rotulo, valor_vazio="Não in
 
 def _grafico_severidade_colunas(lista_chamados, key=None):
     """Gráfico de colunas (barras verticais) com a quantidade de chamados por
-    severidade, sempre na ordem Crítica > Alta > Média > Baixa, cada barra na
-    cor correspondente (mesmas cores das bolinhas 🔴🟠🟡🟢 usadas na tabela)."""
+    severidade, sempre na ordem Crítica > Alta > Média > Baixa. Mesma cor
+    verde usada nos outros gráficos de colunas do Insights (Ferramenta,
+    Empresa, Atendente) — pedido do usuário pra não destoar dos demais."""
     contagem = {s: 0 for s in OPCOES_SEVERIDADE_INSIGHTS}
     for c in lista_chamados:
         sev_normalizada = normalizar_severidade(c.get("severidade"))
@@ -5054,18 +5055,14 @@ def _grafico_severidade_colunas(lista_chamados, key=None):
         "Quantidade": list(contagem.values()),
     })
 
-    fig = px.bar(
-        df, x="Severidade", y="Quantidade", text="Quantidade",
-        color="Severidade", color_discrete_map=CORES_SEVERIDADE_INSIGHTS,
-    )
-    fig.update_traces(textposition="outside", cliponaxis=False, width=0.35)
+    fig = px.bar(df, x="Severidade", y="Quantidade", text="Quantidade")
+    fig.update_traces(marker_color="#72A703", textposition="outside", cliponaxis=False, width=0.35)
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font_color="#FFFFFF",
         xaxis_title=None,
         yaxis_title=None,
-        showlegend=False,
         margin=dict(t=10, b=10, l=10, r=10),
         height=260,
         bargap=0.5,
@@ -5229,8 +5226,8 @@ def painel_insights():
             return
 
         # --- CONTAGEM POR STATUS ---
-        st.markdown('<div class="subtitulo-insights">Chamados por status</div>', unsafe_allow_html=True)
-
+        # Pedido do usuário: as métricas (Total, Aguardando atendimento, etc.)
+        # ficam ACIMA do título "Chamados por status", não abaixo.
         contagem_status = {s: 0 for s in OPCOES_STATUS}
         for c in chamados_periodo:
             if c.get("status") in contagem_status:
@@ -5241,35 +5238,41 @@ def painel_insights():
         for col, status_nome in zip(cols_metricas[1:], OPCOES_STATUS):
             col.metric(status_nome, contagem_status[status_nome])
 
+        st.markdown('<div class="subtitulo-insights">Chamados por status</div>', unsafe_allow_html=True)
+
         df_status = pd.DataFrame({
             "Status": list(contagem_status.keys()),
             "Quantidade": list(contagem_status.values()),
         })
         df_status = df_status[df_status["Quantidade"] > 0]
-        if not df_status.empty:
-            fig_status = px.pie(
-                df_status, names="Status", values="Quantidade", hole=0.5,
-                color="Status", color_discrete_map=CORES_STATUS_INSIGHTS,
-            )
-            # Pedido do usuário: em vez da legenda separada no canto (quadradinho
-            # colorido + nome do status), cada fatia mostra seu nome + percentual
-            # do lado de fora do rótulo, ligado a ela por uma linha — dispensando
-            # a legenda lateral.
-            fig_status.update_traces(
-                texttemplate="<b>%{label}</b><br>%{percent}",
-                textposition="outside",
-                textfont=dict(color="#FFFFFF", size=13),
-                automargin=True,
-            )
-            fig_status.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#FFFFFF",
-                showlegend=False,
-                margin=dict(t=50, b=50, l=70, r=70),
-                height=300,
-            )
-            st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False}, key="grafico_status_insights")
+        # Pedido do usuário: a rosca fica na coluna da ESQUERDA, com outro
+        # indicador ao lado (coluna da direita) — ainda a definir.
+        col_rosca_status, col_status_extra = st.columns(2)
+        with col_rosca_status:
+            if not df_status.empty:
+                fig_status = px.pie(
+                    df_status, names="Status", values="Quantidade", hole=0.5,
+                    color="Status", color_discrete_map=CORES_STATUS_INSIGHTS,
+                )
+                # Pedido do usuário: em vez da legenda separada no canto (quadradinho
+                # colorido + nome do status), cada fatia mostra seu nome + percentual
+                # do lado de fora do rótulo, ligado a ela por uma linha — dispensando
+                # a legenda lateral.
+                fig_status.update_traces(
+                    texttemplate="<b>%{label}</b><br>%{percent}",
+                    textposition="outside",
+                    textfont=dict(color="#FFFFFF", size=13),
+                    automargin=True,
+                )
+                fig_status.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font_color="#FFFFFF",
+                    showlegend=False,
+                    margin=dict(t=50, b=50, l=70, r=70),
+                    height=300,
+                )
+                st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False}, key="grafico_status_insights")
 
         # --- A MESMA COISA, SÓ ENTRE OS CHAMADOS JÁ ENCERRADOS ---
         status_encerrados = ["Concluído", "Encerrado pelo solicitante"]

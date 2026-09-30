@@ -5108,6 +5108,68 @@ def _grafico_chamados_por_mes(lista_chamados, key=None):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=key)
 
 
+_ORDEM_ETAPAS_TEMPO_MEDIO = ["Aguardando atendimento", "Em análise", "Em atendimento"]
+
+
+def _grafico_tempo_medio_por_etapa(lista_chamados, key=None):
+    """Tempo médio (em horas) que os chamados passam em cada etapa antes de
+    mudar pra próxima — monta, pra cada chamado, a mesma linha do tempo usada
+    no histórico do Detalhe do Chamado (created_at + data_em_analise +
+    data_em_atendimento + data_concluido/cancelado/encerrado_solicitante,
+    ordenados cronologicamente) e mede a diferença entre um evento e o
+    seguinte. Só entra na conta quem JÁ SAIU daquela etapa (tem uma data de
+    entrada na etapa seguinte); chamados ainda "presos" numa etapa, sem terem
+    avançado, não têm como entrar porque ainda não têm uma data de saída."""
+    somas_segundos = {etapa: 0.0 for etapa in _ORDEM_ETAPAS_TEMPO_MEDIO}
+    contagens = {etapa: 0 for etapa in _ORDEM_ETAPAS_TEMPO_MEDIO}
+
+    for c in lista_chamados:
+        eventos = [(_parse_data_chamado(c.get("created_at")), "Aguardando atendimento")]
+        for status_nome, coluna_data in _MAPA_STATUS_PARA_COLUNA_DATA.items():
+            data_evento = _parse_data_chamado(c.get(coluna_data))
+            if data_evento:
+                eventos.append((data_evento, status_nome))
+        eventos = [e for e in eventos if e[0] is not None]
+        eventos.sort(key=lambda e: e[0])
+
+        for i in range(len(eventos) - 1):
+            data_atual, etapa_atual = eventos[i]
+            data_proxima, _ = eventos[i + 1]
+            if etapa_atual in somas_segundos and data_proxima >= data_atual:
+                somas_segundos[etapa_atual] += (data_proxima - data_atual).total_seconds()
+                contagens[etapa_atual] += 1
+
+    rotulos, horas_medias, textos = [], [], []
+    for etapa in _ORDEM_ETAPAS_TEMPO_MEDIO:
+        if contagens[etapa] > 0:
+            media_horas = (somas_segundos[etapa] / contagens[etapa]) / 3600
+            rotulos.append(etapa)
+            horas_medias.append(media_horas)
+            textos.append(f"{media_horas:.1f}h")
+
+    if not rotulos:
+        st.caption(
+            "Ainda não há chamados que tenham avançado de etapa (com as datas "
+            "registradas) pra calcular esse tempo médio."
+        )
+        return
+
+    df = pd.DataFrame({"Etapa": rotulos, "Horas": horas_medias, "Rótulo": textos})
+    fig = px.bar(df, x="Etapa", y="Horas", text="Rótulo")
+    fig.update_traces(marker_color="#72A703", textposition="outside", cliponaxis=False, width=0.4)
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="#FFFFFF",
+        xaxis_title=None,
+        yaxis_title=None,
+        margin=dict(t=10, b=10, l=10, r=10),
+        height=280,
+        bargap=0.4,
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=key)
+
+
 def painel_insights():
     st.markdown(
         '<div class="titulo-painel-chamados">Insights - Central de Chamados</div>',
@@ -5361,6 +5423,43 @@ def painel_insights():
             with st.popover(f"Ver {len(protocolos_sla_ignorados)} chamado(s) encerrado(s) que não entraram na conta"):
                 for _proto_ignorado, _motivo_ignorado in protocolos_sla_ignorados:
                     st.caption(f"{_proto_ignorado}: {_motivo_ignorado}")
+
+        # --- CHAMADOS FORA DO PRAZO (SLA) E TEMPO MÉDIO POR ETAPA ---
+        col_fora_prazo, col_tempo_etapa = st.columns(2)
+        with col_fora_prazo:
+            st.markdown('<div class="subtitulo-insights">Chamados fora do prazo (SLA)</div>', unsafe_allow_html=True)
+            estados_finais = ["Concluído", "Cancelado", "Encerrado pelo solicitante"]
+            chamados_em_aberto = [c for c in chamados_periodo if c.get("status") not in estados_finais]
+
+            dias_limite_atraso = st.number_input(
+                "Considerar atrasado a partir de quantos dias em aberto?",
+                min_value=1, value=3, step=1,
+                key="dias_limite_atraso_insights",
+            )
+
+            agora = datetime.now(timezone.utc)
+            chamados_fora_prazo = []
+            for _c_atraso in chamados_em_aberto:
+                _abertura_atraso = _parse_data_chamado(_c_atraso.get("created_at"))
+                if _abertura_atraso:
+                    _dias_em_aberto = (agora - _abertura_atraso).total_seconds() / 86400
+                    if _dias_em_aberto > dias_limite_atraso:
+                        chamados_fora_prazo.append((_c_atraso, _dias_em_aberto))
+
+            st.metric(f"Fora do prazo (> {dias_limite_atraso}d)", len(chamados_fora_prazo))
+            st.caption(f"{len(chamados_em_aberto)} chamado(s) em aberto no período selecionado (não concluído/cancelado/encerrado).")
+
+            if chamados_fora_prazo:
+                chamados_fora_prazo.sort(key=lambda item: item[1], reverse=True)
+                with st.popover(f"Ver {len(chamados_fora_prazo)} chamado(s) fora do prazo"):
+                    for _c_fp, _dias_fp in chamados_fora_prazo:
+                        st.caption(
+                            f"{_c_fp.get('protocolo', '-')} — {_c_fp.get('status', '-')} — "
+                            f"{_dias_fp:.1f} dia(s) em aberto"
+                        )
+        with col_tempo_etapa:
+            st.markdown('<div class="subtitulo-insights">Tempo médio por etapa</div>', unsafe_allow_html=True)
+            _grafico_tempo_medio_por_etapa(chamados_periodo, key="grafico_tempo_medio_etapa")
 
         # --- FERRAMENTA E EMPRESA COM MAIS CHAMADOS (VOLUME TOTAL NO PERÍODO) ---
         col_ferr, col_emp = st.columns(2)

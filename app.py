@@ -4608,21 +4608,56 @@ def _dialog_detalhe_chamado(c):
             chave_versao_uploader = f"_comentario_versao_{protocolo}"
             versao_uploader = st.session_state.get(chave_versao_uploader, 0)
 
+            # Pedido do usuário: travar o texto/anexo/botões assim que
+            # clicar em "Enviar", pra não correr risco da pessoa mandar
+            # duas vezes ou editar o texto depois de já ter clicado enviar.
+            # Funciona em 2 passos: 1) o clique só liga essa "trava" e dá um
+            # rerun — nesse rerun os campos já nascem desabilitados; 2) o
+            # envio de verdade só acontece DEPOIS, com tudo já travado na
+            # tela.
+            chave_enviando_resposta = f"_enviando_resposta_{protocolo}"
+            enviando_resposta = st.session_state.get(chave_enviando_resposta, False)
+
             texto_novo_comentario = st.text_area(
                 "Mensagem",
                 key=f"novo_comentario_{protocolo}",
                 placeholder="Escreva uma mensagem para o solicitante...",
+                disabled=enviando_resposta,
             )
             anexo_novo_comentario = st.file_uploader(
                 "Anexo (opcional) — imagem, PDF, Word ou Excel",
                 type=["png", "jpg", "jpeg", "pdf", "docx", "xlsx"],
                 key=f"anexo_comentario_{protocolo}_{versao_uploader}",
+                disabled=enviando_resposta,
             )
             col_enviar_resposta, col_cancelar_resposta = st.columns(2)
-            if col_enviar_resposta.button("Enviar", key=f"btn_comentario_{protocolo}", type="primary"):
+            clicou_enviar_resposta = col_enviar_resposta.button(
+                "Enviar", key=f"btn_comentario_{protocolo}", type="primary", disabled=enviando_resposta,
+            )
+            clicou_cancelar_resposta = col_cancelar_resposta.button(
+                "Cancelar", key=f"btn_cancelar_responder_{protocolo}", disabled=enviando_resposta,
+            )
+
+            if clicou_enviar_resposta and not enviando_resposta:
                 if not texto_novo_comentario or not texto_novo_comentario.strip():
                     st.warning("Escreva a mensagem antes de enviar.")
                 else:
+                    st.session_state[chave_enviando_resposta] = True
+                    st.rerun()
+
+            if clicou_cancelar_resposta and not enviando_resposta:
+                st.session_state[chave_responder_aberto] = False
+                st.rerun()
+
+            if enviando_resposta:
+                # Pedido do usuário: enviar o e-mail (e subir o anexo,
+                # quando tem) demora alguns segundos — nesse meio tempo o
+                # Streamlit chegava a mostrar um aviso de erro/conexão na
+                # tela (que sumia sozinho quando terminava, e a mensagem
+                # sempre ia certinho). Um "spinner" aqui "mascara" essa
+                # espera com um aviso nosso, contínuo e sem susto, em vez
+                # de deixar aparecer aquele aviso do Streamlit.
+                with st.spinner("Estamos enviando sua mensagem ao solicitante, aguarde..."):
                     email_comentario_enviado = adicionar_comentario_chamado(
                         protocolo=protocolo,
                         autor=st.session_state.get("usuario_logado", "Administrador"),
@@ -4632,16 +4667,14 @@ def _dialog_detalhe_chamado(c):
                         nome_solicitante=c["nome_solicitante"],
                         assunto_chamado=c["assunto"],
                     )
-                    if email_comentario_enviado:
-                        st.toast(f"Mensagem enviada para {c['nome_solicitante']}.")
-                    else:
-                        st.toast("Mensagem salva, mas o e-mail para o solicitante falhou.")
-                    st.session_state[f"novo_comentario_{protocolo}"] = ""
-                    st.session_state[chave_versao_uploader] = versao_uploader + 1
-                    st.session_state[chave_responder_aberto] = False
-                    st.rerun()
-            if col_cancelar_resposta.button("Cancelar", key=f"btn_cancelar_responder_{protocolo}"):
+                if email_comentario_enviado:
+                    st.toast(f"Mensagem enviada para {c['nome_solicitante']}.")
+                else:
+                    st.toast("Mensagem salva, mas o e-mail para o solicitante falhou.")
+                st.session_state[f"novo_comentario_{protocolo}"] = ""
+                st.session_state[chave_versao_uploader] = versao_uploader + 1
                 st.session_state[chave_responder_aberto] = False
+                st.session_state[chave_enviando_resposta] = False
                 st.rerun()
 
     st.divider()

@@ -5346,7 +5346,7 @@ def painel_insights():
         })
         df_status = df_status[df_status["Quantidade"] > 0]
         # Pedido do usuário: a rosca fica na coluna da ESQUERDA, com o
-        # indicador "Chamados por mês" ao lado (coluna da direita).
+        # indicador "Chamados fora do prazo (SLA)" ao lado (coluna da direita).
         col_rosca_status, col_status_extra = st.columns(2)
         with col_rosca_status:
             if not df_status.empty:
@@ -5374,8 +5374,36 @@ def painel_insights():
                 )
                 st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False}, key="grafico_status_insights")
         with col_status_extra:
-            st.markdown('<div class="subtitulo-insights">Chamados por mês</div>', unsafe_allow_html=True)
-            _grafico_chamados_por_mes(chamados_periodo, key="grafico_chamados_por_mes")
+            st.markdown('<div class="subtitulo-insights">Chamados fora do prazo (SLA)</div>', unsafe_allow_html=True)
+            estados_finais = ["Concluído", "Cancelado", "Encerrado pelo solicitante"]
+            chamados_em_aberto = [c for c in chamados_periodo if c.get("status") not in estados_finais]
+
+            dias_limite_atraso = st.number_input(
+                "Considerar atrasado a partir de quantos dias em aberto?",
+                min_value=1, value=3, step=1,
+                key="dias_limite_atraso_insights",
+            )
+
+            agora = datetime.now(timezone.utc)
+            chamados_fora_prazo = []
+            for _c_atraso in chamados_em_aberto:
+                _abertura_atraso = _parse_data_chamado(_c_atraso.get("created_at"))
+                if _abertura_atraso:
+                    _dias_em_aberto = (agora - _abertura_atraso).total_seconds() / 86400
+                    if _dias_em_aberto > dias_limite_atraso:
+                        chamados_fora_prazo.append((_c_atraso, _dias_em_aberto))
+
+            st.metric(f"Fora do prazo (> {dias_limite_atraso}d)", len(chamados_fora_prazo))
+            st.caption(f"{len(chamados_em_aberto)} chamado(s) em aberto no período selecionado (não concluído/cancelado/encerrado).")
+
+            if chamados_fora_prazo:
+                chamados_fora_prazo.sort(key=lambda item: item[1], reverse=True)
+                with st.popover(f"Ver {len(chamados_fora_prazo)} chamado(s) fora do prazo"):
+                    for _c_fp, _dias_fp in chamados_fora_prazo:
+                        st.caption(
+                            f"{_c_fp.get('protocolo', '-')} — {_c_fp.get('status', '-')} — "
+                            f"{_dias_fp:.1f} dia(s) em aberto"
+                        )
 
         # --- A MESMA COISA, SÓ ENTRE OS CHAMADOS JÁ ENCERRADOS ---
         status_encerrados = ["Concluído", "Encerrado pelo solicitante"]
@@ -5424,39 +5452,11 @@ def painel_insights():
                 for _proto_ignorado, _motivo_ignorado in protocolos_sla_ignorados:
                     st.caption(f"{_proto_ignorado}: {_motivo_ignorado}")
 
-        # --- CHAMADOS FORA DO PRAZO (SLA) E TEMPO MÉDIO POR ETAPA ---
+        # --- CHAMADOS POR MÊS E TEMPO MÉDIO POR ETAPA ---
         col_fora_prazo, col_tempo_etapa = st.columns(2)
         with col_fora_prazo:
-            st.markdown('<div class="subtitulo-insights">Chamados fora do prazo (SLA)</div>', unsafe_allow_html=True)
-            estados_finais = ["Concluído", "Cancelado", "Encerrado pelo solicitante"]
-            chamados_em_aberto = [c for c in chamados_periodo if c.get("status") not in estados_finais]
-
-            dias_limite_atraso = st.number_input(
-                "Considerar atrasado a partir de quantos dias em aberto?",
-                min_value=1, value=3, step=1,
-                key="dias_limite_atraso_insights",
-            )
-
-            agora = datetime.now(timezone.utc)
-            chamados_fora_prazo = []
-            for _c_atraso in chamados_em_aberto:
-                _abertura_atraso = _parse_data_chamado(_c_atraso.get("created_at"))
-                if _abertura_atraso:
-                    _dias_em_aberto = (agora - _abertura_atraso).total_seconds() / 86400
-                    if _dias_em_aberto > dias_limite_atraso:
-                        chamados_fora_prazo.append((_c_atraso, _dias_em_aberto))
-
-            st.metric(f"Fora do prazo (> {dias_limite_atraso}d)", len(chamados_fora_prazo))
-            st.caption(f"{len(chamados_em_aberto)} chamado(s) em aberto no período selecionado (não concluído/cancelado/encerrado).")
-
-            if chamados_fora_prazo:
-                chamados_fora_prazo.sort(key=lambda item: item[1], reverse=True)
-                with st.popover(f"Ver {len(chamados_fora_prazo)} chamado(s) fora do prazo"):
-                    for _c_fp, _dias_fp in chamados_fora_prazo:
-                        st.caption(
-                            f"{_c_fp.get('protocolo', '-')} — {_c_fp.get('status', '-')} — "
-                            f"{_dias_fp:.1f} dia(s) em aberto"
-                        )
+            st.markdown('<div class="subtitulo-insights">Chamados por mês</div>', unsafe_allow_html=True)
+            _grafico_chamados_por_mes(chamados_periodo, key="grafico_chamados_por_mes")
         with col_tempo_etapa:
             st.markdown('<div class="subtitulo-insights">Tempo médio por etapa</div>', unsafe_allow_html=True)
             _grafico_tempo_medio_por_etapa(chamados_periodo, key="grafico_tempo_medio_etapa")

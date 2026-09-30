@@ -5070,6 +5070,44 @@ def _grafico_severidade_colunas(lista_chamados, key=None):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=key)
 
 
+_NOMES_MESES_ABREV = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
+
+
+def _grafico_chamados_por_mes(lista_chamados, key=None):
+    """Gráfico de colunas com a quantidade TOTAL de chamados (todos os
+    status juntos) abertos em cada mês — cada coluna cobre do dia 1 ao
+    último dia daquele mês, com base no created_at do chamado. Os meses
+    aparecem em ordem cronológica, só os que têm pelo menos 1 chamado no
+    conjunto filtrado (Período/Empresa/Ferramenta/Atendente/Severidade)."""
+    contagem_por_mes = {}
+    for c in lista_chamados:
+        data_c = _parse_data_chamado(c.get("created_at"))
+        if not data_c:
+            continue
+        chave = (data_c.year, data_c.month)
+        contagem_por_mes[chave] = contagem_por_mes.get(chave, 0) + 1
+
+    chaves_ordenadas = sorted(contagem_por_mes.keys())
+    rotulos = [f"{_NOMES_MESES_ABREV[mes - 1]}/{ano}" for ano, mes in chaves_ordenadas]
+    quantidades = [contagem_por_mes[chave] for chave in chaves_ordenadas]
+
+    df = pd.DataFrame({"Mês": rotulos, "Quantidade": quantidades})
+
+    fig = px.bar(df, x="Mês", y="Quantidade", text="Quantidade")
+    fig.update_traces(marker_color="#72A703", textposition="outside", cliponaxis=False, width=0.5)
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="#FFFFFF",
+        xaxis_title=None,
+        yaxis_title=None,
+        margin=dict(t=10, b=10, l=10, r=10),
+        height=300,
+        bargap=0.4,
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=key)
+
+
 def painel_insights():
     st.markdown(
         '<div class="titulo-painel-chamados">Insights - Central de Chamados</div>',
@@ -5245,8 +5283,8 @@ def painel_insights():
             "Quantidade": list(contagem_status.values()),
         })
         df_status = df_status[df_status["Quantidade"] > 0]
-        # Pedido do usuário: a rosca fica na coluna da ESQUERDA, com outro
-        # indicador ao lado (coluna da direita) — ainda a definir.
+        # Pedido do usuário: a rosca fica na coluna da ESQUERDA, com o
+        # indicador "Chamados por mês" ao lado (coluna da direita).
         col_rosca_status, col_status_extra = st.columns(2)
         with col_rosca_status:
             if not df_status.empty:
@@ -5273,6 +5311,9 @@ def painel_insights():
                     height=300,
                 )
                 st.plotly_chart(fig_status, use_container_width=True, config={"displayModeBar": False}, key="grafico_status_insights")
+        with col_status_extra:
+            st.markdown('<div class="subtitulo-insights">Chamados por mês</div>', unsafe_allow_html=True)
+            _grafico_chamados_por_mes(chamados_periodo, key="grafico_chamados_por_mes")
 
         # --- A MESMA COISA, SÓ ENTRE OS CHAMADOS JÁ ENCERRADOS ---
         status_encerrados = ["Concluído", "Encerrado pelo solicitante"]
